@@ -42,7 +42,39 @@ const singleTeacherPage = () => {
             </div>
           </div>
           {/* SMALL CARDS */}
-          <div>
+          <div className='flex-1 flex gap-4 justify-between flex-wrap'>
+            {/* CARD */}
+            <div>
+              <img src="/singleAttendance.png" alt="" width={24} height={24} className='w-6 h-6' />
+              <div>
+                <h1 className='text-xl font-semibold'>90%</h1>
+                <span className='text-sm'>Attendance</span>
+              </div>
+            </div>
+            {/* CARD */}
+            <div>
+              <img src="/singleAttendance.png" alt="" width={24} height={24} className='w-6 h-6' />
+              <div>
+                <h1 className='text-xl font-semibold'>90%</h1>
+                <span className='text-sm'>Attendance</span>
+              </div>
+            </div>
+            {/* CARD */}
+            <div>
+              <img src="/singleAttendance.png" alt="" width={24} height={24} className='w-6 h-6' />
+              <div>
+                <h1 className='text-xl font-semibold'>90%</h1>
+                <span className='text-sm'>Attendance</span>
+              </div>
+            </div>
+            {/* CARD */}
+            <div>
+              <img src="/singleAttendance.png" alt="" width={24} height={24} className='w-6 h-6' />
+              <div>
+                <h1 className='text-xl font-semibold'>90%</h1>
+                <span className='text-sm'>Attendance</span>
+              </div>
+            </div>
             
           </div>
         </div>
