@@ -29,13 +29,13 @@ const classListPage = () => {
       <td className="hidden md:table-cell">{classes.supervisor}</td>
       <td>
         <div className="flex items-center gap-2">
-          <Link href={`/list/teachers/${classes.id}`}>
+          <Link href={`/list/classes/${classes.id}`}>
           
           </Link>
           {role === 'admin' && (
             <>
             <FormModal type='update' data={classes}/>
-             <FormModal type='delete' data={classes}/>
+             <FormModal type='delete' data={classes} id={classes.id}/>
             </>
          
           )}
@@ -58,9 +58,10 @@ const classListPage = () => {
             <button className="w-8 h-8 flex items-center justify-center rounded-full bg-[#FAE27C]">
               <Image src={"/sort.png"} alt="" width={14} height={14} />
             </button>
-            <button className="w-8 h-8 flex items-center justify-center rounded-full bg-[#FAE27C]">
+            {/* <button className="w-8 h-8 flex items-center justify-center rounded-full bg-[#FAE27C]">
               <Image src={"/plus.png"} alt="" width={14} height={14} />
-            </button>
+            </button> */}
+            <FormModal type='create' table='class'/>
           </div>
         </div>
       </div>

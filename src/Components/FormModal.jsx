@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import React, { useState } from "react";
+import TeachersForm from "./Forms/TeachersForm";
 
 const FormModal = ({ table, type, data, id }) => {
   const size = type === "create" ? "w-7 h-7" : "w-8 h-8";
@@ -21,7 +22,7 @@ const FormModal = ({ table, type, data, id }) => {
                 <button className="bg-red-500 text-white py-2 px-4 rounded-md border-none self-center w-max">Delete</button>
             </form>
         ):(
-            'update form or create form'
+            <TeachersForm type='update' data={data}/>
         )
       }
 
@@ -34,7 +35,7 @@ const FormModal = ({ table, type, data, id }) => {
       >
         <Image src={`/${type}.png`} alt="" width={16} height={16} />
       </button>
-      {open && <div className="w-screen h-screen absolute top-0 left-0 bg-black bg-opacity-60 z-5 flex items-center justify-center">
+      {open && <div className="w-screen h-screen absolute top-0 left-0 bg-black bg-opacity-60 z-50 flex items-center justify-center">
         <div className="rounded-md bg-white p-4 relative w-[90%] md:w-[70%] lg:w-[60%] xl:w-[50%] 2xl:[40%]">
             <Form />
             <div className="absolute top-4 right-4 cursor-pointer " onClick={() => setOpen(false)}>

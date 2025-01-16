@@ -44,7 +44,7 @@ const subjecttListPage = () => {
             <>
               <FormModal type="update" table="subject" />
 
-              <FormModal type="delete" table="event" id={subject.id} />
+              <FormModal type="delete" table="subject" id={subject.id} />
             </>
           )}
         </div>
@@ -66,9 +66,10 @@ const subjecttListPage = () => {
             <button className="w-8 h-8 flex items-center justify-center rounded-full bg-[#FAE27C]">
               <Image src={"/sort.png"} alt="" width={14} height={14} />
             </button>
-            <button className="w-8 h-8 flex items-center justify-center rounded-full bg-[#FAE27C]">
+            {/* <button className="w-8 h-8 flex items-center justify-center rounded-full bg-[#FAE27C]">
               <Image src={"/plus.png"} alt="" width={14} height={14} />
-            </button>
+            </button> */}
+            <FormModal type="create" table="subject" />
           </div>
         </div>
       </div>

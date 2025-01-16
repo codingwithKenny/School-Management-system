@@ -1,5 +1,6 @@
 import Annoucement from '@/Components/Annoucement'
 import BigCalendar from '@/Components/BigCalendar'
+import FormModal from '@/Components/FormModal'
 import Performance from '@/Components/Performance'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -26,7 +27,25 @@ const singleTeacherPage = () => {
             </div>
             {/* USERiNFO */}
             <div className='w-2/3 flex flex-col justify-between gap-2 lg:-ml-28'>
-              <h1 className='text-xl font-semibold'>Idris Adedayo</h1>
+            <div className='flex items-center gap-2'>
+            <h1 className='text-sm font-semibold'>Idris Adedayo</h1>
+              <FormModal type='update' table='teacher' data={
+                {id: '1',
+                name: 'Idris Adedayo',
+                image: 'https://images.pexels.com/photos/2888150/pexels-photo-2888150.jpeg?auto=compress&cs=tinysrgb&w=1200',
+                email: 'idrisAdedayo@gmail.com',
+                phonenumber: '+234-8114218',
+                department: 'Science',
+                position: 'Head Teacher',
+                qualifications: 'MBA, PhD',
+                experience: '15 years',
+                hire_date: '2010-01-01',
+                graduation_date: '2020-06-30',
+                salary: '50000',
+                subjects: 'Mathematics, Physics, Chemistry',}
+              }/>
+            </div>
+             
               <p className='text-xs text-gray-500'>Lorem ipsum dolor sit amet, consectetur adipisicing elit.</p>
               <div className='flex items-center justify-between flex-wrap text-xs font-small gap-2 '>
                 <div className='w-full md:w-1/3 lg:full flex  items-center gap-2' >
