@@ -1,3 +1,4 @@
+import FormModal from '@/Components/FormModal';
 import Pagination from '@/Components/Pagination';
 import Table from '@/Components/Table';
 import TableSearch from '@/Components/TableSearch';
@@ -29,14 +30,14 @@ const classListPage = () => {
       <td>
         <div className="flex items-center gap-2">
           <Link href={`/list/teachers/${classes.id}`}>
-            <button className="w-7 h-7 rounded-full flex items-center justify-center bg-[#C3EBFA]">
-              <Image src={"/edit.png"} alt="" width={16} height={16} />
-            </button>
+          
           </Link>
           {role === 'admin' && (
-            <button className="w-7 h-7 rounded-full flex items-center justify-center bg-[#CFCEFF]">
-              <Image src={"/delete.png"} alt="" width={16} height={16} />
-            </button>
+            <>
+            <FormModal type='update' data={classes}/>
+             <FormModal type='delete' data={classes}/>
+            </>
+         
           )}
         </div>
       </td>

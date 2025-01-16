@@ -1,43 +1,52 @@
-import Pagination from '@/Components/Pagination';
-import Table from '@/Components/Table';
-import TableSearch from '@/Components/TableSearch';
-import { parentsData, role} from '@/lib/data';
-import Image from 'next/image';
-import Link from 'next/link';
+import FormModal from "@/Components/FormModal";
+import Pagination from "@/Components/Pagination";
+import Table from "@/Components/Table";
+import TableSearch from "@/Components/TableSearch";
+import { parentsData, role } from "@/lib/data";
+import Image from "next/image";
+import Link from "next/link";
 
-import React from 'react';
+import React from "react";
 
 const column = [
-  { header: 'Info', accessor: 'info' },
-  { header: 'Student Name', accessor: 'studentname', className: 'hidden md:table-cell' },
-  { header: 'Phone', accessor: 'phone', className: 'hidden md:table-cell' },
-  { header: 'Address', accessor: 'address', className: 'hidden lg:table-cell' },
-  { header: 'Actions', accessor: 'actions' },
+  { header: "Info", accessor: "info" },
+  {
+    header: "Student Name",
+    accessor: "studentname",
+    className: "hidden md:table-cell",
+  },
+  { header: "Phone", accessor: "phone", className: "hidden md:table-cell" },
+  { header: "Address", accessor: "address", className: "hidden lg:table-cell" },
+  { header: "Actions", accessor: "actions" },
 ];
 
 const parentListPage = () => {
   const renderRow = (parent) => (
-    <tr key={parent.id} className='text-xs border-b border-grey-200 even:bg-slate-50 hover:bg-[#F1F0FF]'>
-      <td className='flex items-center  gap-4 p-4 '>
+    <tr
+      key={parent.id}
+      className="text-xs border-b border-grey-200 even:bg-slate-50 hover:bg-[#F1F0FF]"
+    >
+      <td className="flex items-center  gap-4 p-4 ">
         <div className="flex flex-col">
           <h3 className="font-semibold">{parent.name}</h3>
           <h4 className="text-gray-500 text-sm">{parent.email}</h4>
         </div>
       </td>
-      <td className="hidden md:table-cell">{parent.students.join(',')}</td>
+      <td className="hidden md:table-cell">{parent.students.join(",")}</td>
       <td className="hidden md:table-cell">{parent.phone}</td>
       <td className="hidden md:table-cell">{parent.address}</td>
       <td>
         <div className="flex items-center gap-2">
-          <Link href={`/list/teachers/${parent.parentId}`}>
-            <button className="w-7 h-7 rounded-full flex items-center justify-center bg-[#C3EBFA]">
-              <Image src={"/view.png"} alt="" width={16} height={16} />
-            </button>
-          </Link>
-          {role === 'admin' && (
-            <button className="w-7 h-7 rounded-full flex items-center justify-center bg-[#CFCEFF]">
-              <Image src={"/delete.png"} alt="" width={16} height={16} />
-            </button>
+          <Link href={`/list/parents/${parent.parentId}`}></Link>
+          {role === "admin" && (
+            // <button className="w-7 h-7 rounded-full flex items-center justify-center bg-[#CFCEFF]">
+            //   <Image src={"/delete.png"} alt="" width={16} height={16} />
+            // </button>
+            <>
+              <FormModal type="update" table="parent" id={parent} />
+
+              <FormModal type="delete" table="parent" id={parent.parentId} />
+            </>
           )}
         </div>
       </td>
@@ -58,9 +67,10 @@ const parentListPage = () => {
             <button className="w-8 h-8 flex items-center justify-center rounded-full bg-[#FAE27C]">
               <Image src={"/sort.png"} alt="" width={14} height={14} />
             </button>
-            <button className="w-8 h-8 flex items-center justify-center rounded-full bg-[#FAE27C]">
+            {/* <button className="w-8 h-8 flex items-center justify-center rounded-full bg-[#FAE27C]">
               <Image src={"/plus.png"} alt="" width={14} height={14} />
-            </button>
+            </button> */}
+            <FormModal type="create" table="parent" />
           </div>
         </div>
       </div>

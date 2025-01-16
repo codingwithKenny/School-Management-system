@@ -1,38 +1,51 @@
-import Pagination from '@/Components/Pagination';
-import Table from '@/Components/Table';
-import TableSearch from '@/Components/TableSearch';
-import { role, subjectsData} from '@/lib/data';
-import Image from 'next/image';
-import Link from 'next/link';
+import FormModal from "@/Components/FormModal";
+import Pagination from "@/Components/Pagination";
+import Table from "@/Components/Table";
+import TableSearch from "@/Components/TableSearch";
+import { role, subjectsData } from "@/lib/data";
+import Image from "next/image";
+import Link from "next/link";
 
-import React from 'react';
+import React from "react";
 
 const column = [
-  { header: 'Subject Name', accessor: 'name' },
-  { header: 'Teachers', accessor: 'teachers', className: 'hidden md:table-cell' },
-  { header: 'Actions', accessor: 'actions' },
+  { header: "Subject Name", accessor: "name" },
+  {
+    header: "Teachers",
+    accessor: "teachers",
+    className: "hidden md:table-cell",
+  },
+  { header: "Actions", accessor: "actions" },
 ];
 
 const subjecttListPage = () => {
   const renderRow = (subject) => (
-    <tr key={subject.id} className='text-xs border-b border-grey-200 even:bg-slate-50 hover:bg-[#F1F0FF]'>
-      <td className='flex items-center  gap-4 p-4 '>
+    <tr
+      key={subject.id}
+      className="text-xs border-b border-grey-200 even:bg-slate-50 hover:bg-[#F1F0FF]"
+    >
+      <td className="flex items-center  gap-4 p-4 ">
         <div className="flex flex-col">
           <h3 className="font-semibold">{subject.name}</h3>
         </div>
       </td>
-      <td className="hidden md:table-cell">{subject.teachers.join(',')}</td>
+      <td className="hidden md:table-cell">{subject.teachers.join(",")}</td>
       <td>
         <div className="flex items-center gap-2">
-          <Link href={`/list/teachers/${subject.id}`}>
-            <button className="w-7 h-7 rounded-full flex items-center justify-center bg-[#C3EBFA]">
+          <Link href={`/list/subjects/${subject.id}`}>
+            {/* <button className="w-7 h-7 rounded-full flex items-center justify-center bg-[#C3EBFA]">
               <Image src={"/edit.png"} alt="" width={16} height={16} />
-            </button>
+            </button> */}
           </Link>
-          {role === 'admin' && (
-            <button className="w-7 h-7 rounded-full flex items-center justify-center bg-[#CFCEFF]">
-              <Image src={"/delete.png"} alt="" width={16} height={16} />
-            </button>
+          {role === "admin" && (
+            // <button className="w-7 h-7 rounded-full flex items-center justify-center bg-[#CFCEFF]">
+            //   <Image src={"/delete.png"} alt="" width={16} height={16} />
+            // </button>
+            <>
+              <FormModal type="update" table="subject" />
+
+              <FormModal type="delete" table="event" id={subject.id} />
+            </>
           )}
         </div>
       </td>
