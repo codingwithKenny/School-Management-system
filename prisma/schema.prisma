@@ -1,0 +1,161 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Admin {
+  admin_id String @id @default(dbgenerated("substring(gen_random_uuid()::text, 1, 8)")) @db.VarChar(8)
+  name     String
+  email    String @unique
+  password String
+}
+
+model Student {
+  student_id String  @id @default(dbgenerated("substring(gen_random_uuid()::text, 1, 8)")) @db.VarChar(8)
+  surname    String
+  name       String
+  username   String   @unique
+  sex        Sex
+  img        String?
+  address    String?
+  createdAt  DateTime @default(now())
+  grade      Grade     @relation(fields: [gradeId], references: [grade_id])
+  gradeId    Int
+  class      Class     @relation(fields: [classId], references: [class_id])
+  classId    Int
+  parent     Parent    @relation(fields: [parentId], references: [parent_id])
+  parentId   Int
+  results    Result[]
+  attendance Attendance[]
+}
+
+model Teacher {
+teacher_id String @id @default(dbgenerated("substring(gen_random_uuid()::text, 1, 8)")) @db.VarChar(8)
+  surname    String
+  name       String
+  username   String   @unique
+  sex        Sex
+  email      String   @unique
+  img        String?
+  address    String?
+  password   String
+  subjects   Subject[]
+  lessons    Lesson[]
+  classes    Class[]  @relation("SupervisorRelation")
+}
+
+model Subject {
+  subject_id Int      @id @default(autoincrement())
+  name       String   @unique
+  teacher    Teacher  @relation(fields: [teacherId], references: [teacher_id])
+  teacherId  String   @db.VarChar(8)
+  lessons    Lesson[]
+}
+
+model Lesson {
+  lesson_id Int       @id @default(autoincrement())
+  name      String
+  class     Class     @relation(fields: [classId], references: [class_id])
+  classId   Int
+  subject   Subject   @relation(fields: [subjectId], references: [subject_id])
+  subjectId Int
+  teacher   Teacher   @relation(fields: [teacherId], references: [teacher_id])
+  teacherId String    @db.VarChar(8)
+  day       Day
+  exams     Exam[]
+  assignments Assignment[]
+  attendance Attendance[]
+}
+
+model Grade {
+  grade_id Int       @id @default(autoincrement())
+  name     String
+  classes  Class[]
+  students Student[]
+}
+
+model Class {
+  class_id     Int       @id @default(autoincrement())
+  name         String    @unique
+  grade        Grade     @relation(fields: [gradeId], references: [grade_id])
+  gradeId      Int
+  supervisor   Teacher?   @relation("SupervisorRelation", fields: [supervisorId], references: [teacher_id])
+  supervisorId String ?  @db.VarChar(8)
+  students     Student[]
+  lessons      Lesson[]
+}
+
+model Parent {
+  parent_id Int       @id @default(autoincrement())
+  name      String
+  email     String    @unique
+  children  Student[]
+}
+
+model Exam {
+  exam_id  Int      @id @default(autoincrement())
+  name     String
+  lesson   Lesson   @relation(fields: [lessonId], references: [lesson_id])
+  lessonId Int
+  term     Term     @relation(fields: [termId], references: [term_id])
+  termId   Int
+  results  Result[]
+}
+
+model Assignment {
+  assignment_id Int      @id @default(autoincrement())
+  name          String
+  lesson        Lesson   @relation(fields: [lessonId], references: [lesson_id])
+  lessonId      Int
+  term          Term     @relation(fields: [termId], references: [term_id])
+  termId        Int
+  results       Result[]
+}
+
+model Result {
+  result_id    String    @id @default(dbgenerated("substring(gen_random_uuid()::text, 1, 8)")) @db.VarChar(8)
+  student      Student  @relation(fields: [studentId], references: [student_id])
+  studentId    String   @db.VarChar(8)
+  exam         Exam?    @relation(fields: [examId], references: [exam_id])
+  examId       Int?
+  assignment   Assignment? @relation(fields: [assignmentId], references: [assignment_id])
+  assignmentId Int?
+  score        Float
+}
+
+model Attendance {
+  attendance_id Int       @id @default(autoincrement())
+  student       Student   @relation(fields: [studentId], references: [student_id])
+  studentId     String    @db.VarChar(8)
+  lesson        Lesson    @relation(fields: [lessonId], references: [lesson_id])
+  lessonId      Int
+  date          DateTime
+  status        Boolean   // TRUE = Present, FALSE = Absent
+}
+
+model Term {
+  term_id     Int         @id @default(autoincrement())
+  name        String
+  session     String
+  startDate   DateTime
+  endDate     DateTime
+  exams       Exam[]
+  assignments Assignment[]
+}
+
+enum Sex {
+  MALE
+  FEMALE
+}
+
+enum Day {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+}

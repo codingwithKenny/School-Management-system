@@ -23,7 +23,7 @@ const schema = z.object({
  
 
 });
-const TeachersForm = ({type,data}) => {
+const StudentForm = ({type,data}) => {
   const {
     register,
     handleSubmit,
@@ -153,4 +153,4 @@ const TeachersForm = ({type,data}) => {
   </form>
 }
 
-export default TeachersForm
+export default StudentForm

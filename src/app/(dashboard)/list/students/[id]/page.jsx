@@ -15,18 +15,20 @@ const singleStdentPage = () => {
           {/* USER INFO CARDS */}
           <div className='bg-[#CFCEFF] py-6 px-4 flex-1 flex rounded-md gap-4'>
             {/* USERIMAGE */}
-            <div className='w-full lg:-ml-3' >
+            <div className='w-full lg:-ml-3 gap-2' >
               <img
                src="https://images.pexels.com/photos/1187765/pexels-photo-1187765.jpeg?auto=compress&cs=tinysrgb&w=1200" 
                alt="" 
                width={144} 
                height={144} 
                className='w-28 h-28 rounded-full object-cover'/>
+               
 
             </div>
             {/* USERiNFO */}
             <div className='w-2/3 flex flex-col justify-between gap-2 lg:-ml-28'>
-              <h1 className='text-xl font-semibold'>Okunlola Ridwat</h1>
+              <h1 className='text-sm font-semibold'>Okunlola Ridwat</h1>
+              <span className='bg-white rounded-md'>NOT PAID</span>
               <p className='text-xs text-gray-500'>Lorem ipsum dolor sit amet, consectetur adipisicing elit.</p>
               <div className='flex items-center justify-between flex-wrap text-xs font-small gap-2 '>
                 <div className='w-full md:w-1/3 lg:full flex  items-center gap-2' >
