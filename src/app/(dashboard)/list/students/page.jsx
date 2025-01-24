@@ -3,6 +3,8 @@ import Pagination from '@/Components/Pagination';
 import Table from '@/Components/Table';
 import TableSearch from '@/Components/TableSearch';
 import { role, studentsData, teachersData } from '@/lib/data';
+import { ITEM_PER_PAGE } from '@/lib/paginationSettings';
+import prisma from '@/lib/prisma';
 import Image from 'next/image';
 import Link from 'next/link';
 
@@ -17,12 +19,54 @@ const column = [
   { header: 'Actions', accessor: 'actions' },
 ];
 
-const studentListPage = () => {
+const studentListPage = async({ searchParams = {} }) => {
+  const page = searchParams.page || 1; // Default to 1 if not provided
+  const p = parseInt(page);
+
+    // Construct query conditions
+    const query = {};
+    if (searchParams) {
+      for (const [key, value] of Object.entries(searchParams)) {
+        if (value !== undefined) {
+          switch (key) {
+            case 'teacherId':
+              query.lessons = {
+                some: { teacherId: parseInt(value) },
+              };
+              break;
+            // Add additional filters as needed
+            case 'search':
+              query.name = { contains: value, mode:"insensitive" };
+              break;
+            // Add additional filters as needed
+            default:
+              break;
+          }
+        }
+      }
+    }
+
+  // FETCH STUDENT FROM DATABASE AND COUNT
+ const studentData = await prisma.student.findMany({
+  where:query,
+  include:{
+    grade: true,
+    class: true,
+  },
+  take:ITEM_PER_PAGE,
+  skip: (p-1)* ITEM_PER_PAGE
+ })
+
+ const count = await prisma.student.count({where:query})
+ 
+
+
+
   const renderRow = (student) => (
     <tr key={student.id} className='text-xs border-b border-grey-200 even:bg-slate-50 hover:bg-[#F1F0FF]'>
       <td className='flex items-center  gap-4 p-4 '>
         <Image
-          src={student.photo}
+          src={student.photo || '/noAvatar.png'}
           alt=""
           width={40}
           height={40}
@@ -30,16 +74,16 @@ const studentListPage = () => {
         />
         <div className="flex flex-col">
           <h3 className="font-semibold">{student.name}</h3>
-          <h4 className="text-gray-500 text-sm">{student.class}</h4>
+          <h4 className="text-gray-500 text-sm">{student.class?.name|| 'N/A'}</h4>
         </div>
       </td>
-      <td className="hidden md:table-cell">{student.studentId}</td>
+      <td className="hidden md:table-cell">{student.username}</td>
+      <td className="hidden md:table-cell">{student.grade?.name || 'N/A'}</td>
       <td className="hidden md:table-cell">{student.phone}</td>
-      <td className="hidden md:table-cell">{student.grade}</td>
       <td className="hidden md:table-cell">{student.address}</td>
       <td>
         <div className="flex items-center gap-2">
-          <Link href={`/list/students/${student.studentId}`}>
+          <Link href={`/list/students/${student.student_id}`}>
             <button className="w-7 h-7 rounded-full flex items-center justify-center bg-[#C3EBFA]">
               <Image src={"/view.png"} alt="" width={16} height={16} />
             </button>
@@ -48,7 +92,7 @@ const studentListPage = () => {
             // <button className="w-7 h-7 rounded-full flex items-center justify-center bg-[#CFCEFF]">
             //   <Image src={"/delete.png"} alt="" width={16} height={16} />
             // </button>
-            <FormModal type='delete' id={student.studentId} table='student'/>
+            <FormModal type='delete' id={student.student_id} table='student'/>
           )}
         </div>
       </td>
@@ -77,9 +121,9 @@ const studentListPage = () => {
         </div>
       </div>
       {/* LIST */}
-      <Table column={column} renderRow={renderRow} data={studentsData} />
+      <Table column={column} renderRow={renderRow} data={studentData || []} />
       {/* PAGINATION */}
-      <Pagination />
+      <Pagination page={p} count={count} />
     </div>
   );
 };

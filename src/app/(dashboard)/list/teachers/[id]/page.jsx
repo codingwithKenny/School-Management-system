@@ -118,7 +118,7 @@ const singleTeacherPage = () => {
           <h1 className='text-xl font-semibold'>Shortcuts</h1>
           <div className='mt-3 flex gap-2 flex-wrap text-xs text-gray-500'>
             <Link className='p-3 rounded-md bg-[#FEFCE8]' href='/'>Teachers Classes</Link>
-            <Link className='p-3 rounded-md bg-[#F1F0FF]' href='/'>Teachers Students</Link>
+            <Link className='p-3 rounded-md bg-[#F1F0FF]' href={`/list/teachers?studentId=${2}`}>Teachers Students</Link>
             <Link className='p-3 rounded-md bg-pink-50' href='/'>Teachers Lessons</Link>
             <Link className='p-3 rounded-md bg-[#EDF9FD]' href='/'>Teachers Exam</Link>
             <Link className='p-3 rounded-md bg-[#FEFCE8]' href='/'>Teachers Assignment</Link>

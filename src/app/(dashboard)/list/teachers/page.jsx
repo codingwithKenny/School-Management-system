@@ -1,4 +1,3 @@
-
 import Image from 'next/image';
 import Link from 'next/link';
 import FormModal from '@/Components/FormModal';
@@ -9,29 +8,48 @@ import { role } from '@/lib/data';
 import prisma from '@/lib/prisma';
 import { ITEM_PER_PAGE } from '@/lib/paginationSettings';
 
+export default async function TeacherListPage({ searchParams = {} }) {
+  const page = searchParams.page || 1; // Default to 1 if not provided
+  const p = parseInt(page);
 
-async function fetchTeachers(p) {
-  return await prisma.teacher.findMany({
+  // Construct query conditions
+  const query = {};
+  if (searchParams) {
+    for (const [key, value] of Object.entries(searchParams)) {
+      if (value !== undefined) {
+        switch (key) {
+          case 'classId':
+            query.lessons = {
+              some: { classId: parseInt(value) },
+            };
+            break;
+          // Add additional filters as needed
+          case 'search':
+            query.name = { contains: value, mode:"insensitive" };
+            break;
+          // Add additional filters as needed
+          default:
+            break;
+        }
+      }
+    }
+  }
+
+  // Fetch teachers and count
+  const teachersData = await prisma.teacher.findMany({
+    where: query,
     include: {
       subjects: true, // Include related subjects
-      classes: true,  // Include related lessons
+      classes: true,  // Include related classes
     },
     take: ITEM_PER_PAGE,
-    skip: (p - 1) * ITEM_PER_PAGE, 
+    skip: (p - 1) * ITEM_PER_PAGE,
   });
-}
-const count = await prisma.teacher.count()
-console.log(count , 'count')
 
-export default async function TeacherListPage({searchParams ={} }) {
-  const page = searchParams.page || 1; // Default to 1 if page is not provided
- 
-  const p = page? parseInt(page) : 1;
-  console.log("SearchParams:", searchParams);
-  console.log("Page:", page);
-  const teachersData = await fetchTeachers(p);
-  console.log(teachersData)
+  const count = await prisma.teacher.count({ where: query });
 
+
+  // Table column definitions
   const column = [
     { header: 'Info', accessor: 'info' },
     { header: 'Teacher Id', accessor: 'id', className: 'hidden md:table-cell' },
@@ -42,8 +60,9 @@ export default async function TeacherListPage({searchParams ={} }) {
     { header: 'Actions', accessor: 'actions' },
   ];
 
+  // Render table rows
   const renderRow = (teacher) => (
-    <tr key={teacher.teacher_id} className="text-xs border-b border-grey-200 even:bg-slate-50 hover:bg-[#F1F0FF]">
+    <tr key={teacher.id} className="text-xs border-b border-grey-200 even:bg-slate-50 hover:bg-[#F1F0FF]">
       <td className="flex items-center gap-4 p-4">
         <Image
           src={teacher.photo || '/noAvatar.png'}
@@ -57,7 +76,7 @@ export default async function TeacherListPage({searchParams ={} }) {
           <h4 className="text-gray-500 text-sm">{teacher.email}</h4>
         </div>
       </td>
-      <td className="hidden md:table-cell">{teacher.teacher_id}</td>
+      <td className="hidden md:table-cell">{teacher.username}</td>
       <td className="hidden md:table-cell">
         {teacher.subjects?.map((subject) => subject.name).join(', ') || 'N/A'}
       </td>
@@ -74,13 +93,14 @@ export default async function TeacherListPage({searchParams ={} }) {
             </button>
           </Link>
           {role === 'admin' && (
-            <FormModal type="delete" table="teacher" id={teacher.teacher_id} />
+            <FormModal type="delete" table="teacher" id={teacher.id} />
           )}
         </div>
       </td>
     </tr>
   );
 
+  // Page rendering
   return (
     <div className="bg-white rounded-md p-4 flex-1 m-4 mt-0">
       <div className="flex items-center justify-between">
@@ -99,7 +119,7 @@ export default async function TeacherListPage({searchParams ={} }) {
         </div>
       </div>
       <Table column={column} renderRow={renderRow} data={teachersData || []} />
-      <Pagination page={p} count = {count} />
+      <Pagination page={p} count={count} />
     </div>
   );
 }

@@ -3,6 +3,8 @@ import Pagination from "@/Components/Pagination";
 import Table from "@/Components/Table";
 import TableSearch from "@/Components/TableSearch";
 import { parentsData, role } from "@/lib/data";
+import { ITEM_PER_PAGE } from "@/lib/paginationSettings";
+import prisma from "@/lib/prisma";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -20,10 +22,50 @@ const column = [
   { header: "Actions", accessor: "actions" },
 ];
 
-const parentListPage = () => {
+
+const parentListPage = async({ searchParams }) => {
+  const params = searchParams ? await searchParams : {};
+
+  const page = params.page || 1; // Default to 1 if not provided
+  const p = parseInt(page);
+
+  // Construct query conditions
+  const query = {};
+ 
+  if (searchParams) {
+    for (const [key, value] of Object.entries(params)) {
+      if (value !== undefined) {
+        switch (key) {
+          // Add additional filters as needed
+          case 'search':
+            query.name = { contains: value, mode:"insensitive" };
+            break;
+          // Add additional filters as needed
+          default:
+            break;
+        }
+      }
+    }
+  }
+
+  // Fetch teachers and count
+  const data = await prisma.parent.findMany({
+    where: query,
+    include: {
+      children: true, // Include related subjects
+    },
+    take: ITEM_PER_PAGE,
+    skip: (p - 1) * ITEM_PER_PAGE,
+  });
+
+  const count = await prisma.parent.count({ where: query });
+
+  
+  
+
   const renderRow = (parent) => (
     <tr
-      key={parent.id}
+      key={parent.parent_id}
       className="text-xs border-b border-grey-200 even:bg-slate-50 hover:bg-[#F1F0FF]"
     >
       <td className="flex items-center  gap-4 p-4 ">
@@ -32,26 +74,28 @@ const parentListPage = () => {
           <h4 className="text-gray-500 text-sm">{parent.email}</h4>
         </div>
       </td>
-      <td className="hidden md:table-cell">{parent.students.join(",")}</td>
-      <td className="hidden md:table-cell">{parent.phone}</td>
-      <td className="hidden md:table-cell">{parent.address}</td>
+      <td className="hidden md:table-cell">{parent.children?.map((item)=> item.name).join(",")}</td>
+      <td className="hidden md:table-cell">{parent.phone || "N/A"}</td>
+      <td className="hidden md:table-cell">{parent.address || "N/A"}</td>
       <td>
         <div className="flex items-center gap-2">
-          <Link href={`/list/parents/${parent.parentId}`}></Link>
+          <Link href={`/list/parents/${parent.parent_id}`}></Link>
           {role === "admin" && (
             // <button className="w-7 h-7 rounded-full flex items-center justify-center bg-[#CFCEFF]">
             //   <Image src={"/delete.png"} alt="" width={16} height={16} />
             // </button>
             <>
               <FormModal type="update" table="parent" id={parent} />
-
-              <FormModal type="delete" table="parent" id={parent.parentId} />
+  
+              <FormModal type="delete" table="parent" id={parent.parent_id} />
             </>
           )}
         </div>
       </td>
     </tr>
   );
+
+ 
 
   return (
     <div className="bg-white rounded-md p-4 flex-1 m-4 mt-0">
@@ -75,9 +119,9 @@ const parentListPage = () => {
         </div>
       </div>
       {/* LIST */}
-      <Table column={column} renderRow={renderRow} data={parentsData} />
+      <Table column={column} renderRow={renderRow} data={data || []} />
       {/* PAGINATION */}
-      <Pagination />
+      <Pagination count={count} page={p} />
     </div>
   );
 };

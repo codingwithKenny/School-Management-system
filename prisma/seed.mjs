@@ -3,11 +3,9 @@ import { v4 as uuidv4 } from "uuid";
 
 const prisma = new PrismaClient();
 
-
-const generateShortUuid = () => uuidv4().replace(/-/g, '').slice(0, 8);
+const generateShortUuid = () => uuidv4().replace(/-/g, "").slice(0, 8);
 
 console.log(generateShortUuid());
-
 
 async function main() {
   console.log("Seeding data...");
@@ -60,13 +58,15 @@ async function main() {
 
   // Seed Subjects
   const subjects = ["Math", "Science", "English", "History", "Art"];
+  const subjectList = [];
   for (let i = 0; i < subjects.length; i++) {
-    await prisma.subject.create({
+    const subject = await prisma.subject.create({
       data: {
         name: subjects[i],
-        teacherId: teacherList[i % teacherList.length].teacher_id, // Assign each subject to a teacher
+        teacherId: teacherList[i % teacherList.length].teacher_id,
       },
     });
+    subjectList.push(subject);
   }
 
   // Seed Classes
@@ -96,8 +96,9 @@ async function main() {
   }
 
   // Seed Students
+  const studentList = [];
   for (let i = 1; i <= 30; i++) {
-    await prisma.student.create({
+    const student = await prisma.student.create({
       data: {
         student_id: generateShortUuid(),
         username: `student${i}`,
@@ -110,19 +111,86 @@ async function main() {
         parentId: parentList[i % parentList.length].parent_id,
       },
     });
+    studentList.push(student);
   }
 
   // Seed Lessons
+  const lessonList = [];
   for (let i = 0; i < 20; i++) {
-    await prisma.lesson.create({
+    const lesson = await prisma.lesson.create({
       data: {
         name: `Lesson ${i + 1}`,
         day: "MONDAY",
         classId: classList[i % classList.length].class_id,
-        subjectId: (i % subjects.length) + 1,
+        subjectId: subjectList[i % subjectList.length].subject_id,
         teacherId: teacherList[i % teacherList.length].teacher_id,
       },
     });
+    lessonList.push(lesson);
+  }
+
+  // Seed Terms
+  const termList = [];
+  for (let i = 1; i <= 3; i++) {
+    const term = await prisma.term.create({
+      data: {
+        name: `Term ${i}`,
+        session: `2023/2024`,
+        startDate: new Date(`2023-01-01`),
+        endDate: new Date(`2023-12-31`),
+      },
+    });
+    termList.push(term);
+  }
+
+  // Seed Exams
+  const examList = [];
+  for (let i = 0; i < 10; i++) {
+    const exam = await prisma.exam.create({
+      data: {
+        name: `Exam ${i + 1}`,
+        lessonId: lessonList[i % lessonList.length].lesson_id,
+        termId: termList[i % termList.length].term_id,
+      },
+    });
+    examList.push(exam);
+  }
+
+  // Seed Assignments
+  const assignmentList = [];
+  for (let i = 0; i < 10; i++) {
+    const assignment = await prisma.assignment.create({
+      data: {
+        name: `Assignment ${i + 1}`,
+        lessonId: lessonList[i % lessonList.length].lesson_id,
+        termId: termList[i % termList.length].term_id,
+      },
+    });
+    assignmentList.push(assignment);
+  }
+
+  // Seed Results
+  for (let i = 0; i < 30; i++) {
+    const student = studentList[i % studentList.length];
+    if (i < examList.length) {
+      await prisma.result.create({
+        data: {
+          result_id: generateShortUuid(),
+          studentId: student.student_id,
+          examId: examList[i].exam_id,
+          score: Math.random() * 100,
+        },
+      });
+    } else {
+      await prisma.result.create({
+        data: {
+          result_id: generateShortUuid(),
+          studentId: student.student_id,
+          assignmentId: assignmentList[i % assignmentList.length].assignment_id,
+          score: Math.random() * 100,
+        },
+      });
+    }
   }
 
   console.log("Seeding completed successfully!");

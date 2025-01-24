@@ -101,7 +101,7 @@ const singleStdentPage = () => {
           <h1 className='text-xl font-semibold'>Shortcuts</h1>
           <div className='mt-3 flex gap-2 flex-wrap text-xs text-gray-500'>
             <Link className='p-3 rounded-md bg-[#FEFCE8]' href='/'>Students Classes</Link>
-            <Link className='p-3 rounded-md bg-[#F1F0FF]' href='/'>Students Teachers</Link>
+            <Link className='p-3 rounded-md bg-[#F1F0FF]' href={`/list/teachers?classId=${2}`}>Students Teachers</Link>
             <Link className='p-3 rounded-md bg-pink-50' href='/'>Students Lessons</Link>
             <Link className='p-3 rounded-md bg-[#EDF9FD]' href='/'>Students Exam</Link>
             <Link className='p-3 rounded-md bg-[#FEFCE8]' href='/'>Students Assignment</Link>

@@ -3,6 +3,8 @@ import Pagination from '@/Components/Pagination';
 import Table from '@/Components/Table';
 import TableSearch from '@/Components/TableSearch';
 import { classesData, role} from '@/lib/data';
+import { ITEM_PER_PAGE } from '@/lib/paginationSettings';
+import prisma from '@/lib/prisma';
 import Image from 'next/image';
 import Link from 'next/link';
 
@@ -16,7 +18,41 @@ const column = [
   { header: 'Actions', accessor: 'actions' },
 ];
 
-const classListPage = () => {
+const classListPage = async ({searchParams = {}}) => {
+   const page = searchParams?.page || 1
+   const p = parseInt(page)
+
+    // Construct query conditions
+  const query = {};
+  if (searchParams) {
+    for (const [key, value] of Object.entries(searchParams)) {
+      if (value !== undefined) {
+        switch (key) {
+          // Add additional filters as needed
+          case 'search':
+            query.name = { contains: value, mode:"insensitive" };
+            break;
+          // Add additional filters as needed
+          default:
+            break;
+        }
+      }
+    }
+  }
+ const classData = await prisma.class.findMany({
+  where:query,
+  include:{
+    students: true,
+    grade: true,
+    supervisor: true,
+    lessons: true
+  },
+  take:ITEM_PER_PAGE,
+  skip: (p-1)* ITEM_PER_PAGE
+
+ })
+const count = await prisma.class.count({where:query})
+
   const renderRow = (classes) => (
     <tr key={classes.id} className='text-xs border-b border-grey-200 even:bg-slate-50 hover:bg-[#F1F0FF]'>
       <td className='flex items-center  gap-4 p-4 '>
@@ -24,9 +60,9 @@ const classListPage = () => {
           <h3 className="font-semibold">{classes.name}</h3>
         </div>
       </td>
-      <td className="hidden md:table-cell">{classes.capacity}</td>
-      <td className="hidden md:table-cell">{classes.grade}</td>
-      <td className="hidden md:table-cell">{classes.supervisor}</td>
+      <td className="hidden md:table-cell">{classes.capacity || "N/A"}</td>
+      <td className="hidden md:table-cell">{classes.grade.name}</td>
+      <td className="hidden md:table-cell">{classes.supervisor?.name}</td>
       <td>
         <div className="flex items-center gap-2">
           <Link href={`/list/classes/${classes.id}`}>
@@ -66,9 +102,9 @@ const classListPage = () => {
         </div>
       </div>
       {/* LIST */}
-      <Table column={column} renderRow={renderRow} data={classesData} />
+      <Table column={column} renderRow={renderRow} data={classData || []} />
       {/* PAGINATION */}
-      <Pagination />
+      <Pagination count={count} page={p} />
     </div>
   );
 };

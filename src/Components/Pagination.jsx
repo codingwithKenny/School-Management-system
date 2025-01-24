@@ -8,9 +8,8 @@ const Pagination = ({page, count}) => {
   const changePage = (newPage) => {
     const params = new URLSearchParams(window.location.search)
     params.set('page', newPage.toString())
-    router.push(`${window.location.pathname}? ${params}`)
-
-   
+    const newUrl = `${window.location.pathname}?${params.toString()}`;
+    router.push(newUrl);
   }
   const hasPrev = ITEM_PER_PAGE *(page -1) > 0
   const hasNext = ITEM_PER_PAGE * page < count

@@ -3,6 +3,8 @@ import Pagination from "@/Components/Pagination";
 import Table from "@/Components/Table";
 import TableSearch from "@/Components/TableSearch";
 import { role, subjectsData } from "@/lib/data";
+import { ITEM_PER_PAGE } from "@/lib/paginationSettings";
+import prisma from "@/lib/prisma";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -15,10 +17,47 @@ const column = [
     accessor: "teachers",
     className: "hidden md:table-cell",
   },
+  {
+    header: "Lessons",
+    accessor: "lesson",
+    className: "hidden md:table-cell",
+  },
   { header: "Actions", accessor: "actions" },
 ];
 
-const subjecttListPage = () => {
+const subjecttListPage =async ({searchParams}) => {
+  const params = searchParams ? await searchParams : {};
+   const page = params?.page || 1
+   const p = parseInt(page)
+
+     // Construct query conditions
+  const query = {};
+  if (params) {
+    for (const [key, value] of Object.entries(params)) {
+      if (value !== undefined) {
+        switch (key) {
+          case 'search':
+            query.name = { contains: value, mode:"insensitive" };
+            break;
+          // Add additional filters as needed
+          default:
+            break;
+        }
+      }
+    }
+  }
+
+  const subjectData = await prisma.subject.findMany({
+    where:query,
+    include:{
+      lessons:true,
+      teacher: true,
+    },
+    take:ITEM_PER_PAGE,
+    skip: (p - 1) * ITEM_PER_PAGE,
+  })
+  const count = await prisma.subject.count({where:query})
+
   const renderRow = (subject) => (
     <tr
       key={subject.id}
@@ -29,10 +68,11 @@ const subjecttListPage = () => {
           <h3 className="font-semibold">{subject.name}</h3>
         </div>
       </td>
-      <td className="hidden md:table-cell">{subject.teachers.join(",")}</td>
+      <td className="hidden md:table-cell">{subject.teacher?.name}</td>
+      <td className="hidden md:table-cell">{subject.lessons?.map((item)=> item.name).join(', ')}</td>
       <td>
         <div className="flex items-center gap-2">
-          <Link href={`/list/subjects/${subject.id}`}>
+          <Link href={`/list/subjects/${subject.subject_id}`}>
             {/* <button className="w-7 h-7 rounded-full flex items-center justify-center bg-[#C3EBFA]">
               <Image src={"/edit.png"} alt="" width={16} height={16} />
             </button> */}
@@ -44,7 +84,7 @@ const subjecttListPage = () => {
             <>
               <FormModal type="update" table="subject" />
 
-              <FormModal type="delete" table="subject" id={subject.id} />
+              <FormModal type="delete" table="subject" id={subject.subject_id} />
             </>
           )}
         </div>
@@ -74,9 +114,9 @@ const subjecttListPage = () => {
         </div>
       </div>
       {/* LIST */}
-      <Table column={column} renderRow={renderRow} data={subjectsData} />
+      <Table column={column} renderRow={renderRow} data={subjectData || []} />
       {/* PAGINATION */}
-      <Pagination />
+      <Pagination count={count} page={p} />
     </div>
   );
 };
