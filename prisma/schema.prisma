@@ -7,15 +7,88 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+
 model Admin {
-  admin_id String @id @default(dbgenerated("substring(gen_random_uuid()::text, 1, 8)")) @db.VarChar(8)
+  admin_id String @id @default(dbgenerated("substring(gen_random_uuid()::text, 1, 10)")) @db.VarChar(10)
   name     String
   email    String @unique
   password String
 }
 
+model Teacher {
+  teacher_id String @id @default(dbgenerated("substring(gen_random_uuid()::text, 1, 10)")) @db.VarChar(10)
+  surname    String
+  name       String
+  username   String   @unique
+  sex        Sex
+  email      String   @unique
+  img        String?
+  address    String?
+  password   String
+  subjects   Subject[] // One teacher can teach multiple subjects
+  classes    Class[]   @relation("SupervisorRelation") // Classes supervised by this teacher
+}
+
+model Session {
+  session_id Int       @id @default(autoincrement())
+  name       String    @unique // e.g., "2024/2025"
+  terms      Term[]    // A session has multiple terms
+  results    Result[]  // Results are tied to a session
+  exams      Exam[]    // Exams are tied to a session
+  assessments Assessment[] // Assessments are tied to a session
+  attendance Attendance[] // Attendance is tied to a session
+}
+
+model Term {
+  term_id   Int       @id @default(autoincrement())
+  name      String    // e.g., "First Term"
+  session   Session   @relation(fields: [sessionId], references: [session_id])
+  sessionId Int       // Foreign key to Session
+  startDate DateTime
+  endDate   DateTime
+  exams     Exam[]
+  assessments Assessment[]
+  results   Result[]  // Relation to Result
+}
+
+model Subject {
+  subject_id Int      @id @default(autoincrement())
+  name       String   @unique
+  teacher    Teacher?  @relation(fields: [teacherId], references: [teacher_id])
+  teacherId  String?  @db.VarChar(10)
+  students   StudentSubject[] // Many-to-many relationship with students
+  exams      Exam[]           // Exams tied to this subject
+  assessments Assessment[]    // Assessments tied to this subject
+  attendance Attendance[]     // Attendance tied to this subject
+  results    Result[]         // Relation to Result
+}
+
+model Grade {
+  grade_id Int       @id @default(autoincrement())
+  name     String    @unique
+  classes  Class[]   // A grade can have multiple classes
+  students Student[] // A grade can have multiple students
+}
+
+model Class {
+  class_id     Int       @id @default(autoincrement())
+  name         String    @unique
+  grade        Grade     @relation(fields: [gradeId], references: [grade_id])
+  gradeId      Int
+  supervisor   Teacher?  @relation("SupervisorRelation", fields: [supervisorId], references: [teacher_id])
+  supervisorId String?   @db.VarChar(10) // Foreign key to Teacher
+  students     Student[] // A class can have multiple students
+}
+
+model Parent {
+  parent_id Int       @id @default(autoincrement())
+  name      String
+  email     String    @unique
+  children  Student[] // A parent can have multiple children
+}
+
 model Student {
-  student_id String  @id @default(dbgenerated("substring(gen_random_uuid()::text, 1, 8)")) @db.VarChar(8)
+  student_id String  @id @default(dbgenerated("substring(gen_random_uuid()::text, 1, 10)")) @db.VarChar(10)
   surname    String
   name       String
   username   String   @unique
@@ -29,133 +102,92 @@ model Student {
   classId    Int
   parent     Parent    @relation(fields: [parentId], references: [parent_id])
   parentId   Int
-  results    Result[]
-  attendance Attendance[]
+  subjects   StudentSubject[] // Many-to-many relationship with subjects
+  results    Result[]         // Combined results of exams and assessments
+  examResults ExamResult[]    // Relation to ExamResult
+  assessmentResults AssessmentResult[] // Relation to AssessmentResult
+  attendance Attendance[]     // Attendance records
 }
 
-model Teacher {
-teacher_id String @id @default(dbgenerated("substring(gen_random_uuid()::text, 1, 8)")) @db.VarChar(8)
-  surname    String
-  name       String
-  username   String   @unique
-  sex        Sex
-  email      String   @unique
-  img        String?
-  address    String?
-  password   String
-  subjects   Subject[]
-  lessons    Lesson[]
-  classes    Class[]  @relation("SupervisorRelation")
-}
-
-model Subject {
-  subject_id Int      @id @default(autoincrement())
-  name       String   @unique
-  teacher    Teacher  @relation(fields: [teacherId], references: [teacher_id])
-  teacherId  String   @db.VarChar(8)
-  lessons    Lesson[]
-}
-
-model Lesson {
-  lesson_id Int       @id @default(autoincrement())
-  name      String
-  class     Class     @relation(fields: [classId], references: [class_id])
-  classId   Int
-  subject   Subject   @relation(fields: [subjectId], references: [subject_id])
+model StudentSubject {
+  studentId String   @db.VarChar(10)
   subjectId Int
-  teacher   Teacher   @relation(fields: [teacherId], references: [teacher_id])
-  teacherId String    @db.VarChar(8)
-  day       Day
-  exams     Exam[]
-  assignments Assignment[]
-  attendance Attendance[]
-}
+  student   Student @relation(fields: [studentId], references: [student_id])
+  subject   Subject @relation(fields: [subjectId], references: [subject_id])
 
-model Grade {
-  grade_id Int       @id @default(autoincrement())
-  name     String
-  classes  Class[]
-  students Student[]
-}
-
-model Class {
-  class_id     Int       @id @default(autoincrement())
-  name         String    @unique
-  grade        Grade     @relation(fields: [gradeId], references: [grade_id])
-  gradeId      Int
-  supervisor   Teacher?   @relation("SupervisorRelation", fields: [supervisorId], references: [teacher_id])
-  supervisorId String ?  @db.VarChar(8)
-  students     Student[]
-  lessons      Lesson[]
-}
-
-model Parent {
-  parent_id Int       @id @default(autoincrement())
-  name      String
-  email     String    @unique
-  children  Student[]
+  @@id([studentId, subjectId]) // Composite primary key
 }
 
 model Exam {
   exam_id  Int      @id @default(autoincrement())
   name     String
-  lesson   Lesson   @relation(fields: [lessonId], references: [lesson_id])
-  lessonId Int
+  subject  Subject  @relation(fields: [subjectId], references: [subject_id])
+  subjectId Int
   term     Term     @relation(fields: [termId], references: [term_id])
   termId   Int
-  results  Result[]
+  session  Session  @relation(fields: [sessionId], references: [session_id])
+  sessionId Int
+  results  ExamResult[] // Results for this exam
 }
 
-model Assignment {
-  assignment_id Int      @id @default(autoincrement())
+model Assessment {
+  assessment_id Int      @id @default(autoincrement())
   name          String
-  lesson        Lesson   @relation(fields: [lessonId], references: [lesson_id])
-  lessonId      Int
-  term          Term     @relation(fields: [termId], references: [term_id])
+  subject       Subject   @relation(fields: [subjectId], references: [subject_id])
+  subjectId     Int
+  term          Term      @relation(fields: [termId], references: [term_id])
   termId        Int
-  results       Result[]
+  session       Session   @relation(fields: [sessionId], references: [session_id])
+  sessionId     Int
+  results       AssessmentResult[] // Results for this assessment
 }
 
 model Result {
-  result_id    String    @id @default(dbgenerated("substring(gen_random_uuid()::text, 1, 8)")) @db.VarChar(8)
-  student      Student  @relation(fields: [studentId], references: [student_id])
-  studentId    String   @db.VarChar(8)
-  exam         Exam?    @relation(fields: [examId], references: [exam_id])
-  examId       Int?
-  assignment   Assignment? @relation(fields: [assignmentId], references: [assignment_id])
-  assignmentId Int?
-  score        Float
+  result_id String    @id @default(dbgenerated("substring(gen_random_uuid()::text, 1, 10)")) @db.VarChar(10)
+  student   Student   @relation(fields: [studentId], references: [student_id])
+  studentId String    @db.VarChar(10)
+  subject   Subject   @relation(fields: [subjectId], references: [subject_id])
+  subjectId Int
+  term      Term      @relation(fields: [termId], references: [term_id])
+  termId    Int
+  session   Session   @relation(fields: [sessionId], references: [session_id])
+  sessionId Int       // Foreign key to Session
+  examScore Float     // Total score from all exams in the term
+  assessmentScore Float // Total score from all assessments in the term
+  totalScore Float    // Combined total score
+}
+
+model ExamResult {
+  id        Int      @id @default(autoincrement())
+  student   Student  @relation(fields: [studentId], references: [student_id])
+  studentId String   @db.VarChar(10)
+  exam      Exam     @relation(fields: [examId], references: [exam_id])
+  examId    Int
+  score     Float
+}
+
+model AssessmentResult {
+  id            Int       @id @default(autoincrement())
+  student       Student   @relation(fields: [studentId], references: [student_id])
+  studentId     String    @db.VarChar(10)
+  assessment    Assessment @relation(fields: [assessmentId], references: [assessment_id])
+  assessmentId  Int
+  score         Float
 }
 
 model Attendance {
   attendance_id Int       @id @default(autoincrement())
   student       Student   @relation(fields: [studentId], references: [student_id])
-  studentId     String    @db.VarChar(8)
-  lesson        Lesson    @relation(fields: [lessonId], references: [lesson_id])
-  lessonId      Int
+  studentId     String    @db.VarChar(10)
+  subject       Subject   @relation(fields: [subjectId], references: [subject_id])
+  subjectId     Int
+  session       Session   @relation(fields: [sessionId], references: [session_id])
+  sessionId     Int
   date          DateTime
   status        Boolean   // TRUE = Present, FALSE = Absent
-}
-
-model Term {
-  term_id     Int         @id @default(autoincrement())
-  name        String
-  session     String
-  startDate   DateTime
-  endDate     DateTime
-  exams       Exam[]
-  assignments Assignment[]
 }
 
 enum Sex {
   MALE
   FEMALE
-}
-
-enum Day {
-  MONDAY
-  TUESDAY
-  WEDNESDAY
-  THURSDAY
-  FRIDAY
 }

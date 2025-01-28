@@ -1,7 +1,15 @@
+import { UserButton, useUser } from "@clerk/nextjs";
 import Image from "next/image";
 import React from "react";
 
 export default function Navbar() {
+  const { isLoaded, user } = useUser();
+
+  if (!isLoaded || !user) {
+    return <div>Loading...</div>;
+  }
+
+  const role = user.publicMetadata?.role;
   return (
     <div className="flex items-center justify-between p-4 bg-gray-100">
       {/* SEARCHBAR */}
@@ -32,10 +40,11 @@ export default function Navbar() {
 
         {/* User Info */}
         <div>
-          <p className="text-xs leading-3 font-medium">Ridwat</p>
-          <p className="text-[10px] text-gray-500 text-right">Admin</p>
+          <p className="text-xs leading-3 font-medium">{user.username}</p>
+          <p className="text-[10px] text-gray-500 text-right">{role}</p>
         </div>
-        <Image src="/avatar.png" alt="User Avatar" width={36} height={36} className="rounded-full" />
+        {/* <Image src="/avatar.png" alt="User Avatar" width={36} height={36} className="rounded-full" /> */}
+        <UserButton/>
       </div>
     </div>
   );

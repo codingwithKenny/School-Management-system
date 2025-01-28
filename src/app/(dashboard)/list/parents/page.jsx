@@ -1,14 +1,14 @@
-import FormModal from "@/Components/FormModal";
-import Pagination from "@/Components/Pagination";
-import Table from "@/Components/Table";
-import TableSearch from "@/Components/TableSearch";
-import { parentsData, role } from "@/lib/data";
-import { ITEM_PER_PAGE } from "@/lib/paginationSettings";
+import FormModal from "@/components/FormModal";
+import Pagination from "@/components/Pagination";
+import Table from "@/components/Table";
+import TableSearch from "@/components/TableSearch";
+import { ITEM_PER_PAGE } from "@/lib/settings";
 import prisma from "@/lib/prisma";
 import Image from "next/image";
 import Link from "next/link";
 
 import React from "react";
+import { role } from "@/lib/authUtils";
 
 const column = [
   { header: "Info", accessor: "info" },
@@ -29,14 +29,13 @@ const parentListPage = async({ searchParams }) => {
   const page = params.page || 1; // Default to 1 if not provided
   const p = parseInt(page);
 
-  // Construct query conditions
+  // CQUERY CONDITIONS
   const query = {};
  
-  if (searchParams) {
+  if (params) {
     for (const [key, value] of Object.entries(params)) {
       if (value !== undefined) {
         switch (key) {
-          // Add additional filters as needed
           case 'search':
             query.name = { contains: value, mode:"insensitive" };
             break;
@@ -48,11 +47,11 @@ const parentListPage = async({ searchParams }) => {
     }
   }
 
-  // Fetch teachers and count
+  // FETCH PARENT AND COUNT
   const data = await prisma.parent.findMany({
     where: query,
     include: {
-      children: true, // Include related subjects
+      children: true, 
     },
     take: ITEM_PER_PAGE,
     skip: (p - 1) * ITEM_PER_PAGE,
@@ -114,7 +113,15 @@ const parentListPage = async({ searchParams }) => {
             {/* <button className="w-8 h-8 flex items-center justify-center rounded-full bg-[#FAE27C]">
               <Image src={"/plus.png"} alt="" width={14} height={14} />
             </button> */}
-            <FormModal type="create" table="parent" />
+             {role === "admin" && (
+            // <button className="w-7 h-7 rounded-full flex items-center justify-center bg-[#CFCEFF]">
+            //   <Image src={"/delete.png"} alt="" width={16} height={16} />
+            // </button>
+            <>
+             <FormModal type="create" table="parent" />
+            </>
+          )}
+           
           </div>
         </div>
       </div>

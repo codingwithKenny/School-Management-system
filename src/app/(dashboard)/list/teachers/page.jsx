@@ -1,21 +1,23 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import FormModal from '@/Components/FormModal';
-import Pagination from '@/Components/Pagination';
-import Table from '@/Components/Table';
-import TableSearch from '@/Components/TableSearch';
-import { role } from '@/lib/data';
+import FormModal from '@/components/FormModal';
+import Pagination from '@/components/Pagination';
+import Table from '@/components/Table';
+import TableSearch from '@/components/TableSearch';
 import prisma from '@/lib/prisma';
-import { ITEM_PER_PAGE } from '@/lib/paginationSettings';
+import { ITEM_PER_PAGE } from '@/lib/settings';
+import { role } from '@/lib/authUtils';
 
-export default async function TeacherListPage({ searchParams = {} }) {
-  const page = searchParams.page || 1; // Default to 1 if not provided
+export default async function TeacherListPage({ searchParams}) {
+  const params = searchParams ? await searchParams : {};
+
+  const page = params.page || 1; // Default to 1 if not provided
   const p = parseInt(page);
 
   // Construct query conditions
   const query = {};
-  if (searchParams) {
-    for (const [key, value] of Object.entries(searchParams)) {
+  if (params) {
+    for (const [key, value] of Object.entries(params)) {
       if (value !== undefined) {
         switch (key) {
           case 'classId':
@@ -57,8 +59,11 @@ export default async function TeacherListPage({ searchParams = {} }) {
     { header: 'Classes', accessor: 'classes', className: 'hidden md:table-cell' },
     { header: 'Phone', accessor: 'phone', className: 'hidden lg:table-cell' },
     { header: 'Address', accessor: 'address', className: 'hidden lg:table-cell' },
-    { header: 'Actions', accessor: 'actions' },
-  ];
+ ...(role === 'admin' ? [ { 
+    header: "Actions", 
+    accessor: "actions" }]
+    :
+    []),  ];
 
   // Render table rows
   const renderRow = (teacher) => (
@@ -114,7 +119,9 @@ export default async function TeacherListPage({ searchParams = {} }) {
             <button className="w-8 h-8 flex items-center justify-center rounded-full bg-[#FAE27C]">
               <Image src="/sort.png" alt="Sort" width={14} height={14} />
             </button>
+            {role === 'admin' && (
             <FormModal type="create" table="teacher" />
+          )}
           </div>
         </div>
       </div>

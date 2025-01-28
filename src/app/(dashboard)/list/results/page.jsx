@@ -1,44 +1,67 @@
-import FormModal from '@/Components/FormModal';
-import Pagination from '@/Components/Pagination';
-import Table from '@/Components/Table';
-import TableSearch from '@/Components/TableSearch';
-import { role } from '@/lib/data';
-import { ITEM_PER_PAGE } from '@/lib/paginationSettings';
+import FormModal from '@/components/FormModal';
+import Pagination from '@/components/Pagination';
+import Table from '@/components/Table';
+import TableSearch from '@/components/TableSearch';
 import prisma from '@/lib/prisma';
-import Image from 'next/image';
+import { ITEM_PER_PAGE } from '@/lib/settings';
 import Link from 'next/link';
+import Image from 'next/image';
+import { currentUserId, role } from '@/lib/authUtils';
 
-import React from 'react';
-
+// COLUNM TABLE
 const column = [
   { header: 'Subject', accessor: 'subject' },
-  { header: 'Student', accessor: 'student', className: '' },
+  { header: 'Student', accessor: 'student' },
   { header: 'Score', accessor: 'score', className: 'hidden md:table-cell' },
+  { header: 'CA', accessor: 'assessmentScore', className: 'hidden md:table-cell' },
+  { header: 'Exam', accessor: 'examScore', className: 'hidden md:table-cell' },
   { header: 'Teacher', accessor: 'teacher', className: 'hidden md:table-cell' },
-  { header: 'Class', accessor: 'class', className: 'hidden md:table-cell' },
+  { header: 'Term', accessor: 'term', className: 'hidden md:table-cell' },
   { header: 'Date', accessor: 'date', className: 'hidden md:table-cell' },
-  { header: 'Actions', accessor: 'actions' },
+  ...(role === 'teacher' ? [ { 
+    header: "Actions", 
+    accessor: "actions" }]
+    :
+    []),
 ];
 
 const resultListPage = async ({ searchParams }) => {
+if (!role || !currentUserId) {
+    throw new Error("Unauthorized access: missing role or user ID.");
+  }
   const params = searchParams ? await searchParams : {};
-  const page = params.page || 1; // Default to 1 if not provided
+  const page = params.page || 1;
   const p = parseInt(page);
 
-  // Construct query conditions
+  // QUERY CONDITIONS
   const query = {};
-  if (params) {
+   // SEARCH AND FILTER
+
+   if (params) {
     for (const [key, value] of Object.entries(params)) {
       if (value !== undefined) {
         switch (key) {
-          case 'search':
-            query.OR =[
-              {exam:{name:{ contains: value, mode: 'insensitive' }}},
-              {student:{name:{ contains: value, mode: 'insensitive' }}},
-
-            ] ;
+          case "classId":
+            query.subject = {
+              students: {
+                some: {
+                  student: {
+                    classId: parseInt(value),
+                  },
+                },
+              },
+            };
             break;
-          // Add additional filters as needed
+          case "teacherId":
+            query.subject = {
+              teacherId: value,
+            };
+            break;
+          case "search":
+            query.subject = {
+              name: { contains: value, mode: "insensitive" },
+            };
+            break;
           default:
             break;
         }
@@ -46,77 +69,92 @@ const resultListPage = async ({ searchParams }) => {
     }
   }
 
-  const dataRes = await prisma.result.findMany({
-    where: query,
-    include: {
-      student: { select: { name: true, surname: true } },
-      exam: {
-        include: {
-          lesson: {
-            select: {
-              class: { select: { name: true } },
-              teacher: { select: { name: true } },
-            },
+
+  // ROLE CONDITIONS
+  switch (role) {
+    case 'admin': 
+      break;
+
+    case 'teacher':
+      query.subject = {
+        teacherId: currentUserId,  //TEACHER CAN ONL VIEW THE RESULT OF SUBJECT THEY TEACH
+      };
+      break;
+
+    case 'student':
+      query.studentId = currentUserId;   //STUDENT CAN ONL VIEW THEIR RESULT
+      break;
+
+    case 'parent':
+      query.student = {
+        parent: {
+          parent_id: currentUserId,
+        },
+      };
+      break;
+
+    default:
+      throw new Error('Unauthorized access: invalid role.');
+  }
+
+  // FETCH RESULT DATA AND COUNT
+  const [dataRes, count] = await prisma.$transaction([
+    prisma.result.findMany({
+      where: query,
+      include: {
+        student: { select: { name: true, surname: true } },
+        subject: {
+          include: {
+            teacher: { select: { name: true, surname: true } },
           },
         },
+        term: { select: { name: true, session: { select: { name: true } } } },
       },
-      assignment: {
-        include: {
-          lesson: {
-            select: {
-              class: { select: { name: true } },
-              teacher: { select: { name: true } },
-            },
-          },
-        },
-      },
-    },
-    take: ITEM_PER_PAGE,
-    skip: (p - 1) * ITEM_PER_PAGE,
-  });
+      take: ITEM_PER_PAGE,
+      skip: (p - 1) * ITEM_PER_PAGE,
+    }),
+    prisma.result.count({ where: query }),
+  ]);
 
-  const count = await prisma.result.count({ where: query });
-
-  const data = dataRes.map((item) => {
-    // Check if it's an exam or an assignment
-    const isExam = Boolean(item.exam); // True if `exam` field is populated
-    const assessment = item.exam || item.assignment; // Use exam if present, otherwise assignment
-
-    return {
-      id: item.result_id,
-      subject: assessment?.name || 'N/A', // Exam/Assignment name
-      student: `${item.student?.surname} ${item.student?.name}`,
-      score: item.score,
-      teacher: assessment?.lesson?.teacher?.name || 'N/A', // Teacher associated with the lesson
-      class: assessment?.lesson?.class?.name || 'N/A', // Class associated with the lesson
-      date: isExam
-        ? new Date(item.exam.createdAt).toLocaleDateString()
-        : 'N/A', // Add created date for exam
-      type: isExam ? 'Exam' : 'Assignment', // Determine type
-    };
-  });
+  // MAP THE AVAILABLE DATA IN RESULT
+  const data = dataRes.map((item) => ({
+    id: item.result_id,
+    subject: item.subject.name,
+    student: `${item.student.surname} ${item.student.name}`,
+    score: item.totalScore || 'N/A',
+    assessmentScore: item.assessmentScore || 'N/A',
+    examScore: item.examScore || 'N/A',
+    teacher: `${item.subject.teacher.name} ${item.subject.teacher.surname}`,
+    term: `${item.term.name} (${item.term.session.name})`,
+    date: new Date(item.createdAt).toLocaleDateString(),
+  }));
 
   const renderRow = (result) => (
     <tr key={result.id} className="text-xs border-b border-grey-200 even:bg-slate-50 hover:bg-[#F1F0FF]">
       <td className="flex items-center gap-4 p-4">
         <div className="flex flex-col">
           <h3 className="font-semibold">{result.subject}</h3>
-          {/* <span className="text-gray-500 text-sm">{result.type}</span> Show type (Exam/Assignment) */}
         </div>
       </td>
-      <td className="">{result.student}</td>
+      <td>{result.student}</td>
       <td className="hidden md:table-cell">{result.score}</td>
+      <td className="hidden md:table-cell">{result.assessmentScore}</td>
+      <td className="hidden md:table-cell">{result.examScore}</td>
       <td className="hidden md:table-cell">{result.teacher}</td>
-      <td className="hidden md:table-cell">{result.class}</td>
+      <td className="hidden md:table-cell">{result.term}</td>
       <td className="hidden md:table-cell">{result.date}</td>
       <td>
         <div className="flex items-center gap-2">
-          <Link href={`/list/results/${result.id}`}>
+        {(role === "teacher") && (
+            <>
+             <Link href={`/list/results/${result.id}`}>
             <FormModal type="update" table="result" />
           </Link>
-          {role === 'admin' && (
-            <FormModal type="delete" table="result" />
+          <FormModal type="delete" table="result" />
+            </>
           )}
+       
+          
         </div>
       </td>
     </tr>
@@ -124,7 +162,7 @@ const resultListPage = async ({ searchParams }) => {
 
   return (
     <div className="bg-white rounded-md p-4 flex-1 m-4 mt-0">
-      {/* TOP */}
+      {/* Header Section */}
       <div className="flex items-center justify-between">
         <h1 className="hidden md:block text-lg font-semibold">All Results</h1>
         <div className="flex flex-col md:flex-row items-center gap-4 w-full md:w-auto">
@@ -136,15 +174,17 @@ const resultListPage = async ({ searchParams }) => {
             <button className="w-8 h-8 flex items-center justify-center rounded-full bg-[#FAE27C]">
               <Image src="/sort.png" alt="Sort" width={14} height={14} />
             </button>
-            <button className="w-8 h-8 flex items-center justify-center rounded-full bg-[#FAE27C]">
-              <Image src="/plus.png" alt="Add" width={14} height={14} />
-            </button>
+            {(role === 'teacher') && (
+             <>
+             <FormModal type='create' table='class'/>
+             </>
+            )}
           </div>
         </div>
       </div>
-      {/* LIST */}
+      {/* Table Section */}
       <Table column={column} renderRow={renderRow} data={data} />
-      {/* PAGINATION */}
+      {/* Pagination Section */}
       <Pagination count={count} page={p} />
     </div>
   );

@@ -1,14 +1,13 @@
-import FormModal from "@/Components/FormModal";
-import Pagination from "@/Components/Pagination";
-import Table from "@/Components/Table";
-import TableSearch from "@/Components/TableSearch";
-import { role, subjectsData } from "@/lib/data";
-import { ITEM_PER_PAGE } from "@/lib/paginationSettings";
+import FormModal from "@/components/FormModal";
+import Pagination from "@/components/Pagination";
+import Table from "@/components/Table";
+import TableSearch from "@/components/TableSearch";
+import { ITEM_PER_PAGE } from "@/lib/settings";
 import prisma from "@/lib/prisma";
 import Image from "next/image";
 import Link from "next/link";
-
 import React from "react";
+import { role } from "@/lib/authUtils";
 
 const column = [
   { header: "Subject Name", accessor: "name" },
@@ -17,20 +16,18 @@ const column = [
     accessor: "teachers",
     className: "hidden md:table-cell",
   },
-  {
-    header: "Lessons",
-    accessor: "lesson",
-    className: "hidden md:table-cell",
-  },
-  { header: "Actions", accessor: "actions" },
-];
+ ...(role === 'admin' ? [ { 
+    header: "Actions", 
+    accessor: "actions" }]
+    :
+    []),];
 
 const subjecttListPage =async ({searchParams}) => {
   const params = searchParams ? await searchParams : {};
    const page = params?.page || 1
    const p = parseInt(page)
 
-     // Construct query conditions
+  //  QUERY CONDITIONS
   const query = {};
   if (params) {
     for (const [key, value] of Object.entries(params)) {
@@ -47,10 +44,10 @@ const subjecttListPage =async ({searchParams}) => {
     }
   }
 
+  // FETCH DATA AND COUNTFROM DB
   const subjectData = await prisma.subject.findMany({
     where:query,
     include:{
-      lessons:true,
       teacher: true,
     },
     take:ITEM_PER_PAGE,
@@ -69,21 +66,17 @@ const subjecttListPage =async ({searchParams}) => {
         </div>
       </td>
       <td className="hidden md:table-cell">{subject.teacher?.name}</td>
-      <td className="hidden md:table-cell">{subject.lessons?.map((item)=> item.name).join(', ')}</td>
       <td>
         <div className="flex items-center gap-2">
-          <Link href={`/list/subjects/${subject.subject_id}`}>
-            {/* <button className="w-7 h-7 rounded-full flex items-center justify-center bg-[#C3EBFA]">
-              <Image src={"/edit.png"} alt="" width={16} height={16} />
-            </button> */}
-          </Link>
+         
           {role === "admin" && (
             // <button className="w-7 h-7 rounded-full flex items-center justify-center bg-[#CFCEFF]">
             //   <Image src={"/delete.png"} alt="" width={16} height={16} />
             // </button>
             <>
-              <FormModal type="update" table="subject" />
-
+             <Link href={`/list/subjects/${subject.subject_id}`}>
+              <FormModal type="update" table="teacher" />
+              </Link>
               <FormModal type="delete" table="subject" id={subject.subject_id} />
             </>
           )}
@@ -109,7 +102,12 @@ const subjecttListPage =async ({searchParams}) => {
             {/* <button className="w-8 h-8 flex items-center justify-center rounded-full bg-[#FAE27C]">
               <Image src={"/plus.png"} alt="" width={14} height={14} />
             </button> */}
+              {role === "admin" && (
+            <>
             <FormModal type="create" table="subject" />
+            </>
+          )}
+            
           </div>
         </div>
       </div>

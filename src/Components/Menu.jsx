@@ -1,7 +1,11 @@
-import { role } from '@/lib/data';
-import Image from 'next/image';
-import Link from 'next/link';
-import React from 'react'
+
+// import { useUser } from "@clerk/nextjs";
+import { useUser } from "@clerk/nextjs";
+import Image from "next/image";
+import Link from "next/link";
+// import { useRouter } from "next/navigation";
+import React, {  } from "react";
+
 const menuItems = [
   {
     title: "MENU",
@@ -41,6 +45,18 @@ const menuItems = [
         label: "Classes",
         href: "/list/classes",
         visible: ["admin", "teacher"],
+      },
+      {
+        icon: "/assignment.png",
+        label: "Assessment",
+        href: "/list/assessments",
+        visible: ["admin", "teacher", "student", "parent"],
+      },
+      {
+        icon: "/exam.png",
+        label: "Exams",
+        href: "/list/exams",
+        visible: ["admin", "teacher", "student", "parent"],
       },
       {
         icon: "/result.png",
@@ -98,36 +114,48 @@ const menuItems = [
     ],
   },
 ];
-  
-export default function Menu() {
-  return (
-    <div className='mt-2 text-xs'>
-      {menuItems.map(item=>(
-        <div className='gap-2' key={item.title}>
-          {/* TITLE */}
-          <span className='hidden lg:block text-gray-400 font-light text-sm'>{item.title}</span>
-          {/* ITEMS */}
-          {item.items.map(el=>{
-            if(el.visible.includes(role)){
-              return(
-                (
-            <Link href={el.href} key={el.label} className='flex items-center justify-center lg:justify-start gap-4 text-gray-500 py-2'>
-            <Image 
-            src={el.icon} 
-            alt='image' 
-            width={20} 
-            height={20}
-            className=''/>
-            <span className='hidden lg:block'>{el.label}</span>
-              
-            </Link>
-          )
-              )
-            }
-          })}
 
+export default function Menu() {
+  const { isLoaded, user } = useUser();
+
+  if (!isLoaded || !user) {
+    return <div>Loading...</div>;
+  }
+
+  const role = user.publicMetadata?.role;
+
+  return (
+    <div className="mt-2 text-xs">
+      {menuItems.map((item) => (
+        <div className="gap-2" key={item.title}>
+          {/* TITLE */}
+          <span className="hidden lg:block text-gray-400 font-light text-sm">
+            {item.title}
+          </span>
+          {/* ITEMS */}
+          {item.items.map((el) => {
+            if (role && el.visible.includes(role)) {
+              return (
+                <Link
+                  href={el.href}
+                  key={el.label}
+                  className="flex items-center justify-center lg:justify-start gap-4 text-gray-500 py-2"
+                >
+                  <Image
+                    src={el.icon}
+                    alt="image"
+                    width={20}
+                    height={20}
+                    className=""
+                  />
+                  <span className="hidden lg:block">{el.label}</span>
+                </Link>
+              );
+            }
+            return null; // Do not render items not visible to the role
+          })}
         </div>
       ))}
     </div>
-  )
+  );
 }

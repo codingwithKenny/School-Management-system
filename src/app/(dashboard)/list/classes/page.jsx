@@ -1,34 +1,37 @@
-import FormModal from '@/Components/FormModal';
-import Pagination from '@/Components/Pagination';
-import Table from '@/Components/Table';
-import TableSearch from '@/Components/TableSearch';
-import { classesData, role} from '@/lib/data';
-import { ITEM_PER_PAGE } from '@/lib/paginationSettings';
+import FormModal from '@/components/FormModal';
+import Pagination from '@/components/Pagination';
+import Table from '@/components/Table';
+import TableSearch from '@/components/TableSearch';
+import { ITEM_PER_PAGE } from '@/lib/settings';
 import prisma from '@/lib/prisma';
 import Image from 'next/image';
 import Link from 'next/link';
-
 import React from 'react';
+import { role } from '@/lib/authUtils';
 
 const column = [
   { header: 'Class Name', accessor: 'name' },
   { header: 'Capacity', accessor: 'capacity', className: 'hidden md:table-cell' },
   { header: 'Grade', accessor: 'grade', className: 'hidden md:table-cell' },
   { header: 'Supervisor', accessor: 'supervisor', className: 'hidden md:table-cell' },
-  { header: 'Actions', accessor: 'actions' },
+  ...(role ==='admin' ? [ { 
+    header: "Actions", 
+    accessor: "actions" }]
+    :
+    []),,
 ];
 
-const classListPage = async ({searchParams = {}}) => {
-   const page = searchParams?.page || 1
+const classListPage = async ({searchParams}) => {
+  const params = searchParams ? await searchParams : {};
+  const page = params?.page || 1
    const p = parseInt(page)
 
-    // Construct query conditions
+    // QUERY CONDITIONS
   const query = {};
-  if (searchParams) {
-    for (const [key, value] of Object.entries(searchParams)) {
+  if (params) {
+    for (const [key, value] of Object.entries(params)) {
       if (value !== undefined) {
         switch (key) {
-          // Add additional filters as needed
           case 'search':
             query.name = { contains: value, mode:"insensitive" };
             break;
@@ -45,7 +48,7 @@ const classListPage = async ({searchParams = {}}) => {
     students: true,
     grade: true,
     supervisor: true,
-    lessons: true
+
   },
   take:ITEM_PER_PAGE,
   skip: (p-1)* ITEM_PER_PAGE
@@ -54,7 +57,7 @@ const classListPage = async ({searchParams = {}}) => {
 const count = await prisma.class.count({where:query})
 
   const renderRow = (classes) => (
-    <tr key={classes.id} className='text-xs border-b border-grey-200 even:bg-slate-50 hover:bg-[#F1F0FF]'>
+    <tr key={classes.class_id} className='text-xs border-b border-grey-200 even:bg-slate-50 hover:bg-[#F1F0FF]'>
       <td className='flex items-center  gap-4 p-4 '>
         <div className="flex flex-col">
           <h3 className="font-semibold">{classes.name}</h3>
@@ -97,7 +100,9 @@ const count = await prisma.class.count({where:query})
             {/* <button className="w-8 h-8 flex items-center justify-center rounded-full bg-[#FAE27C]">
               <Image src={"/plus.png"} alt="" width={14} height={14} />
             </button> */}
-            <FormModal type='create' table='class'/>
+            {role ==="admin" &&(
+                          <FormModal type='create' table='class'/>
+            )}
           </div>
         </div>
       </div>

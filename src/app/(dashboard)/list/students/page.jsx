@@ -1,14 +1,13 @@
-import FormModal from '@/Components/FormModal';
-import Pagination from '@/Components/Pagination';
-import Table from '@/Components/Table';
-import TableSearch from '@/Components/TableSearch';
-import { role, studentsData, teachersData } from '@/lib/data';
-import { ITEM_PER_PAGE } from '@/lib/paginationSettings';
+import FormModal from '@/components/FormModal';
+import Pagination from '@/components/Pagination';
+import Table from '@/components/Table';
+import TableSearch from '@/components/TableSearch';
+import { ITEM_PER_PAGE } from '@/lib/settings';
 import prisma from '@/lib/prisma';
 import Image from 'next/image';
 import Link from 'next/link';
-
 import React from 'react';
+import { role } from '@/lib/authUtils';
 
 const column = [
   { header: 'Info', accessor: 'info' },
@@ -16,17 +15,22 @@ const column = [
   { header: 'Grade', accessor: 'grade', className: 'hidden md:table-cell' },
   { header: 'Phone', accessor: 'phone', className: 'hidden lg:table-cell' },
   { header: 'Address', accessor: 'address', className: 'hidden lg:table-cell' },
-  { header: 'Actions', accessor: 'actions' },
-];
+  ...(role === 'admin' ? [ { 
+    header: "Actions", 
+    accessor: "actions" }]
+    :
+    []),];
 
-const studentListPage = async({ searchParams = {} }) => {
-  const page = searchParams.page || 1; // Default to 1 if not provided
+const studentListPage = async({ searchParams}) => {
+  const params = searchParams ? await searchParams : {};
+
+  const page = params.page || 1; // Default to 1 if not provided
   const p = parseInt(page);
 
-    // Construct query conditions
+    // QUERY CONDITIONS
     const query = {};
-    if (searchParams) {
-      for (const [key, value] of Object.entries(searchParams)) {
+    if (params) {
+      for (const [key, value] of Object.entries(params)) {
         if (value !== undefined) {
           switch (key) {
             case 'teacherId':
@@ -34,7 +38,6 @@ const studentListPage = async({ searchParams = {} }) => {
                 some: { teacherId: parseInt(value) },
               };
               break;
-            // Add additional filters as needed
             case 'search':
               query.name = { contains: value, mode:"insensitive" };
               break;

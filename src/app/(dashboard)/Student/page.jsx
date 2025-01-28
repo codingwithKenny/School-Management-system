@@ -1,6 +1,6 @@
-import Annoucement from '@/Components/Annoucement'
-import BigCalendar from '@/Components/BigCalendar'
-import EventCalender from '@/Components/EventCalender'
+import Annoucement from '@/components/Annoucement'
+import BigCalendar from '@/components/BigCalendar'
+import EventCalender from '@/components/EventCalender'
 import React from 'react'
 
 export default function studentPage() {
