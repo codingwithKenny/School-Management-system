@@ -70,13 +70,8 @@ const subjecttListPage =async ({searchParams}) => {
         <div className="flex items-center gap-2">
          
           {role === "admin" && (
-            // <button className="w-7 h-7 rounded-full flex items-center justify-center bg-[#CFCEFF]">
-            //   <Image src={"/delete.png"} alt="" width={16} height={16} />
-            // </button>
             <>
-             <Link href={`/list/subjects/${subject.subject_id}`}>
-              <FormModal type="update" table="teacher" />
-              </Link>
+              <FormModal type="update" table="subject" data={subject}/>
               <FormModal type="delete" table="subject" id={subject.subject_id} />
             </>
           )}

@@ -15,7 +15,7 @@ export const createSubjectData = async (data) => {
   } catch (error) {
     // Detect duplicate subject creation
     if (error.code === "P2002") {
-      // Prisma error code for unique constraint violations
+      // Prisma error
       return { success: false, error: "Subject already exists." };
     }
     console.error("Error creating subject:", error);

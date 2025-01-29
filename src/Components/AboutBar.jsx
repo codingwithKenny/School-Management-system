@@ -50,7 +50,7 @@ export default function AboutUs() {
 
         {/* Dropdown Menu */}
         {isDropdownOpen && (
-          <div className="absolute right-0 mt-2 w-56 rounded-md bg-white shadow-lg ring-1 ring-black/5">
+          <div className="absolute right-0 mt-2 w-56 rounded-md bg-white shadow-lg z-50 ring-1 ring-black/5">
             <div className="py-1">
               <Link
                 href="#"

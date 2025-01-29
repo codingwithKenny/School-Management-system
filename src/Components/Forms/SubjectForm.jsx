@@ -1,11 +1,10 @@
 "use client";
-
-import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import InputField from "../InputField"; 
-import { subjectSchema } from "@/lib/formValidation"; 
+import InputField from "../InputField";
+import { subjectSchema } from "@/lib/formValidation";
 import { createSubjectData } from "@/lib/actions";
+import { useEffect, useState } from "react";
 
 const SubjectForm = ({ type, data }) => {
   const {
@@ -14,7 +13,6 @@ const SubjectForm = ({ type, data }) => {
     formState: { errors },
   } = useForm({
     resolver: zodResolver(subjectSchema),
-    defaultValues: data || {}, 
   });
 
   // HANDLE SUCCESS AND ERROR MESSAGE
@@ -22,22 +20,30 @@ const SubjectForm = ({ type, data }) => {
     success: false,
     error: false,
   });
-
-  const onSubmit = handleSubmit(async (formData) => {
+  const onSubmit = handleSubmit(async (data) => {
     try {
-      console.log("Form Data Submitted:", formData); 
-      const response = await createSubjectData(formData); // server-action
+      const response = await createSubjectData(data); // Server action
+      console.log("Form Data Submitted:", data);
+
 
       if (response.success) {
         setState({ success: true, error: false });
       } else {
-        setState({ success: false, error: true }); 
+        setState({ success: false, error: true });
       }
     } catch (error) {
-      console.error("Error submitting form:", error); 
-      setState({ success: false, error: true }); 
+      console.error("Error submitting form:", error);
+      setState({ success: false, error: true });
     }
   });
+
+  useEffect(() => {
+    if (state.success) {
+      setTimeout(() => {
+        window.location.reload(); // Full-page reload if needed
+      }, 300);
+    }
+  }, [state]);
 
   return (
     <form className="flex flex-col gap-4" onSubmit={onSubmit}>
@@ -45,11 +51,13 @@ const SubjectForm = ({ type, data }) => {
         {type === "create" ? "Create New Subject" : "Update Subject"}
       </h1>
       <div className="flex flex-wrap justify-between gap-2">
+        
         <InputField
           label="Subject Name"
           name="name"
           register={register}
           error={errors.name}
+          defaultValue={data?.name}
         />
       </div>
 
@@ -57,9 +65,7 @@ const SubjectForm = ({ type, data }) => {
       {state.success && (
         <p className="text-green-500">Subject created successfully!</p>
       )}
-      {state.error && (
-        <p className="text-red-500">Something went wrong.</p>
-      )}
+      {state.error && <p className="text-red-500">Something went wrong.</p>}
 
       <button
         type="submit"
