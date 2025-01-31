@@ -91,7 +91,7 @@ export default function Home() {
         {/* RIGHT SIDE */}
         <div className="w-full md:w-[50%] p-2 md:p-5 text-center md:text-left">
           <Image
-            src="/school1.jpg"
+            src="/muslim71.jpg"
             alt=""
             width={600}
             height={5}
@@ -136,7 +136,7 @@ export default function Home() {
         {/* LEFT SIDE */}
         <div className="w-full md:w-[50%] p-2 md:p-5 text-center md:text-left">
           <Image
-            src="/school1.jpg"
+            src="/muslim9.jpg"
             alt=""
             width={600}
             height={5}
@@ -173,7 +173,7 @@ export default function Home() {
         {/* RIGHT SIDE */}
         <div className="w-full md:w-[50%] p-2 md:p-5 text-center md:text-left">
           <Image
-            src="/school1.jpg"
+            src="/muslim2.jpg"
             alt=""
             width={600}
             height={5}
@@ -242,7 +242,7 @@ export default function Home() {
           {/* LEFT SIDE */}
           <div className="w-full md:w-[50%] p-2 md:p-5 text-center md:text-left">
             <Image
-              src="/school1.jpg"
+              src="/muslim6.jpg"
               alt=""
               width={600}
               height={5}

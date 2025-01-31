@@ -92,7 +92,7 @@ export default async function TeacherListPage({ searchParams}) {
       <td className="hidden md:table-cell">{teacher.address || 'N/A'}</td>
       <td>
         <div className="flex items-center gap-2">
-          <Link href={`/list/teachers/${teacher.teacher_id}`}>
+          <Link href={`/list/teachers/${teacher.id}`}>
             <button className="w-7 h-7 rounded-full flex items-center justify-center bg-[#C3EBFA]">
               <Image src="/view.png" alt="View" width={16} height={16} />
             </button>

@@ -16,7 +16,7 @@ export default async function AdminPage() {
     teacher: await prisma.teacher.count(),
     parent: await prisma.parent.count(),
     session: await prisma.session.findFirst({
-      orderBy: { session_id: "desc" }, // Fetch the most recent session
+      orderBy: { id: "desc" }, // Fetch the most recent session
     }),
   };
 

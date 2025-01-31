@@ -4,188 +4,120 @@ import Table from '@/components/Table';
 import TableSearch from '@/components/TableSearch';
 import prisma from '@/lib/prisma';
 import { ITEM_PER_PAGE } from '@/lib/settings';
-import Link from 'next/link';
-import Image from 'next/image';
 import { currentUserId, role } from '@/lib/authUtils';
-
-// COLUNM TABLE
-const column = [
-  { header: 'Subject', accessor: 'subject' },
-  { header: 'Student', accessor: 'student' },
-  { header: 'Score', accessor: 'score', className: 'hidden md:table-cell' },
-  { header: 'CA', accessor: 'assessmentScore', className: 'hidden md:table-cell' },
-  { header: 'Exam', accessor: 'examScore', className: 'hidden md:table-cell' },
-  { header: 'Teacher', accessor: 'teacher', className: 'hidden md:table-cell' },
-  { header: 'Term', accessor: 'term', className: 'hidden md:table-cell' },
-  { header: 'Date', accessor: 'date', className: 'hidden md:table-cell' },
-  ...(role === 'teacher' ? [ { 
-    header: "Actions", 
-    accessor: "actions" }]
-    :
-    []),
-];
+import TeacherResultActions from '@/components/TeacherResultActions';
 
 const resultListPage = async ({ searchParams }) => {
-if (!role || !currentUserId) {
+  if (!role || !currentUserId) {
     throw new Error("Unauthorized access: missing role or user ID.");
   }
-  const params = searchParams ? await searchParams : {};
+  const params = searchParams || {};
   const page = params.page || 1;
-  const p = parseInt(page);
+  const p = parseInt(page, 10);
 
-  // QUERY CONDITIONS
-  const query = {};
-   // SEARCH AND FILTER
+  // ROLE-BASED FILTERING
+  let query = {};
+  if (role === 'teacher') {
+    query.teacherId = currentUserId; // Teachers see only their students' results
+  }
 
-   if (params) {
-    for (const [key, value] of Object.entries(params)) {
-      if (value !== undefined) {
-        switch (key) {
-          case "classId":
-            query.subject = {
-              students: {
-                some: {
-                  student: {
-                    classId: parseInt(value),
-                  },
-                },
-              },
-            };
-            break;
-          case "teacherId":
-            query.subject = {
-              teacherId: value,
-            };
-            break;
-          case "search":
-            query.subject = {
-              name: { contains: value, mode: "insensitive" },
-            };
-            break;
-          default:
-            break;
-        }
+  // FETCH NECESSARY DATA
+  const [students, grades, sessions, subjects, terms, results, count] = await prisma.$transaction([
+    // Fetch students assigned to the teacher
+    prisma.student.findMany({
+      where: {
+        results: { some: { teacherId: currentUserId } }
+      },
+      select: { 
+        id: true, 
+        name: true, 
+        surname: true, 
+        grade: { select: { id: true, name: true } }
       }
-    }
-  }
+    }),
 
+    // Fetch all grades
+    prisma.grade.findMany({
+      select: { id: true, name: true }
+    }),
 
-  // ROLE CONDITIONS
-  switch (role) {
-    case 'admin': 
-      break;
+    // ✅ Fetch all sessions (Fixing the missing `sessions` data)
+    prisma.session.findMany({
+      select: { id: true, name: true }
+    }),
 
-    case 'teacher':
-      query.subject = {
-        teacherId: currentUserId,  //TEACHER CAN ONL VIEW THE RESULT OF SUBJECT THEY TEACH
-      };
-      break;
+    // Fetch subjects taught by the teacher
+    prisma.subject.findMany({
+      where: {
+        results: { some: { teacherId: currentUserId } }
+      },
+      select: { id: true, name: true }
+    }),
 
-    case 'student':
-      query.studentId = currentUserId;   //STUDENT CAN ONL VIEW THEIR RESULT
-      break;
+    // Fetch all terms (since they are fixed)
+    prisma.term.findMany({
+      select: { id: true, name: true }
+    }),
 
-    case 'parent':
-      query.student = {
-        parent: {
-          parent_id: currentUserId,
-        },
-      };
-      break;
-
-    default:
-      throw new Error('Unauthorized access: invalid role.');
-  }
-
-  // FETCH RESULT DATA AND COUNT
-  const [dataRes, count] = await prisma.$transaction([
+    // Fetch teacher's results
     prisma.result.findMany({
       where: query,
       include: {
-        student: { select: { name: true, surname: true } },
-        subject: {
-          include: {
-            teacher: { select: { name: true, surname: true } },
-          },
+        student: { 
+          select: { 
+            id: true,
+            name: true, 
+            surname: true, 
+            grade: { select: { id: true, name: true } }
+          } 
         },
-        term: { select: { name: true, session: { select: { name: true } } } },
+        subject: { select: { id: true, name: true } },
+        term: { select: { id: true, name: true } }
       },
       take: ITEM_PER_PAGE,
       skip: (p - 1) * ITEM_PER_PAGE,
     }),
+
+    // Count total results for pagination
     prisma.result.count({ where: query }),
   ]);
 
-  // MAP THE AVAILABLE DATA IN RESULT
-  const data = dataRes.map((item) => ({
-    id: item.result_id,
-    subject: item.subject.name,
-    student: `${item.student.surname} ${item.student.name}`,
-    score: item.totalScore || 'N/A',
-    assessmentScore: item.assessmentScore || 'N/A',
-    examScore: item.examScore || 'N/A',
-    teacher: `${item.subject.teacher.name} ${item.subject.teacher.surname}`,
-    term: `${item.term.name} (${item.term.session.name})`,
-    date: new Date(item.createdAt).toLocaleDateString(),
+  // MAP RESULTS INTO CLEAN DATA FORMAT
+  const mappedResults = results.map((item) => ({
+    id: item.id,
+    subject: item.subject?.name ?? "Unknown Subject",
+    student: item.student 
+      ? `${item.student.surname ?? "Unknown"} ${item.student.name ?? "Unknown"}`
+      : "Unknown Student",
+    grade: item.student?.grade?.name ?? "Unknown Grade",
+    term: item.term?.name ?? "Unknown Term"
   }));
 
-  const renderRow = (result) => (
-    <tr key={result.id} className="text-xs border-b border-grey-200 even:bg-slate-50 hover:bg-[#F1F0FF]">
-      <td className="flex items-center gap-4 p-4">
-        <div className="flex flex-col">
-          <h3 className="font-semibold">{result.subject}</h3>
-        </div>
-      </td>
-      <td>{result.student}</td>
-      <td className="hidden md:table-cell">{result.score}</td>
-      <td className="hidden md:table-cell">{result.assessmentScore}</td>
-      <td className="hidden md:table-cell">{result.examScore}</td>
-      <td className="hidden md:table-cell">{result.teacher}</td>
-      <td className="hidden md:table-cell">{result.term}</td>
-      <td className="hidden md:table-cell">{result.date}</td>
-      <td>
-        <div className="flex items-center gap-2">
-        {(role === "teacher") && (
-            <>
-             <Link href={`/list/results/${result.id}`}>
-            <FormModal type="update" table="result" />
-          </Link>
-          <FormModal type="delete" table="result" />
-            </>
-          )}
-       
-          
-        </div>
-      </td>
-    </tr>
-  );
+  console.log("Mapped Data:", mappedResults);
+  console.log("Sessions Data:", sessions); // Debugging check
 
   return (
     <div className="bg-white rounded-md p-4 flex-1 m-4 mt-0">
-      {/* Header Section */}
-      <div className="flex items-center justify-between">
-        <h1 className="hidden md:block text-lg font-semibold">All Results</h1>
-        <div className="flex flex-col md:flex-row items-center gap-4 w-full md:w-auto">
-          <TableSearch />
-          <div className="flex items-center gap-4 self-end">
-            <button className="w-8 h-8 flex items-center justify-center rounded-full bg-[#FAE27C]">
-              <Image src="/filter.png" alt="Filter" width={14} height={14} />
-            </button>
-            <button className="w-8 h-8 flex items-center justify-center rounded-full bg-[#FAE27C]">
-              <Image src="/sort.png" alt="Sort" width={14} height={14} />
-            </button>
-            {(role === 'teacher') && (
-             <>
-             <FormModal type='create' table='class'/>
-             </>
-            )}
+      {/* TEACHER UI */}
+      {role === "teacher" && (
+        <>
+          <TeacherResultActions 
+            students={students} 
+            grades={grades} 
+            subjects={subjects} 
+            terms={terms} 
+            sessions={sessions}  
+            teacherId={currentUserId}
+          />
+          <div className="mt-4">
+            {/* <h2 className="text-lg font-semibold">Student Results</h2> */}
+            {/* <Table data={mappedResults} /> */}
           </div>
-        </div>
-      </div>
-      {/* Table Section */}
-      <Table column={column} renderRow={renderRow} data={data} />
-      {/* Pagination Section */}
-      <Pagination count={count} page={p} />
+        </>
+      )}
+
+      {/* PAGINATION SECTION */}
+      {/* <Pagination count={count} page={p} /> */}
     </div>
   );
 };

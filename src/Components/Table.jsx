@@ -5,13 +5,13 @@ const Table = ({ column, renderRow, data }) => {
     <table className="w-full mt-4">
       <thead>
         <tr className="text-sm text-gray-500 text-left">
-          {column.map((col) => (
+          {column?.map((col) => (
             <th key={col.accessor} className={col.className}>{col.header}</th>
           ))}
         </tr>
       </thead>
       <tbody>
-        {data.map((item) => renderRow(item))}
+        {data?.map((item) => renderRow(item))}
       </tbody>
     </table>
   );

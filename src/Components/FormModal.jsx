@@ -1,7 +1,8 @@
-'use client';
+"use client";
 import Image from "next/image";
 import React, { useState } from "react";
 import dynamic from "next/dynamic";
+import { deleteSubject } from "@/lib/actions"; // Import soft delete action
 
 // Lazy load forms
 const TeachersForm = dynamic(() => import("./Forms/TeachersForm"), {
@@ -21,17 +22,38 @@ const forms = {
   subject: (type, data) => <SubjectForm type={type} data={data} />,
 };
 
-const FormModal = ({ table, type, data, id }) => {
+const FormModal = ({ table, type, data, id, subjects, setSubjects }) => {
   const size = type === "create" ? "w-7 h-7" : "w-8 h-8";
-  const bgColor =
-    type === "create"
-      ? "#FAE27C"
-      : type === "update"
-      ? "#C3EBFA"
-      : "#CFCEFF";
+  const bgColor = type === "create" ? "#FAE27C" : type === "update" ? "#C3EBFA" : "#CFCEFF";
 
   const [open, setOpen] = useState(false);
+  const [state, setState] = useState({ success: false, error: false });
 
+  // Handle Soft Delete
+  const handleDelete = async () => {
+    try {
+      console.log("Deleting subject with ID:", id);
+      const result = await deleteSubject(id);
+  
+      if (result.success) {
+        console.log("Subject successfully deleted.");
+        setState({ success: true, error: false });
+        setOpen(false); // Close modal
+  
+        // 🔹 Update state to remove deleted subject
+        if (subjects && setSubjects) {
+          setSubjects((prevSubjects) => prevSubjects.filter((subject) => subject.id !== id));
+        }
+      } else {
+        console.error("Failed to delete subject.");
+        setState({ success: false, error: true });
+      }
+    } catch (error) {
+      console.error("Error deleting subject:", error);
+      setState({ success: false, error: true });
+    }
+  };
+  
   return (
     <>
       <button
@@ -44,28 +66,26 @@ const FormModal = ({ table, type, data, id }) => {
 
       {open && (
         <div className="w-screen h-screen absolute top-0 left-0 bg-black bg-opacity-60 z-50 flex items-center justify-center">
-          <div className="rounded-md bg-white p-4 relative w-[90%] md:w-[70%] lg:w-[60%] xl:w-[50%] 2xl:[40%]">
-            {/* Conditional Rendering */}
+          <div className="rounded-md bg-white p-4 relative w-[90%] md:w-[70%] lg:w-[60%] xl:w-[50%] 2xl:w-[40%]">
             {type === "delete" && id ? (
-              <form className="p-4 flex flex-col gap-4">
+              <div className="p-4 flex flex-col gap-4">
                 <span className="text-center font-medium">
-                  All data will be lost. Are you sure you want to delete this{" "}
-                  {table}?
+                  This subject will be deactivated. Are you sure?
                 </span>
-                <button className="bg-red-500 text-white py-2 px-4 rounded-md border-none self-center w-max">
+                <button
+                  className="bg-red-500 text-white py-2 px-4 rounded-md border-none self-center w-max"
+                  onClick={handleDelete} // Calls the delete function
+                >
                   Delete
                 </button>
-              </form>
+                {state.error && <p className="text-red-500 text-center">Failed to delete. Try again.</p>}
+              </div>
             ) : (
               forms[table]?.(type, data) || <h1>Invalid Form</h1>
             )}
 
-            {/* Close Button */}
-            <div
-              className="absolute top-4 right-4 cursor-pointer"
-              onClick={() => setOpen(false)}
-            >
-              <Image src={"/close.png"} alt="Close" width={14} height={14} />
+            <div className="absolute top-4 right-4 cursor-pointer" onClick={() => setOpen(false)}>
+              <Image src="/close.png" alt="Close" width={14} height={14} />
             </div>
           </div>
         </div>

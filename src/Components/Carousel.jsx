@@ -18,9 +18,12 @@ export function CarouselPlugin() {
 
   // Images array
   const images = [
-    { src: "/muslimschool1.jpg", alt: "Image 1" },
-    { src: "/school1.jpg", alt: "Image 2" },
-    { src: "/school2.jpg", alt: "Image 3" },
+    { src: "/muslim17.jpg", alt: "Image 1" },
+    { src: "/muslim10.jpg", alt: "Image 1" },
+    { src: "/muslim4.jpg", alt: "Image 2" },
+    { src: "/muslim18.jpg", alt: "Image 3" },
+    { src: "/muslim12.jpg", alt: "Image 3" },
+    { src: "/muslim71.jpg", alt: "Image 3" },
   ];
 
   return (

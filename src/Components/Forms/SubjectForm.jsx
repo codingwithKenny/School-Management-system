@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import InputField from "../InputField";
 import { subjectSchema } from "@/lib/formValidation";
-import { createSubjectData } from "@/lib/actions";
+import { createSubject,updateSubject} from "@/lib/actions";
 import { useEffect, useState } from "react";
 
 const SubjectForm = ({ type, data }) => {
@@ -20,11 +20,22 @@ const SubjectForm = ({ type, data }) => {
     success: false,
     error: false,
   });
-  const onSubmit = handleSubmit(async (data) => {
-    try {
-      const response = await createSubjectData(data); // Server action
-      console.log("Form Data Submitted:", data);
 
+  const onSubmit = handleSubmit(async (formData) => {
+    console.log("Form Submitted:", formData); // This should log when you submit
+
+    try {
+      let response;
+
+      if (type === "create") {
+        response = await createSubject(formData); // Server action
+      } else if (type === "update" && data?.id) {
+        response = await updateSubject(data.id, formData); // Server action
+      } else {
+        console.error("Error: No subject ID found for update.");
+        setState({ success: false, error: true });
+        return;
+      }
 
       if (response.success) {
         setState({ success: true, error: false });
@@ -43,7 +54,7 @@ const SubjectForm = ({ type, data }) => {
         window.location.reload(); // Full-page reload if needed
       }, 300);
     }
-  }, [state]);
+  }, [state.success]);
 
   return (
     <form className="flex flex-col gap-4" onSubmit={onSubmit}>
@@ -51,7 +62,6 @@ const SubjectForm = ({ type, data }) => {
         {type === "create" ? "Create New Subject" : "Update Subject"}
       </h1>
       <div className="flex flex-wrap justify-between gap-2">
-        
         <InputField
           label="Subject Name"
           name="name"
@@ -63,7 +73,7 @@ const SubjectForm = ({ type, data }) => {
 
       {/* Success and Error Messages */}
       {state.success && (
-        <p className="text-green-500">Subject created successfully!</p>
+        <p className="text-green-500">Subject {type === "create" ? "created" : "updated"} successfully!</p>
       )}
       {state.error && <p className="text-red-500">Something went wrong.</p>}
 
