@@ -24,7 +24,7 @@ model Teacher {
   img        String?
   address    String?
   password   String
-  subjects   Subject[]
+  subjects   TeacherSubject[] // ✅ Many-to-Many relationship
   results    Result[]
   classes    Class[] @relation("SupervisorRelation")
   isDeleted  Boolean @default(false)
@@ -43,13 +43,21 @@ model Parent {
 model Subject {
   id         Int @id @default(autoincrement())
   name       String   @unique
-  teacher    Teacher? @relation(fields: [teacherId], references: [id])
-  teacherId  String?
+  teachers   TeacherSubject[] // ✅ Many-to-Many relationship
   students   StudentSubject[]
   results    Result[]
   attendance Attendance[]
   isDeleted  Boolean @default(false)
   deletedAt  DateTime?
+}
+
+model TeacherSubject {
+  teacherId String
+  subjectId Int
+  teacher   Teacher @relation(fields: [teacherId], references: [id])
+  subject   Subject @relation(fields: [subjectId], references: [id])
+
+  @@id([teacherId, subjectId]) // ✅ Many-to-Many Relationship
 }
 
 model StudentSubject {
@@ -58,7 +66,7 @@ model StudentSubject {
   student   Student @relation(fields: [studentId], references: [id])
   subject   Subject @relation(fields: [subjectId], references: [id])
 
-  @@id([studentId, subjectId]) // Many-to-Many Relationship
+  @@id([studentId, subjectId]) // ✅ Many-to-Many Relationship
 }
 
 model Class {
@@ -76,19 +84,29 @@ model Class {
 model Grade {
   id         Int @id @default(autoincrement())
   name       String   @unique
+  session    Session @relation(fields: [sessionId], references: [id]) // ✅ Link to session
+  sessionId  Int
   classes    Class[]
   students   Student[]
   isDeleted  Boolean @default(false)
   deletedAt  DateTime?
 }
 
+
+
 model Session {
   id         Int @id @default(autoincrement())
   name       String @unique
+  isCurrent  Boolean @default(false) // ✅ Track active session
   terms      Term[]
+  results    Result[]
+  grades     Grade[] // ✅ Track grades in this session
+  students   Student[] // ✅ This completes the relation with Student
   isDeleted  Boolean @default(false)
   deletedAt  DateTime?
 }
+
+
 
 model Term {
   id         Int @id @default(autoincrement())
@@ -110,6 +128,8 @@ model Student {
   img           String?
   address       String?
   createdAt     DateTime @default(now())
+  session       Session @relation(fields: [sessionId], references: [id]) // ✅ Link to session
+  sessionId     Int
   grade         Grade @relation(fields: [gradeId], references: [id])
   gradeId       Int
   class         Class @relation(fields: [classId], references: [id])
@@ -134,12 +154,21 @@ model Result {
   teacherId        String
   term             Term @relation(fields: [termId], references: [id])
   termId           Int
+  session          Session @relation(fields: [sessionId], references: [id])  // ✅ Link Result to Session
+  sessionId        Int
   firstAssessment  Float
   secondAssessment Float
   examScore        Float
   totalScore       Float @default(0)
+  status           ResultStatus @default(PENDING)
   isDeleted        Boolean @default(false)
   deletedAt        DateTime?
+}
+
+
+enum ResultStatus {
+  PENDING
+  FINALIZED
 }
 
 model Attendance {

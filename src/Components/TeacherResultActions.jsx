@@ -3,7 +3,8 @@ import { useState } from 'react';
 import Link from 'next/link';
 import Modal from '@/components/Modal';
 
-const TeacherResultActions = ({ students, grades, subjects, terms, sessions, teacherId }) => {
+const TeacherResultActions = ({ students, grades, subjects, terms, sessions, teacherId,Results }) => {
+  console.log(subjects)
   const [isModalOpen, setModalOpen] = useState(false);
   const [selectedSession, setSelectedSession] = useState('');
   const [selectedTerm, setSelectedTerm] = useState('');
@@ -18,21 +19,25 @@ const TeacherResultActions = ({ students, grades, subjects, terms, sessions, tea
 
   // ✅ Load students based on selected grade
   const handleLoadStudents = () => {
-    if (!selectedGrade) {
-      alert('Please select a grade to load students.');
+    if (!selectedGrade || !selectedSubject) {
+      alert('Please select a grade and subject to load students.');
       return;
     }
-
-    const studentsInGrade = students
-      .filter(student => student.grade?.name === selectedGrade)
+  
+    const studentsInGradeAndSubject = students
+      .filter(student => 
+        student.grade?.name === selectedGrade &&
+        student.subjects.some(sub => sub.subject.name === selectedSubject) // ✅ Ensure subject match
+      )
       .map(student => ({
         id: student.id,
         name: `${student.surname} ${student.name}`,
         grade: student.grade.name
       }));
-
-    setFilteredStudents(studentsInGrade);
+  
+    setFilteredStudents(studentsInGradeAndSubject);
   };
+  
 
   // ✅ Handle Score Input Changes
   const handleInputChange = (studentId, field, value) => {
@@ -47,54 +52,102 @@ const TeacherResultActions = ({ students, grades, subjects, terms, sessions, tea
 
   // ✅ Submit Results to Backend
   const handleSubmitResults = async () => {
-    const createResult = (await import("@/lib/actions")).createResult; // ✅ Dynamic Import
-
-    if (!selectedSession || !selectedTerm || !selectedSubject) {
-      alert('Please select a session, term, and subject.');
+    const createResult = (await import("@/lib/actions")).createResult;
+  
+    if (!selectedSession || !selectedTerm || !selectedSubject || !selectedGrade) {
+      alert("❌ Please select a session, term, subject, and grade.");
       return;
     }
-
+  
+    const sessionId = sessions.find(session => session.name === selectedSession)?.id;
     const termId = terms.find(term => term.name === selectedTerm)?.id;
     const subjectId = subjects.find(subject => subject.name === selectedSubject)?.id;
-
-    if (!termId || !subjectId) {
-      alert('Invalid term or subject selection.');
+    const gradeId = grades.find(grade => grade.name === selectedGrade)?.id;
+  
+    if (!sessionId || !termId || !subjectId || !gradeId) {
+      alert("❌ Invalid session, term, subject, or grade selection.");
       return;
     }
-
-    const formattedResults = Object.entries(results).map(([studentId, scores]) => ({
-      studentId,
-      teacherId,
-      termId,
-      subjectId,
-      firstAssessment: parseFloat(scores.ca1) || 0,
-      secondAssessment: parseFloat(scores.ca2) || 0,
-      examScore: parseFloat(scores.exam) || 0,
-      totalScore:
-        (parseFloat(scores.ca1) || 0) +
-        (parseFloat(scores.ca2) || 0) +
-        (parseFloat(scores.exam) || 0),
-    }));
-  
-    console.log("Sending Results:", formattedResults);
   
     try {
+      // Debugging: Log the Results array
+      console.log("Results:", Results);
+      console.log("Results Structure:", Results?.[0]);
+  
+      const formattedResults = Object.entries(results).map(([studentId, scores]) => {
+        console.log(`🚀 Debug: Processing Student: ${studentId} Scores:`, scores);
+  
+        if (!scores || scores?.ca1?.trim() === "" || scores?.ca2?.trim() === "" || scores?.exam?.trim() === "") {
+          alert(`❌ All scores must be filled. Fix Student: ${studentId}.`);
+          return null;
+        }
+  
+        const ca1Num = parseFloat(scores.ca1);
+        const ca2Num = parseFloat(scores.ca2);
+        const examNum = parseFloat(scores.exam);
+  
+        if (isNaN(ca1Num) || isNaN(ca2Num) || isNaN(examNum) || ca1Num < 0 || ca2Num < 0 || examNum < 0) {
+          alert(`❌ Invalid or negative scores detected. Fix Student: ${studentId}.`);
+          return null;
+        }
+  
+        // Debugging: Log the duplicate check
+        const existingResult = Results?.some(
+          (res) =>
+            res.student.id === studentId &&
+            res.subject.id === subjectId &&
+            res.session.id === sessionId &&
+            res.teacher.id === teacherId &&
+            res.term.id === termId &&
+            res.grade.id === gradeId
+        );
+        
+  
+        console.log(`🚀 Debug: Checking duplicate for Student: ${studentId} =>`, existingResult);
+  
+        if (existingResult) {
+          alert(`❌ Duplicate detected for Student: ${studentId} in this term, subject, and grade.`);
+          return null;
+        }
+  
+        return {
+          studentId,
+          teacherId,
+          termId,
+          subjectId,
+          gradeId,
+          sessionId,
+          firstAssessment: ca1Num,
+          secondAssessment: ca2Num,
+          examScore: examNum,
+          totalScore: ca1Num + ca2Num + examNum,
+        };
+      }).filter(Boolean);
+  
+      console.log("🚀 Debug: Final Processed Results Before Submission:", formattedResults);
+  
+      if (formattedResults.length === 0) {
+        alert("❌ No new results to submit. All students already have records or missing scores.");
+        return;
+      }
+  
+      console.log("✅ Debug: Submitting Results to Backend:", formattedResults);
+  
       for (const result of formattedResults) {
         const response = await createResult(result);
-  
         if (!response.success) {
           alert(response.error);
           return;
         }
       }
   
-      alert('Results uploaded successfully!');
+      alert("✅ Results uploaded successfully!");
       setModalOpen(false);
     } catch (error) {
-      console.error('Upload Error:', error);
-      alert('An error occurred while uploading results.');
+      console.error("❌ Upload Error:", error);
+      alert("❌ An error occurred while uploading results.");
     }
-  }    
+  };
 
   return (
     <div className="flex flex-col items-center mt-6 w-full">

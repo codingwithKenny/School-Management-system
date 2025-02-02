@@ -33,32 +33,27 @@ const subjectListPage = async ({ searchParams }) => {
   // QUERY CONDITIONS - Only fetch subjects that are NOT deleted
   const query = { deletedAt: null }; // 🔹 Exclude soft-deleted subjects
 
-  if (params) {
-    for (const [key, value] of Object.entries(params)) {
-      if (value !== undefined) {
-        switch (key) {
-          case "search":
-            query.name = { contains: value, mode: "insensitive" };
-            break;
-          default:
-            break;
-        }
-      }
-    }
+  if (params?.search) {
+    query.name = { contains: params.search, mode: "insensitive" };
   }
 
-  // FETCH DATA AND COUNT FROM DB
+  // ✅ FETCH SUBJECTS WITH TEACHERS
   const subjectData = await prisma.subject.findMany({
-    where: query, // 🔹 Ensure only non-deleted subjects are returned
+    where: query,
     include: {
-      teacher: true,
+      teachers: {
+        include: {
+          teacher: true, // ✅ Fetch actual teacher data from TeacherSubject relation
+        },
+      },
     },
     take: ITEM_PER_PAGE,
     skip: (p - 1) * ITEM_PER_PAGE,
   });
 
-  const count = await prisma.subject.count({ where: query }); // 🔹 Ensure correct count without soft-deleted records
+  const count = await prisma.subject.count({ where: query });
 
+  // ✅ Render Teachers Properly
   const renderRow = (subject) => (
     <tr
       key={subject.id}
@@ -69,7 +64,12 @@ const subjectListPage = async ({ searchParams }) => {
           <h3 className="font-semibold">{subject.name}</h3>
         </div>
       </td>
-      <td className="hidden md:table-cell">{subject.teacher?.name}</td>
+      {/* ✅ Ensure all teachers are displayed correctly */}
+      <td className="hidden md:table-cell">
+        {subject.teachers.length > 0
+          ? subject.teachers.map(ts => ts.teacher.name).join(", ")
+          : "No assigned teacher"}
+      </td>
       <td>
         <div className="flex items-center gap-2">
           {role === "admin" && (

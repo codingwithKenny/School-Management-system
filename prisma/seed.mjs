@@ -9,18 +9,18 @@ function getRandomElement(arr) {
 async function main() {
   console.log("Seeding database...");
 
-  // Nigerian Names
+  // ✅ Nigerian Names
   const surnames = ["Adeyemi", "Oluwafemi", "Adebayo", "Olagoke", "Akinlade", "Akinyemi", "Adesanya"];
   const firstNamesMale = ["Tunde", "Kunle", "Dele", "Segun", "Femi", "Bayo", "Seyi"];
   const firstNamesFemale = ["Sade", "Tola", "Funmi", "Bisi", "Titi", "Bukky", "Yemi"];
 
-  // Subject Names
+  // ✅ Subject Names
   const subjectNames = [
     "Mathematics", "English", "Science", "Social Studies", "Yoruba",
     "Physics", "Biology", "Chemistry", "Geography", "Economics",
   ];
 
-  // Create Admins
+  // ✅ Create Admins
   await prisma.admin.createMany({
     data: [
       { id: "admin1", name: "School Admin", email: "admin1@school.com", password: "admin123" },
@@ -28,7 +28,7 @@ async function main() {
     ],
   });
 
-  // Create Sessions (Multiple)
+  // ✅ Create Sessions
   const sessions = await Promise.all(
     ["2023/2024", "2024/2025", "2025/2026"].map(name =>
       prisma.session.create({
@@ -37,7 +37,9 @@ async function main() {
     )
   );
 
-  // Create Terms for Each Session
+  const currentSession = sessions[sessions.length - 1]; // Set last session as active
+
+  // ✅ Create Terms for Each Session
   const terms = await Promise.all(
     sessions.flatMap(session =>
       ["First Term", "Second Term", "Third Term"].map(termName =>
@@ -48,19 +50,19 @@ async function main() {
     )
   );
 
-  // Create Grades
+  // ✅ Create Grades (Linked to Session)
   const grades = await Promise.all(
     Array.from({ length: 5 }, (_, i) =>
       prisma.grade.create({
-        data: { name: `Grade ${i + 1}`, isDeleted: false, deletedAt: null },
+        data: { name: `Grade ${i + 1}`, sessionId: currentSession.id, isDeleted: false, deletedAt: null },
       })
     )
   );
 
-  // Create Classes
+  // ✅ Create Classes
   const classes = await Promise.all(
-    grades.flatMap((grade) =>
-      ["A", "B"].map((section) =>
+    grades.flatMap(grade =>
+      ["A", "B"].map(section =>
         prisma.class.create({
           data: {
             name: `${grade.name}${section}`,
@@ -73,7 +75,7 @@ async function main() {
     )
   );
 
-  // Create Teachers
+  // ✅ Create Teachers
   const teachers = await Promise.all(
     Array.from({ length: 15 }, (_, i) =>
       prisma.teacher.create({
@@ -92,21 +94,30 @@ async function main() {
     )
   );
 
-  // Create Subjects and Assign to Teachers
+  // ✅ Create Subjects
   const subjects = await Promise.all(
-    subjectNames.map((subject, i) =>
+    subjectNames.map(subject =>
       prisma.subject.create({
-        data: {
-          name: subject,
-          teacherId: teachers[i % teachers.length].id,
-          isDeleted: false,
-          deletedAt: null,
-        },
+        data: { name: subject, isDeleted: false, deletedAt: null },
       })
     )
   );
 
-  // Create Parents
+  // ✅ Assign Teachers to Subjects (Many-to-Many Relationship)
+  await Promise.all(
+    teachers.flatMap(teacher =>
+      subjects.slice(0, 3).map(subject =>
+        prisma.teacherSubject.create({
+          data: {
+            teacherId: teacher.id,
+            subjectId: subject.id,
+          },
+        })
+      )
+    )
+  );
+
+  // ✅ Create Parents
   const parents = await Promise.all(
     Array.from({ length: 25 }, (_, i) =>
       prisma.parent.create({
@@ -123,7 +134,7 @@ async function main() {
 
   const paymentStatuses = ["PAID", "NOT_PAID", "PARTIALLY_PAID"];
 
-  // Create Students
+  // ✅ Create Students (Linked to Active Session)
   const students = await Promise.all(
     Array.from({ length: 50 }, (_, i) =>
       prisma.student.create({
@@ -133,6 +144,7 @@ async function main() {
           name: i % 2 === 0 ? getRandomElement(firstNamesMale) : getRandomElement(firstNamesFemale),
           username: `student${i + 1}`,
           sex: i % 2 === 0 ? "MALE" : "FEMALE",
+          sessionId: currentSession.id, // ✅ Linked to active session
           gradeId: getRandomElement(grades).id,
           classId: getRandomElement(classes).id,
           parentId: getRandomElement(parents).id,
@@ -144,7 +156,7 @@ async function main() {
     )
   );
 
-  // Enroll Students in Subjects
+  // ✅ Enroll Students in Subjects
   await Promise.all(
     students.flatMap(student =>
       subjects.slice(0, 5).map(subject =>
@@ -158,7 +170,7 @@ async function main() {
     )
   );
 
-  // Add Results with `teacherId`
+  // ✅ Add Results with `teacherId` and `sessionId`
   await Promise.all(
     students.slice(0, 20).flatMap(student =>
       subjects.slice(0, 5).map(subject =>
@@ -166,31 +178,13 @@ async function main() {
           data: {
             studentId: student.id,
             subjectId: subject.id,
-            teacherId: subject.teacherId, // Now correctly linked
+            teacherId: getRandomElement(teachers).id, // ✅ Random teacher
             termId: getRandomElement(terms).id,
+            sessionId: student.sessionId, // ✅ NEW: Link result to student's session
             firstAssessment: Math.floor(Math.random() * 20) + 10,
             secondAssessment: Math.floor(Math.random() * 20) + 10,
             examScore: Math.floor(Math.random() * 50) + 50,
             totalScore: Math.floor(Math.random() * 100) + 50,
-            isDeleted: false,
-            deletedAt: null,
-          },
-        })
-      )
-    )
-  );
-
-  // Add Attendance Records
-  await Promise.all(
-    students.slice(0, 30).flatMap(student =>
-      subjects.slice(0, 5).map(subject =>
-        prisma.attendance.create({
-          data: {
-            studentId: student.id,
-            subjectId: subject.id,
-            termId: getRandomElement(terms).id,
-            date: new Date(),
-            status: Math.random() > 0.1,
             isDeleted: false,
             deletedAt: null,
           },

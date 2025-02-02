@@ -1,4 +1,7 @@
 -- CreateEnum
+CREATE TYPE "ResultStatus" AS ENUM ('PENDING', 'FINALIZED');
+
+-- CreateEnum
 CREATE TYPE "Sex" AS ENUM ('MALE', 'FEMALE');
 
 -- CreateEnum
@@ -46,11 +49,18 @@ CREATE TABLE "Parent" (
 CREATE TABLE "Subject" (
     "id" SERIAL NOT NULL,
     "name" TEXT NOT NULL,
-    "teacherId" TEXT,
     "isDeleted" BOOLEAN NOT NULL DEFAULT false,
     "deletedAt" TIMESTAMP(3),
 
     CONSTRAINT "Subject_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "TeacherSubject" (
+    "teacherId" TEXT NOT NULL,
+    "subjectId" INTEGER NOT NULL,
+
+    CONSTRAINT "TeacherSubject_pkey" PRIMARY KEY ("teacherId","subjectId")
 );
 
 -- CreateTable
@@ -77,6 +87,7 @@ CREATE TABLE "Class" (
 CREATE TABLE "Grade" (
     "id" SERIAL NOT NULL,
     "name" TEXT NOT NULL,
+    "sessionId" INTEGER NOT NULL,
     "isDeleted" BOOLEAN NOT NULL DEFAULT false,
     "deletedAt" TIMESTAMP(3),
 
@@ -87,6 +98,7 @@ CREATE TABLE "Grade" (
 CREATE TABLE "Session" (
     "id" SERIAL NOT NULL,
     "name" TEXT NOT NULL,
+    "isCurrent" BOOLEAN NOT NULL DEFAULT false,
     "isDeleted" BOOLEAN NOT NULL DEFAULT false,
     "deletedAt" TIMESTAMP(3),
 
@@ -114,6 +126,7 @@ CREATE TABLE "Student" (
     "img" TEXT,
     "address" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "sessionId" INTEGER NOT NULL,
     "gradeId" INTEGER NOT NULL,
     "classId" INTEGER NOT NULL,
     "parentId" TEXT NOT NULL,
@@ -131,10 +144,12 @@ CREATE TABLE "Result" (
     "subjectId" INTEGER NOT NULL,
     "teacherId" TEXT NOT NULL,
     "termId" INTEGER NOT NULL,
+    "sessionId" INTEGER NOT NULL,
     "firstAssessment" DOUBLE PRECISION NOT NULL,
     "secondAssessment" DOUBLE PRECISION NOT NULL,
     "examScore" DOUBLE PRECISION NOT NULL,
     "totalScore" DOUBLE PRECISION NOT NULL DEFAULT 0,
+    "status" "ResultStatus" NOT NULL DEFAULT 'PENDING',
     "isDeleted" BOOLEAN NOT NULL DEFAULT false,
     "deletedAt" TIMESTAMP(3),
 
@@ -183,7 +198,10 @@ CREATE UNIQUE INDEX "Session_name_key" ON "Session"("name");
 CREATE UNIQUE INDEX "Student_username_key" ON "Student"("username");
 
 -- AddForeignKey
-ALTER TABLE "Subject" ADD CONSTRAINT "Subject_teacherId_fkey" FOREIGN KEY ("teacherId") REFERENCES "Teacher"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "TeacherSubject" ADD CONSTRAINT "TeacherSubject_teacherId_fkey" FOREIGN KEY ("teacherId") REFERENCES "Teacher"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "TeacherSubject" ADD CONSTRAINT "TeacherSubject_subjectId_fkey" FOREIGN KEY ("subjectId") REFERENCES "Subject"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "StudentSubject" ADD CONSTRAINT "StudentSubject_studentId_fkey" FOREIGN KEY ("studentId") REFERENCES "Student"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -198,7 +216,13 @@ ALTER TABLE "Class" ADD CONSTRAINT "Class_gradeId_fkey" FOREIGN KEY ("gradeId") 
 ALTER TABLE "Class" ADD CONSTRAINT "Class_supervisorId_fkey" FOREIGN KEY ("supervisorId") REFERENCES "Teacher"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "Grade" ADD CONSTRAINT "Grade_sessionId_fkey" FOREIGN KEY ("sessionId") REFERENCES "Session"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "Term" ADD CONSTRAINT "Term_sessionId_fkey" FOREIGN KEY ("sessionId") REFERENCES "Session"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Student" ADD CONSTRAINT "Student_sessionId_fkey" FOREIGN KEY ("sessionId") REFERENCES "Session"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Student" ADD CONSTRAINT "Student_gradeId_fkey" FOREIGN KEY ("gradeId") REFERENCES "Grade"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -220,6 +244,9 @@ ALTER TABLE "Result" ADD CONSTRAINT "Result_teacherId_fkey" FOREIGN KEY ("teache
 
 -- AddForeignKey
 ALTER TABLE "Result" ADD CONSTRAINT "Result_termId_fkey" FOREIGN KEY ("termId") REFERENCES "Term"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Result" ADD CONSTRAINT "Result_sessionId_fkey" FOREIGN KEY ("sessionId") REFERENCES "Session"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Attendance" ADD CONSTRAINT "Attendance_studentId_fkey" FOREIGN KEY ("studentId") REFERENCES "Student"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

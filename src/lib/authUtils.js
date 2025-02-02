@@ -1,5 +1,21 @@
 import { auth } from "@clerk/nextjs/server";
 
-const { userId, sessionClaims } = await auth();
-export const role = sessionClaims?.metadata?.role;
-export const currentUserId = userId;
+// ✅ Function to get the current user's ID & role
+export async function getCurrentUser() {
+  const { userId, sessionClaims } = await auth();
+  return {
+    userId,
+    role: sessionClaims?.metadata?.role || "guest", // Default to 'guest' if undefined
+  };
+}
+
+// ✅ Export individual properties for easier imports
+export async function getUserId() {
+  const { userId } = await getCurrentUser();
+  return userId;
+}
+
+export async function getUserRole() {
+  const { role } = await getCurrentUser();
+  return role;
+}

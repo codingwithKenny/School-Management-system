@@ -1,10 +1,10 @@
 "use client";
 import Image from "next/image";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
-import { deleteSubject } from "@/lib/actions"; // Import soft delete action
+import { deleteTeacher, deleteStudent, deleteSubject, fetchSubjects } from "@/lib/actions"; 
 
-// Lazy load forms
+// Lazy load forms dynamically
 const TeachersForm = dynamic(() => import("./Forms/TeachersForm"), {
   loading: () => <h1>Loading...</h1>,
 });
@@ -15,45 +15,71 @@ const SubjectForm = dynamic(() => import("./Forms/SubjectForm"), {
   loading: () => <h1>Loading...</h1>,
 });
 
-// Map table names to form components
+// ✅ Map table names to form components
 const forms = {
-  teacher: (type, data) => <TeachersForm type={type} data={data} />,
+  teacher: (type, data, subjects) => <TeachersForm type={type} data={data} subjects={subjects} />,
   student: (type, data) => <StudentForm type={type} data={data} />,
   subject: (type, data) => <SubjectForm type={type} data={data} />,
 };
 
-const FormModal = ({ table, type, data, id, subjects, setSubjects }) => {
+// ✅ Map delete functions dynamically
+const deleteFunctions = {
+  teacher: deleteTeacher,
+  student: deleteStudent,
+  subject: deleteSubject,
+};
+
+const FormModal = ({ table, type, data, id }) => {
   const size = type === "create" ? "w-7 h-7" : "w-8 h-8";
   const bgColor = type === "create" ? "#FAE27C" : type === "update" ? "#C3EBFA" : "#CFCEFF";
 
   const [open, setOpen] = useState(false);
   const [state, setState] = useState({ success: false, error: false });
+  const [subjects, setSubjects] = useState([]); 
 
-  // Handle Soft Delete
-  const handleDelete = async () => {
-    try {
-      console.log("Deleting subject with ID:", id);
-      const result = await deleteSubject(id);
-  
-      if (result.success) {
-        console.log("Subject successfully deleted.");
-        setState({ success: true, error: false });
-        setOpen(false); // Close modal
-  
-        // 🔹 Update state to remove deleted subject
-        if (subjects && setSubjects) {
-          setSubjects((prevSubjects) => prevSubjects.filter((subject) => subject.id !== id));
+  // ✅ Fetch Subjects only when dealing with teacher
+  useEffect(() => {
+    if (table === "teacher") {
+      const getSubjects = async () => {
+        try {
+          const data = await fetchSubjects();
+          setSubjects(data);
+          console.log("Subjects fetched:", data);
+        } catch (error) {
+          console.error("Error fetching subjects:", error);
         }
+      };
+      getSubjects();
+    }
+  }, [table]); 
+
+  // ✅ Handle dynamic entity deletion
+  const handleDelete = async () => {
+    if (!id) return console.error(`❌ No ID provided for ${table} deletion.`);
+
+    try {
+      console.log(`🟡 Deleting ${table} with ID:`, id);
+      const deleteFunction = deleteFunctions[table]; 
+
+      if (!deleteFunction) return console.error(`❌ No delete function for ${table}.`);
+
+      const result = await deleteFunction(id);
+
+      if (result.success) {
+        console.log(`✅ ${table.charAt(0).toUpperCase() + table.slice(1)} successfully deleted.`);
+        setState({ success: true, error: false });
+        setOpen(false); 
+        window.location.reload(); // ✅ Refresh UI after delete
       } else {
-        console.error("Failed to delete subject.");
+        console.error(`❌ Failed to delete ${table}.`);
         setState({ success: false, error: true });
       }
     } catch (error) {
-      console.error("Error deleting subject:", error);
+      console.error(`❌ Error deleting ${table}:`, error);
       setState({ success: false, error: true });
     }
   };
-  
+
   return (
     <>
       <button
@@ -70,18 +96,18 @@ const FormModal = ({ table, type, data, id, subjects, setSubjects }) => {
             {type === "delete" && id ? (
               <div className="p-4 flex flex-col gap-4">
                 <span className="text-center font-medium">
-                  This subject will be deactivated. Are you sure?
+                  This {table} will be deactivated. Are you sure?
                 </span>
                 <button
                   className="bg-red-500 text-white py-2 px-4 rounded-md border-none self-center w-max"
-                  onClick={handleDelete} // Calls the delete function
+                  onClick={handleDelete}
                 >
                   Delete
                 </button>
                 {state.error && <p className="text-red-500 text-center">Failed to delete. Try again.</p>}
               </div>
             ) : (
-              forms[table]?.(type, data) || <h1>Invalid Form</h1>
+              forms[table]?.(type, data, subjects) || <h1>Invalid Form</h1>
             )}
 
             <div className="absolute top-4 right-4 cursor-pointer" onClick={() => setOpen(false)}>

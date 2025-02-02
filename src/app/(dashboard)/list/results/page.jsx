@@ -1,125 +1,73 @@
-import FormModal from '@/components/FormModal';
-import Pagination from '@/components/Pagination';
-import Table from '@/components/Table';
-import TableSearch from '@/components/TableSearch';
 import prisma from '@/lib/prisma';
-import { ITEM_PER_PAGE } from '@/lib/settings';
-import { currentUserId, role } from '@/lib/authUtils';
+import {getCurrentUser } from '@/lib/authUtils';
 import TeacherResultActions from '@/components/TeacherResultActions';
+import { allResults } from '@/lib/actions';
 
-const resultListPage = async ({ searchParams }) => {
-  if (!role || !currentUserId) {
-    throw new Error("Unauthorized access: missing role or user ID.");
-  }
-  const params = searchParams || {};
-  const page = params.page || 1;
-  const p = parseInt(page, 10);
+const resultListPage = async () => {
+const {role,userId} = await getCurrentUser();
+const currentUserId = userId
+  console.log(role,'heyyyyyyyyyyyyyyyyyyyyyyyyyyyyy')
+  console.log(currentUserId,'heyyyyyyyyyyyyyyyyyyyyyyyyyyyyy')
 
-  // ROLE-BASED FILTERING
-  let query = {};
-  if (role === 'teacher') {
-    query.teacherId = currentUserId; // Teachers see only their students' results
+  if (role !== 'teacher' || !currentUserId) {
+    throw new Error("Unauthorized access: Only teachers can upload results.");
   }
 
-  // FETCH NECESSARY DATA
-  const [students, grades, sessions, subjects, terms, results, count] = await prisma.$transaction([
-    // Fetch students assigned to the teacher
-    prisma.student.findMany({
-      where: {
-        results: { some: { teacherId: currentUserId } }
-      },
-      select: { 
-        id: true, 
-        name: true, 
-        surname: true, 
-        grade: { select: { id: true, name: true } }
-      }
-    }),
+  console.log("Fetching Data for Teacher ID:", currentUserId);
 
-    // Fetch all grades
-    prisma.grade.findMany({
-      select: { id: true, name: true }
-    }),
+  try {
+    // Fetch teacher's subjects
+    const teacherSubjects = await prisma.teacherSubject.findMany({
+      where: { teacherId: currentUserId },
+      select: { subjectId: true }
+    });
 
-    // ✅ Fetch all sessions (Fixing the missing `sessions` data)
-    prisma.session.findMany({
-      select: { id: true, name: true }
-    }),
+    const subjectIds = teacherSubjects.map(s => s.subjectId);
+    if (!subjectIds.length) {
+      console.log("No subjects found for this teacher.");
+      return <div className="p-4 text-red-500">No students found for your subjects.</div>;
+    }
 
-    // Fetch subjects taught by the teacher
-    prisma.subject.findMany({
-      where: {
-        results: { some: { teacherId: currentUserId } }
-      },
-      select: { id: true, name: true }
-    }),
+    console.log("Subjects Taught by Teacher:", subjectIds);
 
-    // Fetch all terms (since they are fixed)
-    prisma.term.findMany({
-      select: { id: true, name: true }
-    }),
+    // Fetch students & other required data
+    const [students, grades, sessions, subjects, terms] = await prisma.$transaction([
+      prisma.student.findMany({
+        where: { subjects: { some: { subjectId: { in: subjectIds } } } },
+        select: {
+          id: true,
+          name: true,
+          surname: true,
+          grade: { select: { id: true, name: true, id: true } },
+          subjects: { select: { subject: { select: { id: true, name: true } } } }
+        }
+      }),
+      prisma.grade.findMany({ select: { id: true, name: true } }),
+      prisma.session.findMany({ select: { id: true, name: true } }),
+      prisma.subject.findMany({ where: { id: { in: subjectIds } }, select: { id: true, name: true } }),
+      prisma.term.findMany({ select: { id: true, name: true } })
+    ]);
 
-    // Fetch teacher's results
-    prisma.result.findMany({
-      where: query,
-      include: {
-        student: { 
-          select: { 
-            id: true,
-            name: true, 
-            surname: true, 
-            grade: { select: { id: true, name: true } }
-          } 
-        },
-        subject: { select: { id: true, name: true } },
-        term: { select: { id: true, name: true } }
-      },
-      take: ITEM_PER_PAGE,
-      skip: (p - 1) * ITEM_PER_PAGE,
-    }),
+    // FETCH ALL RESULTS IN DB
+    const Results = await allResults();
 
-    // Count total results for pagination
-    prisma.result.count({ where: query }),
-  ]);
-
-  // MAP RESULTS INTO CLEAN DATA FORMAT
-  const mappedResults = results.map((item) => ({
-    id: item.id,
-    subject: item.subject?.name ?? "Unknown Subject",
-    student: item.student 
-      ? `${item.student.surname ?? "Unknown"} ${item.student.name ?? "Unknown"}`
-      : "Unknown Student",
-    grade: item.student?.grade?.name ?? "Unknown Grade",
-    term: item.term?.name ?? "Unknown Term"
-  }));
-
-  console.log("Mapped Data:", mappedResults);
-  console.log("Sessions Data:", sessions); // Debugging check
-
-  return (
-    <div className="bg-white rounded-md p-4 flex-1 m-4 mt-0">
-      {/* TEACHER UI */}
-      {role === "teacher" && (
-        <>
-          <TeacherResultActions 
-            students={students} 
-            grades={grades} 
-            subjects={subjects} 
-            terms={terms} 
-            sessions={sessions}  
-            teacherId={currentUserId}
-          />
-          <div className="mt-4">
-            {/* <h2 className="text-lg font-semibold">Student Results</h2> */}
-            {/* <Table data={mappedResults} /> */}
-          </div>
-        </>
-      )}
-
-      {/* PAGINATION SECTION */}
-      {/* <Pagination count={count} page={p} /> */}
-    </div>
-  );
+    return (
+      <div className="bg-white rounded-md p-4 flex-1 m-4 mt-0">
+        <TeacherResultActions
+          students={students}
+          grades={grades}
+          subjects={subjects}
+          terms={terms}
+          sessions={sessions}
+          teacherId={currentUserId}
+          Results={Results.data || []} 
+        />
+      </div>
+    );
+  } catch (error) {
+    console.error("Error Fetching Data:", error);
+    return <div className="p-4 text-red-500">An error occurred while fetching data.</div>;
+  }
 };
 
 export default resultListPage;

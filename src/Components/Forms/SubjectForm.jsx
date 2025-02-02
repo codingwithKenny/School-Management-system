@@ -3,10 +3,10 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import InputField from "../InputField";
 import { subjectSchema } from "@/lib/formValidation";
-import { createSubject,updateSubject} from "@/lib/actions";
+import { createSubject, updateSubject } from "@/lib/actions";
 import { useEffect, useState } from "react";
 
-const SubjectForm = ({ type, data }) => {
+const SubjectForm = ({ type, data, teachers }) => {
   const {
     register,
     handleSubmit,
@@ -71,9 +71,29 @@ const SubjectForm = ({ type, data }) => {
         />
       </div>
 
+      {/* Teacher Selection */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700">Assign Teacher</label>
+        <select
+          {...register("teacherId")}
+          className="w-full p-2 border rounded-md"
+          defaultValue={data?.teacherId}
+        >
+          <option value="">-- Select a Teacher --</option>
+          {teachers?.map((teacher) => (
+            <option key={teacher.id} value={teacher.id}>
+              {teacher.name} {teacher.surname} ({teacher.email})
+            </option>
+          ))}
+        </select>
+        {errors.teacherId && <p className="text-red-500">{errors.teacherId.message}</p>}
+      </div>
+
       {/* Success and Error Messages */}
       {state.success && (
-        <p className="text-green-500">Subject {type === "create" ? "created" : "updated"} successfully!</p>
+        <p className="text-green-500">
+          Subject {type === "create" ? "created" : "updated"} successfully!
+        </p>
       )}
       {state.error && <p className="text-red-500">Something went wrong.</p>}
 
