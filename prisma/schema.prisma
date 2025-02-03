@@ -124,6 +124,7 @@ model Student {
   surname       String
   name          String
   username      String   @unique
+  email         String   @unique // ✅ Add email here
   sex           Sex
   img           String?
   address       String?
@@ -134,8 +135,8 @@ model Student {
   gradeId       Int
   class         Class @relation(fields: [classId], references: [id])
   classId       Int
-  parent        Parent @relation(fields: [parentId], references: [id])
-  parentId      String
+  parent        Parent? @relation(fields: [parentId], references: [id])
+  parentId      String?
   subjects      StudentSubject[]
   paymentStatus PaymentStatus @default(NOT_PAID)
   results       Result[]
@@ -143,6 +144,7 @@ model Student {
   isDeleted     Boolean @default(false)
   deletedAt     DateTime?
 }
+
 
 model Result {
   id               Int @id @default(autoincrement())

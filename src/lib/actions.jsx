@@ -1,54 +1,39 @@
 "use server";
-import { clerkClient } from "@clerk/clerk-sdk-node"; // ✅ Correct Clerk import
+import { clerkClient } from "@clerk/clerk-sdk-node";
 import prisma from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 
 export const createTeacher = async (data) => {
-  console.log("🟡 Creating user in Clerk...");
-
   try {
-    // ✅ Step 1: Check if Email or Username Already Exists in Clerk
     const existingUsers = await clerkClient.users.getUserList({
       emailAddress: [data.email],
       limit: 1,
     });
 
     if (existingUsers.length > 0) {
-      console.error("❌ Error: Email already registered in Clerk.");
+      console.error("Error: Email already in Clerk.");
       return { success: false, error: "A user with this email already exists." };
     }
-
-    // ✅ Step 2: Create a User in Clerk
     const teacher = await clerkClient.users.createUser({
       username: data.username,
       emailAddress: [data.email],
-      password: data.password, // ✅ Ensure password meets security standards
-      publicMetadata: { role: "teacher" }, // ✅ Store user role in Clerk
-    });
-
-    console.log("🟢 Clerk User Created:", teacher);
-
-    // ✅ Step 3: Store Teacher in Prisma using Clerk's userId
-    const formattedSex = data.sex.toUpperCase(); // Ensure ENUM format
+      password: data.password, 
+      publicMetadata: { role: "teacher" },
+    })
 
     const newTeacher = await prisma.teacher.create({
       data: {
-        id: teacher.id, // ✅ Use Clerk's userId
+        id: teacher.id, 
         surname: data.surname,
         name: data.name,
         username: data.username,
         email: data.email,
-        password: data.password, // Consider storing only in Clerk
-        sex: formattedSex,
+        password: data.password, 
+        sex: data.sex,
         address: data.address || null,
       },
     });
-
-    console.log("✅ Teacher Created in Prisma:", newTeacher);
-
-    // ✅ Step 4: Assign Subjects (If provided)
     if (Array.isArray(data.subjects) && data.subjects.length > 0) {
-      console.log("🟡 Assigning Subjects:", data.subjects);
 
       const subjectData = data.subjects.map((subjectId) => ({
         teacherId: newTeacher.id,
@@ -59,20 +44,16 @@ export const createTeacher = async (data) => {
         data: subjectData,
         skipDuplicates: true,
       });
-
-      console.log("✅ Subjects Assigned:", subjectData);
     } else {
-      console.warn("⚠️ No subjects provided.");
+      console.warn("No subjects provided.");
     }
 
-    // ✅ Refresh UI
+    //Refresh UI
     revalidatePath("/list/teachers");
     return { success: true, message: "Teacher added successfully!" };
 
   } catch (error) {
-    console.error("❌ Error Creating Teacher:", error);
-
-    // ✅ Handle Clerk API errors
+    console.error("Error Creating Teacher:", error);
     if (error.status === 422) {
       return { success: false, error: "Invalid user data. Check email, password, and username." };
     }
@@ -82,54 +63,38 @@ export const createTeacher = async (data) => {
 };
 // / UPDATE TEACHER
 export const updateTeacher = async (teacherId, data) => {
-  console.log("🟢 Received Data for Update:", { teacherId, ...data });
-
   try {
-    // ✅ Convert sex to match ENUM case
-    const formattedSex = data.sex.toUpperCase();
-
-    // ✅ Step 1: Check if Teacher Exists
-    console.log("🟡 Checking if teacher exists...");
     const existingTeacher = await prisma.teacher.findUnique({
       where: { id: teacherId },
     });
 
     if (!existingTeacher) {
-      console.error("❌ Error: Teacher Not Found.");
+      console.error("Error: Teacher Not Found.");
       return { success: false, error: "Teacher not found." };
     }
-
-    // ✅ Step 2: Check for Duplicate Email or Username (Excluding Current Teacher)
-    console.log("🟡 Checking for duplicate email/username...");
     if (data.email !== existingTeacher.email || data.username !== existingTeacher.username) {
       const duplicateTeacher = await prisma.teacher.findFirst({
         where: {
           OR: [{ email: data.email }, { username: data.username }],
-          NOT: { id: teacherId }, // ✅ Exclude the current teacher from check
+          NOT: { id: teacherId },
         },
       });
 
       if (duplicateTeacher) {
         if (duplicateTeacher.email === data.email) {
-          console.error("❌ Error: Duplicate Email Detected.");
           return { success: false, error: "A teacher with this email already exists." };
         }
         if (duplicateTeacher.username === data.username) {
-          console.error("❌ Error: Duplicate Username Detected.");
+          console.error("Error: Duplicate Username Detected.");
           return { success: false, error: "A teacher with this username already exists." };
         }
       }
     }
-
-    // ✅ Step 3: Update Teacher Details in Clerk
-    console.log("🟡 Syncing with Clerk...");
     await clerkClient.users.updateUser(teacherId, {
       emailAddress: [data.email],
       username: data.username,
     });
 
-    // ✅ Step 4: Update Teacher Details in Prisma
-    console.log("🟡 Updating teacher details in Prisma...");
     const updatedTeacher = await prisma.teacher.update({
       where: { id: teacherId },
       data: {
@@ -142,19 +107,18 @@ export const updateTeacher = async (teacherId, data) => {
       },
     });
 
-    console.log("✅ Teacher Updated:", updatedTeacher);
+    console.log("Teacher Updated:", updatedTeacher);
 
-    // ✅ Step 5: Update Teacher's Subjects
     if (Array.isArray(data.subjects)) {
-      console.log("🟡 Updating teacher subjects...");
+      console.log("Updating teacher subjects...");
 
-      // ✅ Remove old subjects
+      //Remove old subjects
       await prisma.teacherSubject.deleteMany({
         where: { teacherId },
       });
 
       if (data.subjects.length > 0) {
-        // ✅ Add new subjects
+        // Add new subjects
         const subjectData = data.subjects.map((subjectId) => ({
           teacherId,
           subjectId: parseInt(subjectId, 10),
@@ -165,18 +129,18 @@ export const updateTeacher = async (teacherId, data) => {
           skipDuplicates: true,
         });
 
-        console.log("✅ Subjects Updated:", subjectData);
+        console.log("Subjects Updated:", subjectData);
       } else {
-        console.warn("⚠️ No subjects provided.");
+        console.warn("No subjects provided.");
       }
     }
 
-    // ✅ Refresh UI
+    // Refresh UI
     revalidatePath("/list/teachers");
     return { success: true, message: "Teacher updated successfully!" };
 
   } catch (error) {
-    console.error("❌ Error Updating Teacher:", error);
+    console.error("Error Updating Teacher:", error);
     return { success: false, error: "An unexpected error occurred." };
   }
 };
@@ -214,11 +178,13 @@ export const deleteTeacher = async (teacherId) => {
 
 
 
+
 export async function createStudent(data) {
+  console.log(data)
   try {
     console.log("🟡 Checking if student exists in Clerk and Prisma...");
 
-    // Check if username exists in Prisma
+    // ✅ Check if username exists in Prisma
     const existingStudent = await prisma.student.findUnique({
       where: { username: data.username },
     });
@@ -227,37 +193,74 @@ export async function createStudent(data) {
       return { success: false, error: "Username is already taken." };
     }
 
-    // Check if email exists in Clerk
-    const existingUsers = await clerkClient.users.getUserList({
-      emailAddress: [data.email],
-      limit: 1,
+    console.log("🟢 Checking if session, grade, and class exist...");
+
+    // ✅ Convert IDs to integers
+    const sessionId = parseInt(data.sessionId, 10);
+    const gradeId = parseInt(data.gradeId, 10);
+    const classId = parseInt(data.classId, 10);
+    
+    const parentId = data.parentId ? String(data.parentId) : null; // ✅ Parent can be null
+
+    // ✅ Validate if session, grade, and class exist
+    const [existingSession, existingGrade, existingClass] = await Promise.all([
+      prisma.session.findUnique({ where: { id: sessionId } }),
+      prisma.grade.findUnique({ where: { id: gradeId } }),
+      prisma.class.findUnique({ where: { id: classId } }),
+    ]);
+
+    if (!existingSession) return { success: false, error: "Invalid session selected." };
+    if (!existingGrade) return { success: false, error: "Invalid grade selected." };
+    if (!existingClass) return { success: false, error: "Invalid class selected." };
+
+    // ✅ Check if parent exists (if provided)
+    let existingParent = null;
+    if (parentId) {
+      existingParent = await prisma.parent.findUnique({ where: { id: parentId } });
+      if (!existingParent) {
+        return { success: false, error: "Invalid parent selected." };
+      }
+    }
+
+    console.log("🟢 Checking if subjects exist...");
+
+    // ✅ Validate subjects
+    if (!Array.isArray(data.subjects) || data.subjects.length === 0) {
+      return { success: false, error: "At least one subject must be selected." };
+    }
+
+    const existingSubjects = await prisma.subject.findMany({
+      where: { id: { in: data.subjects.map((id) => parseInt(id, 10)) } },
+      select: { id: true },
     });
 
-    if (existingUsers.length > 0) {
-      return { success: false, error: "Email already registered." };
+    const validSubjectIds = existingSubjects.map((sub) => sub.id);
+    if (validSubjectIds.length !== data.subjects.length) {
+      return { success: false, error: "One or more selected subjects are invalid." };
     }
 
     console.log("🟢 Creating Student in Clerk...");
 
-    // Create user in Clerk for authentication
-    const studentUser = await clerkClient.users.createUser({
-      username: data.username,
-      emailAddress: [data.email],
-      password: data.password, // Students need passwords to log in
-      publicMetadata: { role: "student" }, // Assign student role
+    const generatePassword = (surname) => {
+      return surname + Math.floor(1000 + Math.random() * 9000) + "!"; // Ensures uniqueness
+    };
+    
+    
+
+    // ✅ Create user in Clerk
+    const student = await clerkClient.users.createUser({
+      username: data.username.trim(), // Ensure no spaces or special characters
+      emailAddress: [data.email.trim()], // Ensure valid email format
+      password: generatePassword(data.surname), // Ensure password meets Clerk's security standards
+      publicMetadata: { role: "student" }, // Assign role in metadata
     });
+  
+    console.log("🟢 Clerk User Created:", student);
 
-    console.log("🟢 Creating Student in Prisma...");
-
-    // Convert IDs to integers
-    const sessionId = parseInt(data.sessionId, 10);
-    const gradeId = parseInt(data.gradeId, 10);
-    const classId = parseInt(data.classId, 10);
-
-    // Create student in Prisma with Clerk's userId
+    // ✅ Create student in Prisma with Clerk's userId
     const newStudent = await prisma.student.create({
       data: {
-        id: studentUser.id, // Use Clerk's user ID
+        id: student.id, // Use Clerk's user ID
         surname: data.surname,
         name: data.name,
         username: data.username,
@@ -268,7 +271,12 @@ export async function createStudent(data) {
         sessionId,
         gradeId,
         classId,
-        parentId: data.parentId,
+        parentId: parentId || null, // ✅ Set parentId to null if not provided
+        subjects: {
+          create: validSubjectIds.map((subjectId) => ({
+            subject: { connect: { id: subjectId } },
+          })),
+        }, // ✅ Linking subjects
       },
     });
 
@@ -277,9 +285,46 @@ export async function createStudent(data) {
     // Refresh UI
     revalidatePath("/list/students");
     return { success: true, message: "Student created successfully!" };
+  }catch (error) {
+    console.error("❌ Error Creating Student in Clerk:", error);
+  
+    if (error.errors) {
+      console.error("📌 Clerk Validation Errors:", JSON.stringify(error.errors, null, 2));
+    }
+  
+    return { success: false, error: "Failed to create student. Please check input values." };
+  }
+  
+}
+
+export async function createParent(data) {
+  try {
+    console.log("🟡 Checking if parent exists:", data.name);
+
+    // ✅ Check if parent already exists
+    let parent = await prisma.parent.findFirst({
+      where: { name: data.name.trim() },
+    });
+
+    if (parent) {
+      console.log("✅ Parent already exists:", parent.id);
+      return parent; // ✅ Return existing parent
+    }
+
+    console.log("🟢 Parent not found, creating new parent...");
+
+    // ✅ Create a new parent
+    const newParent = await prisma.parent.create({
+      data: {
+        name: data.name.trim(),
+      },
+    });
+
+    console.log("✅ New Parent Created:", newParent);
+    return newParent;
   } catch (error) {
-    console.error("❌ Error Creating Student:", error);
-    return { success: false, error: "An unexpected error occurred." };
+    console.error("❌ Error creating parent:", error);
+    return null;
   }
 }
 
@@ -304,8 +349,10 @@ export async function createStudent(data) {
 
 
 
+
 // CREATE SUBJECT WITH TEACHER ASSIGNMENT
 export const createSubject = async (data) => {
+  console.log(data,"helolooooooooooooooooo")
   try {
     // Step 1: Create Subject
     const newSubject = await prisma.subject.create({

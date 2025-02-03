@@ -184,3 +184,47 @@ const resultListPage = async ({ searchParams }) => {
 };
 
 export default resultListPage;
+
+
+
+
+
+
+
+
+
+
+
+
+try {
+  let response;
+
+  // Prepare data (Ensure subjects are sent correctly)
+  const requestData = {
+    ...formData,
+    subjects: selectedSubjects,
+  };
+
+  if (type === "create") {
+    response = await createStudent(requestData);
+  } else if (type === "update" && data?.id) {
+    response = await updateStudent(data.id, requestData);
+  } else {
+    console.error("❌ No student ID found for update.");
+    return;
+  }
+
+  console.log("Response:", response);
+
+  if (response.success) {
+    alert(`✅ Student ${type === "create" ? "created" : "updated"} successfully!`);
+    window.location.reload();
+  } else {
+    setServerError(response.error);
+  }
+} catch (error) {
+  console.error("❌ Error submitting form:", error);
+  setServerError("An unexpected error occurred. Please try again.");
+}
+
+

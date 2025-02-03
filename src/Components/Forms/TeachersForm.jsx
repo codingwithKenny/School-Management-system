@@ -6,217 +6,134 @@ import InputField from "../InputField";
 import { teacherSchema } from "@/lib/formValidation";
 import { createTeacher, updateTeacher } from "@/lib/actions";
 import Image from "next/image";
+import SelectField from "../SelectField";
+import { useDatabase } from "@/app/context/DatabaseProvider";
 
-const TeacherForm = ({ type, data, subjects }) => {
-  console.log(subjects),"subbbbbbbbbbbbbbbbbbbbbbbb"
+const TeacherForm = ({ type, data }) => {
+  const { databaseData } = useDatabase();
+  const [serverError, setServerError] = useState("");
+
   const {
     register,
     handleSubmit,
-    setValue, // ✅ Ensures form values update dynamically
-    getValues, // ✅ Helps retrieve form values
+    setValue,
+    reset,
+    control,
     formState: { errors },
   } = useForm({
     resolver: zodResolver(teacherSchema),
     defaultValues: {
       ...data,
-      subjects: data?.subjects?.map((s) => s.subjectId) || [],
+      subjects: data?.subjects?.map((s) => String(s.subjectId)) || [], // ✅ Ensure correct format
     },
   });
 
-  const [selectedSubjects, setSelectedSubjects] = useState([]);
-  const [serverError, setServerError] = useState("");
-
-  // ✅ Initialize selected subjects when editing
+  // ✅ Update form when `data` changes (Fixes issues with re-rendering)
   useEffect(() => {
-    if (data?.subjects) {
-      setSelectedSubjects(data.subjects.map((s) => s.subjectId));
-      setValue(
-        "subjects",
-        data.subjects.map((s) => s.subjectId)
-      ); // ✅ Ensure subjects are set in the form
+    if (data) {
+      reset({
+        ...data,
+        sex: data?.sex || "MALE", // ✅ Pre-fill sex
+        subjects: data?.subjects?.map((s) => String(s.subjectId)) || [], // ✅ Pre-fill subjects
+      });
     }
-  }, [data, setValue]);
+  }, [data, reset]);
+  
 
-  // ✅ Handle subject selection
-  const handleSubjectChange = (e) => {
-    const selectedId = parseInt(e.target.value);
-
-    if (!selectedSubjects.includes(selectedId)) {
-      const updatedSubjects = [...selectedSubjects, selectedId];
-      setSelectedSubjects(updatedSubjects);
-      setValue("subjects", updatedSubjects); // ✅ Sync with react-hook-form
+  // ✅ Handle file selection
+  const handleFileChange = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      setValue("img", file.name);
     }
-  };
-
-  // ✅ Handle subject removal
-  const handleRemoveSubject = (subjectId) => {
-    const updatedSubjects = selectedSubjects.filter((id) => id !== subjectId);
-    setSelectedSubjects(updatedSubjects);
-    setValue("subjects", updatedSubjects); // ✅ Keep the form updated
   };
 
   // ✅ Handle form submission
- // ✅ Handle form submission
-const onSubmit = handleSubmit(async (formData) => {
-  console.log("🟢 Form Submitted:", formData);
+  const onSubmit = handleSubmit(async (formData) => {
+    console.log("🟢 Form Submitted:", formData);
 
-  try {
-    let response;
+    try {
+      let response;
 
-    // Prepare data (Ensure subjects are sent correctly)
-    const requestData = {
-      ...formData,
-      subjects: selectedSubjects, // ✅ Ensure correct format
-    };
+      // Prepare data (Ensure subjects are sent correctly)
+      const requestData = {
+        ...formData,
+        subjects: formData.subjects.map((s) => Number(s)), // ✅ Convert subjects to numbers
+      };
 
-    if (type === "create") {
-      response = await createTeacher(requestData);
-    } else if (type === "update" && data?.id) {
-      response = await updateTeacher(data.id, requestData);
-    } else {
-      console.error("❌ No teacher ID found for update.");
-      return;
+      if (type === "create") {
+        response = await createTeacher(requestData);
+      } else if (type === "update" && data?.id) {
+        response = await updateTeacher(data.id, requestData);
+      } else {
+        console.error("❌ No teacher ID found for update.");
+        return;
+      }
+
+      console.log("Response:", response);
+
+      if (response.success) {
+        alert(`✅ Teacher ${type === "create" ? "created" : "updated"} successfully!`);
+        window.location.reload(); // ✅ Refresh page after success
+      } else {
+        setServerError(response.error); // ✅ Display error message properly
+      }
+    } catch (error) {
+      console.error("❌ Error submitting form:", error);
+      setServerError("An unexpected error occurred. Please try again.");
     }
-
-    console.log("Response:", response);
-
-    if (response.success) {
-      alert(`✅ Teacher ${type === "create" ? "created" : "updated"} successfully!`);
-      window.location.reload(); // ✅ Refresh page after success
-    } else {
-      setServerError(response.error); // ✅ Display error message properly
-    }
-  } catch (error) {
-    console.error("❌ Error submitting form:", error);
-    setServerError("An unexpected error occurred. Please try again.");
-  }
-});
-
+  });
 
   return (
-    <form className="flex flex-col gap-4" onSubmit={onSubmit}>
+    <form className="flex flex-col gap-4" onSubmit={handleSubmit(onSubmit)}>
       <h1 className="text-xl font-semibold">
         {type === "create" ? "Add New Teacher" : "Update Teacher"}
       </h1>
 
       <div className="flex flex-wrap justify-between gap-2">
-        <InputField
-          label="Surname"
-          name="surname"
-          register={register}
-          error={errors.surname}
-        />
-        <InputField
-          label="Name"
-          name="name"
-          register={register}
-          error={errors.name}
-        />
-        <InputField
-          label="Username"
-          name="username"
-          register={register}
-          error={errors.username}
-        />
-        {serverError && (
-          <p className="text-red-500 text-sm">{serverError}</p> // ✅ Shows error message
-        )}
-        <InputField
-          label="Email"
-          name="email"
-          register={register}
-          error={errors.email}
-        />
-        {serverError && (
-          <p className="text-red-500 text-sm">{serverError}</p> // ✅ Shows error message
-        )}
-        <InputField
-          label="Password"
-          name="password"
-          type="password"
-          register={register}
-          error={errors.password}
-        />
-        <InputField
-          label="Address"
-          name="address"
-          register={register}
-          error={errors.address}
-        />
+        <InputField label="Surname" name="surname" register={register} error={errors.surname} />
+        <InputField label="Name" name="name" register={register} error={errors.name} />
+        <InputField label="Username" name="username" register={register} error={errors.username} />
+        <InputField label="Email" name="email" register={register} error={errors.email} />
+        <InputField label="Password" name="password" type="password" register={register} error={errors.password} />
+        <InputField label="Address" name="address" register={register} error={errors.address} />
       </div>
 
-      {/* Sex Selection */}
-      <label className="block">Sex</label>
-      <select
-        {...register("sex")}
-        className="border rounded p-2 w-full"
-        defaultValue={data?.sex || "Male"}
-      >
-        <option value="Male">Male</option>
-        <option value="Female">Female</option>
-      </select>
-      {errors.sex && <p className="text-red-500">{errors.sex.message}</p>}
-
-      {/* Subjects Selection */}
-      <label className="block">Subjects</label>
-      <select
-        className="border rounded p-2 w-full"
-        onChange={handleSubjectChange}
-      >
-        <option value="">-- Select Subject --</option>
-        {subjects.map((subject) => (
-          <option key={subject.id} value={subject.id}>
-            {subject.name}
-          </option>
-        ))}
-      </select>
-
-      {/* Display selected subjects as pills */}
-      <div className="flex flex-wrap gap-2 mt-2">
-        {selectedSubjects.map((subjectId) => {
-          const subject = subjects.find((s) => s.id === subjectId);
-          return (
-            <span
-              key={subjectId}
-              className="bg-gray-200 px-2 py-1 rounded-md text-sm flex items-center"
-            >
-              {subject?.name}
-              <button
-                type="button"
-                className="ml-2 text-red-500 font-bold"
-                onClick={() => handleRemoveSubject(subjectId)}
-              >
-                ×
-              </button>
-            </span>
-          );
-        })}
-      </div>
-
-      {/* Hidden input to track selected subjects */}
-      <input
-        type="hidden"
-        {...register("subjects")}
-        value={JSON.stringify(selectedSubjects)}
+      {/* ✅ Gender Selection */}
+      <SelectField
+        name="sex"
+        label="Sex"
+        control={control}
+        options={[
+          { id: "MALE", name: "Male" },
+          { id: "FEMALE", name: "Female" },
+        ]}
+        placeholder="-- Select Gender --"
+        error={errors.sex}
       />
-        <div className="flex flex-col gap-2 w-full md:w-1/4 justify-center">
-             <label className="text-xs text-gray-500 flex items-center cursor-pointer gap-2" htmlFor='img'>
-               <Image src ='/upload.png' alt='' width={28} height={28} />
-               <span>Upload a Image</span>
-               </label>
-             <input
-               type='file'
-               id='img'
-               {...register("img")}
-               className="ring-[1.5px] ring-gray-300 rounded-md p-2 text-sm hidden"
-               defaultValue={data?.img}/>
-                 
-               
-             {errors?.message && (
-               <p className="text-red-400 text-xs">{errors?.message.toString()}</p>
-             )}
-           </div>
-      {/* Submit Button */}
+
+      {/* ✅ Subjects Selection */}
+      <SelectField
+        name="subjects"
+        label="Subjects"
+        control={control}
+        options={databaseData.subjects}
+        multiple={true}
+        placeholder="-- Select Subjects --"
+        error={errors.subjects}
+      />
+
+      {/* ✅ File Upload */}
+      <div className="flex flex-col justify-center">
+        <label className="text-xs text-gray-500 flex items-center cursor-pointer gap-2" htmlFor="img">
+          <Image src="/upload.png" alt="Upload" width={28} height={28} />
+          <span>Upload Image</span>
+        </label>
+        <input type="file" id="img" accept="image/*" className="hidden" onChange={handleFileChange} />
+        {errors.img && <p className="text-red-400 text-xs">{errors.img.message}</p>}
+      </div>
+
+      {/* ✅ Submit Button */}
       <button type="submit" className="bg-purple-400 rounded-md text-white p-2">
         {type === "create" ? "Add Teacher" : "Update"}
       </button>

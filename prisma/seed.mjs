@@ -1,204 +1,166 @@
 import { PrismaClient } from "@prisma/client";
+
 const prisma = new PrismaClient();
 
-// Helper function to get random elements from an array
-function getRandomElement(arr) {
-  return arr[Math.floor(Math.random() * arr.length)];
-}
-
 async function main() {
-  console.log("Seeding database...");
+  console.log("🌱 Seeding database...");
 
-  // ✅ Nigerian Names
-  const surnames = ["Adeyemi", "Oluwafemi", "Adebayo", "Olagoke", "Akinlade", "Akinyemi", "Adesanya"];
-  const firstNamesMale = ["Tunde", "Kunle", "Dele", "Segun", "Femi", "Bayo", "Seyi"];
-  const firstNamesFemale = ["Sade", "Tola", "Funmi", "Bisi", "Titi", "Bukky", "Yemi"];
+  // ✅ Create Sessions First (Foreign key for students, grades, etc.)
+  const session1 = await prisma.session.upsert({
+    where: { id: 1 },
+    update: {},
+    create: {
+      id: 1,
+      name: "2023/2024 Academic Year",
+      isCurrent: true,
+    },
+  });
 
-  // ✅ Subject Names
-  const subjectNames = [
-    "Mathematics", "English", "Science", "Social Studies", "Yoruba",
-    "Physics", "Biology", "Chemistry", "Geography", "Economics",
-  ];
+  const session2 = await prisma.session.upsert({
+    where: { id: 2 },
+    update: {},
+    create: {
+      id: 2,
+      name: "2024/2025 Academic Year",
+      isCurrent: false,
+    },
+  });
+
+  // ✅ Create Grades
+  const grade1 = await prisma.grade.upsert({
+    where: { id: 1 },
+    update: {},
+    create: {
+      id: 1,
+      name: "Grade 1",
+      sessionId: session1.id,
+    },
+  });
+
+  const grade2 = await prisma.grade.upsert({
+    where: { id: 2 },
+    update: {},
+    create: {
+      id: 2,
+      name: "Grade 2",
+      sessionId: session1.id,
+    },
+  });
+
+  // ✅ Create Classes
+  const class1 = await prisma.class.upsert({
+    where: { id: 1 },
+    update: {},
+    create: {
+      id: 1,
+      name: "Class A",
+      gradeId: grade1.id,
+    },
+  });
+
+  const class2 = await prisma.class.upsert({
+    where: { id: 2 },
+    update: {},
+    create: {
+      id: 2,
+      name: "Class B",
+      gradeId: grade2.id,
+    },
+  });
+
+  // ✅ Create Subjects
+  const subject1 = await prisma.subject.upsert({
+    where: { id: 1 },
+    update: {},
+    create: { id: 1, name: "Mathematics" },
+  });
+
+  const subject2 = await prisma.subject.upsert({
+    where: { id: 2 },
+    update: {},
+    create: { id: 2, name: "English Language" },
+  });
 
   // ✅ Create Admins
-  await prisma.admin.createMany({
+  const admin1 = await prisma.admin.upsert({
+    where: { email: "admin@school.com" },
+    update: {},
+    create: {
+      id: "admin_123",
+      name: "Principal John",
+      email: "admin@school.com",
+      password: "AdminPass123!",
+    },
+  });
+
+  // ✅ Create Teachers
+  const teacher1 = await prisma.teacher.upsert({
+    where: { id: "teacher_001" },
+    update: {},
+    create: {
+      id: "teacher_001",
+      surname: "Williams",
+      name: "Michael",
+      username: "michael_teacher",
+      email: "michael@school.com",
+      sex: "MALE",
+      password: "TeacherPass123!",
+    },
+  });
+
+  // ✅ Create Parents
+  const parent1 = await prisma.parent.upsert({
+    where: { id: "parent_001" },
+    update: {},
+    create: {
+      id: "parent_001",
+      name: "Mrs. Adebayo",
+      email: "adebayo_parent@school.com",
+    },
+  });
+
+  // ✅ Create Students (Ensure session, grade, class, and parent exist)
+  await prisma.student.createMany({
     data: [
-      { id: "admin1", name: "School Admin", email: "admin1@school.com", password: "admin123" },
-      { id: "admin2", name: "Admin Two", email: "admin2@school.com", password: "admin123" },
+      {
+        id: "student_001",
+        surname: "Apenaola",
+        name: "Kabirat",
+        username: "kabby",
+        email: "kabby@example.com",
+        sex: "MALE",
+        img: "avatar.png",
+        address: "Ikorodu",
+        sessionId: session1.id,
+        gradeId: grade1.id,
+        classId: class1.id,
+        parentId: parent1.id,
+        paymentStatus: "PAID",
+      },
+      {
+        id: "student_002",
+        surname: "Hikamt",
+        name: "Abimbola",
+        username: "hikkygift",
+        email: "hikky@dev.com",
+        sex: "MALE",
+        img: "avatar.png",
+        address: "Cele Oyo",
+        sessionId: session1.id,
+        gradeId: grade2.id,
+        classId: class2.id,
+        parentId: null,
+        paymentStatus: "PAID",
+      },
     ],
   });
 
-  // ✅ Create Sessions
-  const sessions = await Promise.all(
-    ["2023/2024", "2024/2025", "2025/2026"].map(name =>
-      prisma.session.create({
-        data: { name, isDeleted: false, deletedAt: null },
-      })
-    )
-  );
-
-  const currentSession = sessions[sessions.length - 1]; // Set last session as active
-
-  // ✅ Create Terms for Each Session
-  const terms = await Promise.all(
-    sessions.flatMap(session =>
-      ["First Term", "Second Term", "Third Term"].map(termName =>
-        prisma.term.create({
-          data: { name: termName, sessionId: session.id, isDeleted: false, deletedAt: null },
-        })
-      )
-    )
-  );
-
-  // ✅ Create Grades (Linked to Session)
-  const grades = await Promise.all(
-    Array.from({ length: 5 }, (_, i) =>
-      prisma.grade.create({
-        data: { name: `Grade ${i + 1}`, sessionId: currentSession.id, isDeleted: false, deletedAt: null },
-      })
-    )
-  );
-
-  // ✅ Create Classes
-  const classes = await Promise.all(
-    grades.flatMap(grade =>
-      ["A", "B"].map(section =>
-        prisma.class.create({
-          data: {
-            name: `${grade.name}${section}`,
-            gradeId: grade.id,
-            isDeleted: false,
-            deletedAt: null,
-          },
-        })
-      )
-    )
-  );
-
-  // ✅ Create Teachers
-  const teachers = await Promise.all(
-    Array.from({ length: 15 }, (_, i) =>
-      prisma.teacher.create({
-        data: {
-          id: `teacher${i + 1}`,
-          surname: getRandomElement(surnames),
-          name: getRandomElement([...firstNamesMale, ...firstNamesFemale]),
-          username: `teacher${i + 1}`,
-          sex: i % 2 === 0 ? "MALE" : "FEMALE",
-          email: `teacher${i + 1}@school.com`,
-          password: `password${i + 1}`,
-          isDeleted: false,
-          deletedAt: null,
-        },
-      })
-    )
-  );
-
-  // ✅ Create Subjects
-  const subjects = await Promise.all(
-    subjectNames.map(subject =>
-      prisma.subject.create({
-        data: { name: subject, isDeleted: false, deletedAt: null },
-      })
-    )
-  );
-
-  // ✅ Assign Teachers to Subjects (Many-to-Many Relationship)
-  await Promise.all(
-    teachers.flatMap(teacher =>
-      subjects.slice(0, 3).map(subject =>
-        prisma.teacherSubject.create({
-          data: {
-            teacherId: teacher.id,
-            subjectId: subject.id,
-          },
-        })
-      )
-    )
-  );
-
-  // ✅ Create Parents
-  const parents = await Promise.all(
-    Array.from({ length: 25 }, (_, i) =>
-      prisma.parent.create({
-        data: {
-          id: `parent${i + 1}`,
-          name: `Parent ${i + 1}`,
-          email: `parent${i + 1}@example.com`,
-          isDeleted: false,
-          deletedAt: null,
-        },
-      })
-    )
-  );
-
-  const paymentStatuses = ["PAID", "NOT_PAID", "PARTIALLY_PAID"];
-
-  // ✅ Create Students (Linked to Active Session)
-  const students = await Promise.all(
-    Array.from({ length: 50 }, (_, i) =>
-      prisma.student.create({
-        data: {
-          id: `student${i + 1}`,
-          surname: getRandomElement(surnames),
-          name: i % 2 === 0 ? getRandomElement(firstNamesMale) : getRandomElement(firstNamesFemale),
-          username: `student${i + 1}`,
-          sex: i % 2 === 0 ? "MALE" : "FEMALE",
-          sessionId: currentSession.id, // ✅ Linked to active session
-          gradeId: getRandomElement(grades).id,
-          classId: getRandomElement(classes).id,
-          parentId: getRandomElement(parents).id,
-          paymentStatus: getRandomElement(paymentStatuses),
-          isDeleted: false,
-          deletedAt: null,
-        },
-      })
-    )
-  );
-
-  // ✅ Enroll Students in Subjects
-  await Promise.all(
-    students.flatMap(student =>
-      subjects.slice(0, 5).map(subject =>
-        prisma.studentSubject.create({
-          data: {
-            studentId: student.id,
-            subjectId: subject.id,
-          },
-        })
-      )
-    )
-  );
-
-  // ✅ Add Results with `teacherId` and `sessionId`
-  await Promise.all(
-    students.slice(0, 20).flatMap(student =>
-      subjects.slice(0, 5).map(subject =>
-        prisma.result.create({
-          data: {
-            studentId: student.id,
-            subjectId: subject.id,
-            teacherId: getRandomElement(teachers).id, // ✅ Random teacher
-            termId: getRandomElement(terms).id,
-            sessionId: student.sessionId, // ✅ NEW: Link result to student's session
-            firstAssessment: Math.floor(Math.random() * 20) + 10,
-            secondAssessment: Math.floor(Math.random() * 20) + 10,
-            examScore: Math.floor(Math.random() * 50) + 50,
-            totalScore: Math.floor(Math.random() * 100) + 50,
-            isDeleted: false,
-            deletedAt: null,
-          },
-        })
-      )
-    )
-  );
-
-  console.log("✅ Seeding completed successfully!");
+  console.log("✅ Database seeding completed successfully!");
 }
 
 main()
   .catch((e) => {
-    console.error("❌ Seeding error:", e);
+    console.error("❌ Error seeding database:", e);
     process.exit(1);
   })
   .finally(async () => {

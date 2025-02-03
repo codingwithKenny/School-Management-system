@@ -1,31 +1,26 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import InputField from "../InputField";
-import { createStudent, updateStudent } from "@/lib/actions";
+import SelectField from "../SelectField";
 import Image from "next/image";
+import { studentSchema } from "@/lib/formValidation";
+import { useDatabase } from "@/app/context/DatabaseProvider";
+import { createStudent } from "@/lib/actions";
 
-const studentSchema = z.object({
-  surname: z.string().min(2, "Surname is required"),
-  name: z.string().min(2, "Name is required"),
-  username: z.string().min(3, "Username must be at least 3 characters"),
-  sex: z.enum(["MALE", "FEMALE"], { message: "Select your gender" }),
-  img: z.instanceof(File).optional(),
-  address: z.string().optional(),
-  sessionId: z.string().min(1, "Session ID is required"),
-  gradeId: z.string().min(1, "Grade ID is required"),
-  classId: z.string().min(1, "Class ID is required"),
-  parentId: z.string().min(1, "Parent ID is required"),
-});
+const StudentForm = ({ type, data }) => {
+  const { databaseData } = useDatabase();
+  console.log(databaseData.parents) // ✅ Use global database data
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState(null);
 
-const StudentForm = ({ type, data, availableSubjects }) => {
   const {
     register,
     handleSubmit,
     setValue,
+    control,
     formState: { errors },
   } = useForm({
     resolver: zodResolver(studentSchema),
@@ -35,152 +30,193 @@ const StudentForm = ({ type, data, availableSubjects }) => {
     },
   });
 
-  const [selectedSubjects, setSelectedSubjects] = useState([]);
-  const [serverError, setServerError] = useState("");
-
-  // ✅ Initialize selected subjects when editing
-  useEffect(() => {
-    if (data?.subjects) {
-      setSelectedSubjects(data.subjects.map((s) => s.subjectId));
-      setValue(
-        "subjects",
-        data.subjects.map((s) => s.subjectId)
-      );
+  // ✅ Handle file selection
+  const handleFileChange = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      setValue("img", file.name);
     }
-  }, [data, setValue]);
-
-  // ✅ Handle subject selection
-  const handleSubjectChange = (e) => {
-    const selectedId = parseInt(e.target.value);
-    if (!selectedSubjects.includes(selectedId)) {
-      const updatedSubjects = [...selectedSubjects, selectedId];
-      setSelectedSubjects(updatedSubjects);
-      setValue("subjects", updatedSubjects);
-    }
-  };
-
-  // ✅ Handle subject removal
-  const handleRemoveSubject = (subjectId) => {
-    const updatedSubjects = selectedSubjects.filter((id) => id !== subjectId);
-    setSelectedSubjects(updatedSubjects);
-    setValue("subjects", updatedSubjects);
   };
 
   // ✅ Handle form submission
   const onSubmit = handleSubmit(async (formData) => {
-    console.log("🟢 Form Submitted:", formData);
-
+    console.log("🟡 Form submission triggered!"); // ✅ Check if submission is happening
+  
+    if (!formData) {
+      console.error("❌ No formData received!");
+      return;
+    }
+  
+    console.log("🔵 Form Data Before Processing:", formData); // ✅ Check raw form data
+  
+    setLoading(true);
+    setMessage(null);
+  
     try {
-      let response;
-
-      // Prepare data (Ensure subjects are sent correctly)
-      const requestData = {
-        ...formData,
-        subjects: selectedSubjects,
-      };
-
-      if (type === "create") {
-        response = await createStudent(requestData);
-      } else if (type === "update" && data?.id) {
-        response = await updateStudent(data.id, requestData);
-      } else {
-        console.error("❌ No student ID found for update.");
-        return;
+      console.log("🔍 Checking if parent exists in databaseData:", formData.parentName);
+  
+      const parentName = formData.parentName?.trim() || "";
+  
+      if (!parentName) {
+        console.log("⚠ No parent name provided, student is self-sponsored.");
       }
-
-      console.log("Response:", response);
-
-      if (response.success) {
-        alert(`✅ Student ${type === "create" ? "created" : "updated"} successfully!`);
-        window.location.reload();
+  
+      let parent = databaseData.parents.find((p) => p.name.toLowerCase() === parentName.toLowerCase());
+  
+      if (!parent && parentName) {
+        console.log("🟢 Parent not found in databaseData, creating new parent...");
+        const newParent = await createParent({ name: parentName });
+  
+        if (!newParent || !newParent.id) {
+          throw new Error("Failed to create new parent.");
+        }
+  
+        parent = newParent;
+      }
+  
+      console.log("✅ Parent ID to use:", parent ? parent.id : null);
+  
+      const cleanedData = {
+        ...formData,
+        sessionId: Number(formData.sessionId),
+        gradeId: Number(formData.gradeId),
+        classId: Number(formData.classId),
+        parentId: parent ? parent.id : null,
+        subjects: formData.subjects.map(Number),
+        img: formData.img || null,
+      };
+  
+      console.log("🚀 Submitting cleaned data:", cleanedData);
+  
+      const result = await createStudent(cleanedData);
+  
+      if (result.success) {
+        console.log("✅ Student Created Successfully:", result);
+        setMessage({ type: "success", text: result.message });
       } else {
-        setServerError(response.error);
+        console.log("❌ Error Creating Student:", result.error);
+        setMessage({ type: "error", text: result.error });
       }
     } catch (error) {
       console.error("❌ Error submitting form:", error);
-      setServerError("An unexpected error occurred. Please try again.");
+      setMessage({ type: "error", text: "An unexpected error occurred." });
+    } finally {
+      setLoading(false);
     }
   });
+  
+  
+  
+  
 
   return (
-    <form className="flex flex-col gap-4" onSubmit={onSubmit}>
-      <h1 className="text-xl font-semibold">
-        {type === "create" ? "Add New Student" : "Update Student"}
-      </h1>
+    <div className="w-full max-w-4xl mx-auto md:p-6 md:h-auto h-screen overflow-y-auto md:overflow-visible">
+      <form className="flex flex-col gap-2" onSubmit={onSubmit}>
+        <h1 className="text-xl font-semibold">
+          {type === "create" ? "Add New Student" : "Update Student"}
+        </h1>
 
-      {serverError && <p className="text-red-500 text-sm">{serverError}</p>}
+        {/* ✅ Display Form Error Messages */}
+        {message && <p className={`text-sm ${message.type === "error" ? "text-red-500" : "text-green-500"}`}>{message.text}</p>}
 
-      <div className="flex flex-wrap justify-between gap-2">
-        <InputField label="Surname" name="surname" register={register} error={errors.surname} />
-        <InputField label="Name" name="name" register={register} error={errors.name} />
-        <InputField label="Username" name="username" register={register} error={errors.username} />
-        <InputField label="Address" name="address" register={register} error={errors.address} />
-      </div>
+        {/* ✅ Input Fields */}
+        <div className="flex flex-wrap justify-between gap-2 text-xs text-gray-500">
+          <InputField label="Surname" name="surname" register={register} error={errors.surname} />
+          <InputField label="Name" name="name" register={register} error={errors.name} />
+          <InputField label="Username" name="username" register={register} error={errors.username} />
+          <InputField label="Email" name="email" register={register} error={errors.email} />
+          <InputField label="Address" name="address" register={register} error={errors.address} />
+          <InputField label="Parent ID" name="parentId" register={register} error={errors.parentId} />
+        </div>
 
-      {/* Sex Selection */}
-      <label className="block">Sex</label>
-      <select {...register("sex")} className="border rounded p-2 w-full" defaultValue={data?.sex || "MALE"}>
-        <option value="MALE">Male</option>
-        <option value="FEMALE">Female</option>
-      </select>
-      {errors.sex && <p className="text-red-500">{errors.sex.message}</p>}
+        {/* ✅ Dropdown Selections */}
+        <div className="flex flex-wrap justify-between items-center">
+          {/* ✅ Gender Selection */}
+          <SelectField
+            name="sex"
+            label="Sex"
+            control={control}
+            options={[
+              { id: "MALE", name: "Male" },
+              { id: "FEMALE", name: "Female" },
+            ]}
+            placeholder="-- Select Gender --"
+            error={errors.sex} // ✅ Display errors
+          />
 
-      {/* Related IDs */}
-      <InputField label="Session ID" name="sessionId" register={register} error={errors.sessionId} />
-      <InputField label="Grade ID" name="gradeId" register={register} error={errors.gradeId} />
-      <InputField label="Class ID" name="classId" register={register} error={errors.classId} />
-      <InputField label="Parent ID" name="parentId" register={register} error={errors.parentId} />
+          {/* ✅ Payment Status */}
+          <SelectField
+            name="paymentStatus"
+            label="Payment Status"
+            control={control}
+            options={[
+              { id: "PAID", name: "Paid" },
+              { id: "NOT_PAID", name: "Not Paid" },
+              { id: "PARTIALLY_PAID", name: "Partially Paid" },
+            ]}
+            placeholder="-- Select Payment --"
+            error={errors.paymentStatus} // ✅ Display errors
+          />
 
-      {/* Subjects Selection */}
-      <label className="block">Subjects</label>
-      <select className="border rounded p-2 w-full" onChange={handleSubjectChange}>
-        <option value="">-- Select Subject --</option>
-        {availableSubjects?.map((subject) => (
-          <option key={subject.id} value={subject.id}>
-            {subject.name}
-          </option>
-        ))}
-      </select>
+          {/* ✅ Subject Selection (Many-to-Many) */}
+          <SelectField
+            name="subjects"
+            label="Subjects"
+            control={control}
+            options={databaseData.subjects}
+            multiple={true}
+            placeholder="-- Select Subjects --"
+            error={errors.subjects} // ✅ Display errors
+          />
+        </div>
 
-      {/* Display selected subjects */}
-      <div className="flex flex-wrap gap-2 mt-2">
-        {selectedSubjects?.map((subjectId) => {
-          const subject = availableSubjects.find((s) => s.id === subjectId);
-          return (
-            <span key={subjectId} className="bg-gray-200 px-2 py-1 rounded-md text-sm flex items-center">
-              {subject?.name}
-              <button
-                type="button"
-                className="ml-2 text-red-500 font-bold"
-                onClick={() => handleRemoveSubject(subjectId)}
-              >
-                ×
-              </button>
-            </span>
-          );
-        })}
-      </div>
+        <div className="flex flex-wrap justify-between items-center">
+          {/* ✅ Session Selection */}
+          <SelectField
+  name="sessionId"
+  label="Session"
+  control={control}
+  options={databaseData.sessions.map((s) => ({ id: String(s.id), name: s.name }))} // ✅ Ensure `id` is a string
+  placeholder="-- Select Session --"
+  error={errors.sessionId}
+/>
 
-      {/* File Upload */}
-      <div className="flex flex-col gap-2 w-full md:w-1/4 justify-center">
-        <label className="text-xs text-gray-500 flex items-center cursor-pointer gap-2" htmlFor="img">
-          <Image src="/upload.png" alt="" width={28} height={28} />
-          <span>Upload Image</span>
-        </label>
-        <input
-          type="file"
-          id="img"
-          {...register("img")}
-          className="ring-[1.5px] ring-gray-300 rounded-md p-2 text-sm hidden"
-        />
-        {errors.img && <p className="text-red-400 text-xs">{errors.img.message}</p>}
-      </div>
+<SelectField
+  name="gradeId"
+  label="Grade Level"
+  control={control}
+  options={databaseData.grades.map((g) => ({ id: String(g.id), name: g.name }))} // ✅ Ensure `id` is a string
+  placeholder="-- Select Grade Level --"
+  error={errors.gradeId}
+/>
 
-      {/* Submit Button */}
-      <button type="submit" className="bg-purple-400 rounded-md text-white p-2">
-        {type === "create" ? "Add Student" : "Update"}
-      </button>
-    </form>
+<SelectField
+  name="classId"
+  label="Class"
+  control={control}
+  options={databaseData.classes.map((c) => ({ id: String(c.id), name: c.name }))} // ✅ Ensure `id` is a string
+  placeholder="-- Select Class --"
+  error={errors.classId}
+/>
+
+        </div>
+
+        {/* ✅ File Upload */}
+        <div className="flex flex-col justify-center">
+          <label className="text-xs text-gray-500 flex items-center cursor-pointer gap-2" htmlFor="img">
+            <Image src="/upload.png" alt="Upload" width={28} height={28} />
+            <span>Upload Image</span>
+          </label>
+          <input type="file" id="img" accept="image/*" className="hidden" onChange={handleFileChange} />
+          {errors.img && <p className="text-red-400 text-xs">{errors.img.message}</p>}
+        </div>
+
+        {/* ✅ Submit Button */}
+        <button type="submit" className="bg-purple-400 rounded-md text-white p-2" disabled={loading}>
+          {loading ? "Submitting..." : type === "create" ? "Add Student" : "Update"}
+        </button>
+      </form>
+    </div>
   );
 };
 

@@ -2,6 +2,7 @@ import 'react-calendar/dist/Calendar.css';
 import './globals.css';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import { ClerkProvider } from '@clerk/nextjs';
+import { DatabaseProvider } from './context/DatabaseProvider';
 
 export const metadata = {
   title: 'Create Next App',
@@ -14,16 +15,14 @@ export default function RootLayout({ children }) {
       <head>
         <meta charSet="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        {/* <link
-          href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;600;700&display=swap"
-          rel="stylesheet"
-        /> */}
         <title>{metadata.title}</title>
         <meta name="description" content={metadata.description} />
       </head>
       <body className="font-sans">
         <ClerkProvider>
-          {children}
+          <DatabaseProvider>  {/* ✅ Wrap the entire app with DatabaseProvider */}
+            {children}
+          </DatabaseProvider>
         </ClerkProvider>
       </body>
     </html>

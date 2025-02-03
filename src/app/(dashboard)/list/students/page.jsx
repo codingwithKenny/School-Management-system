@@ -5,23 +5,13 @@ import TableSearch from '@/components/TableSearch';
 import { ITEM_PER_PAGE } from '@/lib/settings';
 import prisma from '@/lib/prisma';
 import Image from 'next/image';
-import Link from 'next/link';
 import React from 'react';
-import { role } from '@/lib/authUtils';
+import { getUserRole } from '@/lib/authUtils';
 
-const column = [
-  { header: 'Info', accessor: 'info' },
-  { header: 'Student Id', accessor: 'studentId', className: 'hidden md:table-cell' },
-  { header: 'Grade', accessor: 'grade', className: 'hidden md:table-cell' },
-  { header: 'Phone', accessor: 'phone', className: 'hidden lg:table-cell' },
-  { header: 'Address', accessor: 'address', className: 'hidden lg:table-cell' },
-  ...(role === 'admin' ? [ { 
-    header: "Actions", 
-    accessor: "actions" }]
-    :
-    []),];
 
 const studentListPage = async({ searchParams}) => {
+    const role = await getUserRole();
+  
   const params = searchParams ? await searchParams : {};
 
   const page = params.page || 1; // Default to 1 if not provided
@@ -62,7 +52,17 @@ const studentListPage = async({ searchParams}) => {
 
  const count = await prisma.student.count({where:query})
  
-
+ const column = [
+  { header: 'Info', accessor: 'info' },
+  { header: 'Student Id', accessor: 'studentId', className: 'hidden md:table-cell' },
+  { header: 'Grade', accessor: 'grade', className: 'hidden md:table-cell' },
+  { header: 'Phone', accessor: 'phone', className: 'hidden lg:table-cell' },
+  { header: 'Address', accessor: 'address', className: 'hidden lg:table-cell' },
+  ...(role === 'admin' ? [ { 
+    header: "Actions", 
+    accessor: "actions" }]
+    :
+    []),];
 
 
   const renderRow = (student) => (
@@ -85,17 +85,20 @@ const studentListPage = async({ searchParams}) => {
       <td className="hidden md:table-cell">{student.phone}</td>
       <td className="hidden md:table-cell">{student.address}</td>
       <td>
-        <div className="flex items-center gap-2">
-          <Link href={`/list/students/${student.student_id}`}>
-            <button className="w-7 h-7 rounded-full flex items-center justify-center bg-[#C3EBFA]">
-              <Image src={"/view.png"} alt="" width={16} height={16} />
-            </button>
-          </Link>
-          {role === 'admin' && (
-            // <button className="w-7 h-7 rounded-full flex items-center justify-center bg-[#CFCEFF]">
-            //   <Image src={"/delete.png"} alt="" width={16} height={16} />
-            // </button>
-            <FormModal type='delete' id={student.student_id} table='student'/>
+      <div className="flex items-center gap-2">
+          {role === "admin" && (
+            <>
+              <FormModal
+                type="update"
+                table="student"
+                data={student}
+              />
+              <FormModal
+                type="delete"
+                table="student"
+                id={student?.id}
+              />
+            </>
           )}
         </div>
       </td>
@@ -116,16 +119,12 @@ const studentListPage = async({ searchParams}) => {
             <button className="w-8 h-8 flex items-center justify-center rounded-full bg-[#FAE27C]">
               <Image src={"/sort.png"} alt="" width={14} height={14} />
             </button>
-            {/* <button className="w-8 h-8 flex items-center justify-center rounded-full bg-[#FAE27C]">
-              <Image src={"/plus.png"} alt="" width={14} height={14} />
-            </button> */}
             <FormModal type='create' table='student'/>
           </div>
         </div>
       </div>
       {/* LIST */}
       <Table column={column} renderRow={renderRow} data={studentData || []} />
-      {/* PAGINATION */}
       <Pagination page={p} count={count} />
     </div>
   );

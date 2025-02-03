@@ -122,6 +122,7 @@ CREATE TABLE "Student" (
     "surname" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "username" TEXT NOT NULL,
+    "email" TEXT NOT NULL,
     "sex" "Sex" NOT NULL,
     "img" TEXT,
     "address" TEXT,
@@ -129,7 +130,7 @@ CREATE TABLE "Student" (
     "sessionId" INTEGER NOT NULL,
     "gradeId" INTEGER NOT NULL,
     "classId" INTEGER NOT NULL,
-    "parentId" TEXT NOT NULL,
+    "parentId" TEXT,
     "paymentStatus" "PaymentStatus" NOT NULL DEFAULT 'NOT_PAID',
     "isDeleted" BOOLEAN NOT NULL DEFAULT false,
     "deletedAt" TIMESTAMP(3),
@@ -197,6 +198,9 @@ CREATE UNIQUE INDEX "Session_name_key" ON "Session"("name");
 -- CreateIndex
 CREATE UNIQUE INDEX "Student_username_key" ON "Student"("username");
 
+-- CreateIndex
+CREATE UNIQUE INDEX "Student_email_key" ON "Student"("email");
+
 -- AddForeignKey
 ALTER TABLE "TeacherSubject" ADD CONSTRAINT "TeacherSubject_teacherId_fkey" FOREIGN KEY ("teacherId") REFERENCES "Teacher"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
@@ -231,7 +235,7 @@ ALTER TABLE "Student" ADD CONSTRAINT "Student_gradeId_fkey" FOREIGN KEY ("gradeI
 ALTER TABLE "Student" ADD CONSTRAINT "Student_classId_fkey" FOREIGN KEY ("classId") REFERENCES "Class"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Student" ADD CONSTRAINT "Student_parentId_fkey" FOREIGN KEY ("parentId") REFERENCES "Parent"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Student" ADD CONSTRAINT "Student_parentId_fkey" FOREIGN KEY ("parentId") REFERENCES "Parent"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Result" ADD CONSTRAINT "Result_studentId_fkey" FOREIGN KEY ("studentId") REFERENCES "Student"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

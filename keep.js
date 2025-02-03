@@ -220,3 +220,17 @@ const resultListPage = async ({ searchParams }) => {
 };
 
 export default resultListPage;
+
+
+
+
+Initialize selected subjects when editing
+// useEffect(() => {
+//   if (data?.subjects) {
+//     setSelectedSubjects(data.subjects.map((s) => s.subjectId));
+//     setValue(
+//       "subjects",
+//       data.subjects.map((s) => s.subjectId)
+//     );
+//   }
+// }, [data, setValue]);
