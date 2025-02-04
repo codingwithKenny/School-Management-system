@@ -5,7 +5,7 @@ const prisma = new PrismaClient();
 async function main() {
   console.log("🌱 Seeding database...");
 
-  // ✅ Create Sessions First (Foreign key for students, grades, etc.)
+  // ✅ Create Sessions First
   const session1 = await prisma.session.upsert({
     where: { id: 1 },
     update: {},
@@ -108,18 +108,9 @@ async function main() {
     },
   });
 
-  // ✅ Create Parents
-  const parent1 = await prisma.parent.upsert({
-    where: { id: "parent_001" },
-    update: {},
-    create: {
-      id: "parent_001",
-      name: "Mrs. Adebayo",
-      email: "adebayo_parent@school.com",
-    },
-  });
+  // ❌ REMOVED Parent Creation
 
-  // ✅ Create Students (Ensure session, grade, class, and parent exist)
+  // ✅ Create Students (No `parentId`)
   await prisma.student.createMany({
     data: [
       {
@@ -130,11 +121,11 @@ async function main() {
         email: "kabby@example.com",
         sex: "MALE",
         img: "avatar.png",
+        phone: 2348023456789, // ✅ Added phone number
         address: "Ikorodu",
         sessionId: session1.id,
         gradeId: grade1.id,
         classId: class1.id,
-        parentId: parent1.id,
         paymentStatus: "PAID",
       },
       {
@@ -145,11 +136,11 @@ async function main() {
         email: "hikky@dev.com",
         sex: "MALE",
         img: "avatar.png",
+        phone: 2348034567890, // ✅ Added phone number
         address: "Cele Oyo",
         sessionId: session1.id,
         gradeId: grade2.id,
         classId: class2.id,
-        parentId: null,
         paymentStatus: "PAID",
       },
     ],

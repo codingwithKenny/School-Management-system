@@ -27,11 +27,11 @@ const studentSchema = z.object({
   email: z.string().email({ message: "Invalid email address" }),
   sex: z.enum(["MALE", "FEMALE"], { message: "Select your gender" }),
   img: z.string().optional(),
+  phone: z.string().regex(/^\d{7,15}$/, "Enter a valid phone number (7-15 digits)") .optional(),
   address: z.string().optional(),
   sessionId: z.union([z.string(), z.number()]).transform((val) => Number(val)), // Convert string to number
   gradeId: z.union([z.string(), z.number()]).transform((val) => Number(val)),
   classId: z.union([z.string(), z.number()]).transform((val) => Number(val)),
-  parentId: z.string().min(1, { message: "Parent ID is required" }),
   paymentStatus: z.enum(["PAID", "NOT_PAID", "PARTIALLY_PAID"], { message: "Select payment status" }),
   subjects: z.array(z.union([z.string(), z.number()])).min(1, { message: "At least one subject must be selected" }).transform((arr) => arr.map(Number)),
 });

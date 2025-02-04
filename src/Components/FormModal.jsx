@@ -1,9 +1,8 @@
 "use client";
 import Image from "next/image";
-import React, { useState, useEffect } from "react";
+import React, { useState} from "react";
 import dynamic from "next/dynamic";
-import { deleteTeacher, deleteStudent, deleteSubject, fetchSubjects } from "@/lib/actions"; 
-import { useDatabase } from "@/app/context/DatabaseProvider";
+import { deleteTeacher, deleteStudent, deleteSubject } from "@/lib/actions"; 
 
 const TeachersForm = dynamic(() => import("./Forms/TeachersForm"), {
   loading: () => <h1>Loading...</h1>,

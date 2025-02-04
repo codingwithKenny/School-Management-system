@@ -1,199 +1,192 @@
 generator client {
-  provider = "prisma-client-js"
+    provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
 }
 
 model Admin {
-  id       String @id
-  name     String
-  email    String @unique
-  password String
+    id       String @id
+    name     String
+    email    String @unique
+    password String
 }
 
 model Teacher {
-  id         String @id
-  surname    String
-  name       String
-  username   String   @unique
-  sex        Sex
-  email      String   @unique
-  img        String?
-  address    String?
-  password   String
-  subjects   TeacherSubject[] // ✅ Many-to-Many relationship
-  results    Result[]
-  classes    Class[] @relation("SupervisorRelation")
-  isDeleted  Boolean @default(false)
-  deletedAt  DateTime?
+    id       String  @id
+    surname  String
+    name     String
+    username String  @unique
+    sex      Sex
+    email    String  @unique
+    img      String?
+    address  String?
+    phone    BigInt?
+    password  String
+    subjects  TeacherSubject[] // ✅ Many-to-Many relationship
+    results   Result[]
+    classes   Class[]          @relation("SupervisorRelation")
+    isDeleted Boolean          @default(false)
+    deletedAt DateTime?
 }
 
 model Parent {
-  id        String @id
-  name      String
-  email     String   @unique
-  children  Student[]
-  isDeleted Boolean @default(false)
-  deletedAt DateTime?
+    id        String    @id
+    name      String
+    email     String    @unique
+    isDeleted Boolean   @default(false)
+    deletedAt DateTime?
 }
 
 model Subject {
-  id         Int @id @default(autoincrement())
-  name       String   @unique
-  teachers   TeacherSubject[] // ✅ Many-to-Many relationship
-  students   StudentSubject[]
-  results    Result[]
-  attendance Attendance[]
-  isDeleted  Boolean @default(false)
-  deletedAt  DateTime?
+    id         Int              @id @default(autoincrement())
+    name       String           @unique
+    teachers   TeacherSubject[] // ✅ Many-to-Many relationship
+    students   StudentSubject[]
+    results    Result[]
+    attendance Attendance[]
+    isDeleted  Boolean          @default(false)
+    deletedAt  DateTime?
 }
 
 model TeacherSubject {
-  teacherId String
-  subjectId Int
-  teacher   Teacher @relation(fields: [teacherId], references: [id])
-  subject   Subject @relation(fields: [subjectId], references: [id])
+    teacherId String
+    subjectId Int
+    teacher   Teacher @relation(fields: [teacherId], references: [id])
+    subject   Subject @relation(fields: [subjectId], references: [id])
 
-  @@id([teacherId, subjectId]) // ✅ Many-to-Many Relationship
+    @@id([teacherId, subjectId]) // ✅ Many-to-Many Relationship
 }
 
 model StudentSubject {
-  studentId String
-  subjectId Int
-  student   Student @relation(fields: [studentId], references: [id])
-  subject   Subject @relation(fields: [subjectId], references: [id])
+    studentId String
+    subjectId Int
+    student   Student @relation(fields: [studentId], references: [id])
+    subject   Subject @relation(fields: [subjectId], references: [id])
 
-  @@id([studentId, subjectId]) // ✅ Many-to-Many Relationship
+    @@id([studentId, subjectId]) // ✅ Many-to-Many Relationship
 }
 
 model Class {
-  id           Int @id @default(autoincrement())
-  name         String   @unique
-  grade        Grade @relation(fields: [gradeId], references: [id])
-  gradeId      Int
-  supervisor   Teacher? @relation("SupervisorRelation", fields: [supervisorId], references: [id])
-  supervisorId String?
-  students     Student[]
-  isDeleted    Boolean @default(false)
-  deletedAt    DateTime?
+    id           Int       @id @default(autoincrement())
+    name         String    @unique
+    grade        Grade     @relation(fields: [gradeId], references: [id])
+    gradeId      Int
+    supervisor   Teacher?  @relation("SupervisorRelation", fields: [supervisorId], references: [id])
+    supervisorId String?
+    students     Student[]
+    isDeleted    Boolean   @default(false)
+    deletedAt    DateTime?
 }
 
 model Grade {
-  id         Int @id @default(autoincrement())
-  name       String   @unique
-  session    Session @relation(fields: [sessionId], references: [id]) // ✅ Link to session
-  sessionId  Int
-  classes    Class[]
-  students   Student[]
-  isDeleted  Boolean @default(false)
-  deletedAt  DateTime?
+    id        Int       @id @default(autoincrement())
+    name      String    @unique
+    session   Session   @relation(fields: [sessionId], references: [id]) // ✅ Link to session
+    sessionId Int
+    classes   Class[]
+    students  Student[]
+    isDeleted Boolean   @default(false)
+    deletedAt DateTime?
 }
-
-
 
 model Session {
-  id         Int @id @default(autoincrement())
-  name       String @unique
-  isCurrent  Boolean @default(false) // ✅ Track active session
-  terms      Term[]
-  results    Result[]
-  grades     Grade[] // ✅ Track grades in this session
-  students   Student[] // ✅ This completes the relation with Student
-  isDeleted  Boolean @default(false)
-  deletedAt  DateTime?
+    id        Int       @id @default(autoincrement())
+    name      String    @unique
+    isCurrent Boolean   @default(false) // ✅ Track active session
+    terms     Term[]
+    results   Result[]
+    grades    Grade[] // ✅ Track grades in this session
+    students  Student[] // ✅ This completes the relation with Student
+    isDeleted Boolean   @default(false)
+    deletedAt DateTime?
 }
 
-
-
 model Term {
-  id         Int @id @default(autoincrement())
-  name       String
-  session    Session @relation(fields: [sessionId], references: [id])
-  sessionId  Int
-  results    Result[]
-  attendance Attendance[]
-  isDeleted  Boolean @default(false)
-  deletedAt  DateTime?
+    id         Int          @id @default(autoincrement())
+    name       String
+    session    Session      @relation(fields: [sessionId], references: [id])
+    sessionId  Int
+    results    Result[]
+    attendance Attendance[]
+    isDeleted  Boolean      @default(false)
+    deletedAt  DateTime?
 }
 
 model Student {
-  id            String @id
-  surname       String
-  name          String
-  username      String   @unique
-  email         String   @unique // ✅ Add email here
-  sex           Sex
-  img           String?
-  address       String?
-  createdAt     DateTime @default(now())
-  session       Session @relation(fields: [sessionId], references: [id]) // ✅ Link to session
-  sessionId     Int
-  grade         Grade @relation(fields: [gradeId], references: [id])
-  gradeId       Int
-  class         Class @relation(fields: [classId], references: [id])
-  classId       Int
-  parent        Parent? @relation(fields: [parentId], references: [id])
-  parentId      String?
-  subjects      StudentSubject[]
-  paymentStatus PaymentStatus @default(NOT_PAID)
-  results       Result[]
-  attendance    Attendance[]
-  isDeleted     Boolean @default(false)
-  deletedAt     DateTime?
+    id            String           @id
+    surname       String
+    name          String
+    username      String           @unique
+    email         String           @unique // ✅ Add email here
+    sex           Sex
+    img           String?
+    address       String?
+    phone         BigInt?
+    createdAt     DateTime         @default(now())
+    session       Session          @relation(fields: [sessionId], references: [id]) // ✅ Link to session
+    sessionId     Int
+    grade         Grade            @relation(fields: [gradeId], references: [id])
+    gradeId       Int
+    class         Class            @relation(fields: [classId], references: [id])
+    classId       Int
+    subjects      StudentSubject[]
+    paymentStatus PaymentStatus    @default(NOT_PAID)
+    results       Result[]
+    attendance    Attendance[]
+    isDeleted     Boolean          @default(false)
+    deletedAt     DateTime?
 }
-
 
 model Result {
-  id               Int @id @default(autoincrement())
-  student          Student @relation(fields: [studentId], references: [id])
-  studentId        String
-  subject          Subject @relation(fields: [subjectId], references: [id])
-  subjectId        Int
-  teacher          Teacher @relation(fields: [teacherId], references: [id])
-  teacherId        String
-  term             Term @relation(fields: [termId], references: [id])
-  termId           Int
-  session          Session @relation(fields: [sessionId], references: [id])  // ✅ Link Result to Session
-  sessionId        Int
-  firstAssessment  Float
-  secondAssessment Float
-  examScore        Float
-  totalScore       Float @default(0)
-  status           ResultStatus @default(PENDING)
-  isDeleted        Boolean @default(false)
-  deletedAt        DateTime?
+    id               Int          @id @default(autoincrement())
+    student          Student      @relation(fields: [studentId], references: [id])
+    studentId        String
+    subject          Subject      @relation(fields: [subjectId], references: [id])
+    subjectId        Int
+    teacher          Teacher      @relation(fields: [teacherId], references: [id])
+    teacherId        String
+    term             Term         @relation(fields: [termId], references: [id])
+    termId           Int
+    session          Session      @relation(fields: [sessionId], references: [id]) // ✅ Link Result to Session
+    sessionId        Int
+    firstAssessment  Float
+    secondAssessment Float
+    examScore        Float
+    totalScore       Float        @default(0)
+    status           ResultStatus @default(PENDING)
+    isDeleted        Boolean      @default(false)
+    deletedAt        DateTime?
 }
 
-
 enum ResultStatus {
-  PENDING
-  FINALIZED
+    PENDING
+    FINALIZED
 }
 
 model Attendance {
-  id        Int @id @default(autoincrement())
-  student   Student @relation(fields: [studentId], references: [id])
-  studentId String
-  subject   Subject @relation(fields: [subjectId], references: [id])
-  subjectId Int
-  term      Term @relation(fields: [termId], references: [id])
-  termId    Int
-  date      DateTime @default(now())
-  status    Boolean
-  isDeleted Boolean @default(false)
-  deletedAt DateTime?
+    id        Int       @id @default(autoincrement())
+    student   Student   @relation(fields: [studentId], references: [id])
+    studentId String
+    subject   Subject   @relation(fields: [subjectId], references: [id])
+    subjectId Int
+    term      Term      @relation(fields: [termId], references: [id])
+    termId    Int
+    date      DateTime  @default(now())
+    status    Boolean
+    isDeleted Boolean   @default(false)
+    deletedAt DateTime?
 }
 
 enum Sex {
-  MALE
-  FEMALE
+    MALE
+    FEMALE
 }
 
 enum PaymentStatus {
-  PAID
-  NOT_PAID
-  PARTIALLY_PAID
+    PAID
+    NOT_PAID
+    PARTIALLY_PAID
 }

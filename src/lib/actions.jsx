@@ -1,7 +1,9 @@
 "use server";
 import { clerkClient } from "@clerk/clerk-sdk-node";
 import prisma from "@/lib/prisma";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
+
+
 
 export const createTeacher = async (data) => {
   try {
@@ -47,8 +49,6 @@ export const createTeacher = async (data) => {
     } else {
       console.warn("No subjects provided.");
     }
-
-    //Refresh UI
     revalidatePath("/list/teachers");
     return { success: true, message: "Teacher added successfully!" };
 
@@ -61,7 +61,7 @@ export const createTeacher = async (data) => {
     return { success: false, error: "An unexpected error occurred." };
   }
 };
-// / UPDATE TEACHER
+
 export const updateTeacher = async (teacherId, data) => {
   try {
     const existingTeacher = await prisma.teacher.findUnique({
@@ -102,7 +102,7 @@ export const updateTeacher = async (teacherId, data) => {
         name: data.name,
         username: data.username,
         email: data.email,
-        sex: formattedSex,
+        sex: data.sex,
         address: data.address || null,
       },
     });
@@ -112,13 +112,11 @@ export const updateTeacher = async (teacherId, data) => {
     if (Array.isArray(data.subjects)) {
       console.log("Updating teacher subjects...");
 
-      //Remove old subjects
       await prisma.teacherSubject.deleteMany({
         where: { teacherId },
       });
 
       if (data.subjects.length > 0) {
-        // Add new subjects
         const subjectData = data.subjects.map((subjectId) => ({
           teacherId,
           subjectId: parseInt(subjectId, 10),
@@ -144,22 +142,19 @@ export const updateTeacher = async (teacherId, data) => {
     return { success: false, error: "An unexpected error occurred." };
   }
 };
-//Soft Delete Function
+
 export const deleteTeacher = async (teacherId) => {
   try {
-    console.log(`🟡 Soft Deleting Teacher ID: ${teacherId}...`);
+    console.log(`Deleting Teacher ID: ${teacherId}...`);
 
-    // ✅ Step 1: Check if Teacher Exists
     const existingTeacher = await prisma.teacher.findUnique({
       where: { id: teacherId },
     });
 
     if (!existingTeacher) {
-      console.error("❌ Error: Teacher Not Found.");
+      console.error("Error: Teacher Not Found.");
       return { success: false, error: "Teacher not found." };
     }
-
-    // ✅ Step 2: Update `isDeleted` to `true` and set `deletedAt`
     await prisma.teacher.update({
       where: { id: teacherId },
       data: {
@@ -168,23 +163,18 @@ export const deleteTeacher = async (teacherId) => {
       },
     });
 
-    console.log("✅ Teacher Soft Deleted Successfully.");
+    console.log("Teacher Soft Deleted Successfully.");
     return { success: true, message: "Teacher soft deleted successfully!" };
   } catch (error) {
-    console.error("❌ Error Soft Deleting Teacher:", error);
-    return { success: false, error: "An unexpected error occurred." };
+    console.error("Error Soft Deleting Teacher:", error);
+    return { success: false, error: "An unexpted error occurred." };
   }
 };
-
-
-
-
+// ...............................................................................................................
 export async function createStudent(data) {
-  console.log(data)
+  console.log(data, 'heyyyyyyyyyyyyyyyy')
   try {
-    console.log("🟡 Checking if student exists in Clerk and Prisma...");
-
-    // ✅ Check if username exists in Prisma
+    console.log("if student exists in Clerk and Prisma...");
     const existingStudent = await prisma.student.findUnique({
       where: { username: data.username },
     });
@@ -193,16 +183,10 @@ export async function createStudent(data) {
       return { success: false, error: "Username is already taken." };
     }
 
-    console.log("🟢 Checking if session, grade, and class exist...");
-
-    // ✅ Convert IDs to integers
     const sessionId = parseInt(data.sessionId, 10);
     const gradeId = parseInt(data.gradeId, 10);
     const classId = parseInt(data.classId, 10);
     
-    const parentId = data.parentId ? String(data.parentId) : null; // ✅ Parent can be null
-
-    // ✅ Validate if session, grade, and class exist
     const [existingSession, existingGrade, existingClass] = await Promise.all([
       prisma.session.findUnique({ where: { id: sessionId } }),
       prisma.grade.findUnique({ where: { id: gradeId } }),
@@ -213,18 +197,8 @@ export async function createStudent(data) {
     if (!existingGrade) return { success: false, error: "Invalid grade selected." };
     if (!existingClass) return { success: false, error: "Invalid class selected." };
 
-    // ✅ Check if parent exists (if provided)
-    let existingParent = null;
-    if (parentId) {
-      existingParent = await prisma.parent.findUnique({ where: { id: parentId } });
-      if (!existingParent) {
-        return { success: false, error: "Invalid parent selected." };
-      }
-    }
+    console.log("Checking if subjects exist...");
 
-    console.log("🟢 Checking if subjects exist...");
-
-    // ✅ Validate subjects
     if (!Array.isArray(data.subjects) || data.subjects.length === 0) {
       return { success: false, error: "At least one subject must be selected." };
     }
@@ -239,155 +213,186 @@ export async function createStudent(data) {
       return { success: false, error: "One or more selected subjects are invalid." };
     }
 
-    console.log("🟢 Creating Student in Clerk...");
+    console.log("Creating Student in Clerk...");
 
     const generatePassword = (surname) => {
-      return surname + Math.floor(1000 + Math.random() * 9000) + "!"; // Ensures uniqueness
+      return surname + Math.floor(1000 + Math.random() * 9000) + "!"; 
     };
     
-    
-
-    // ✅ Create user in Clerk
-    const student = await clerkClient.users.createUser({
-      username: data.username.trim(), // Ensure no spaces or special characters
-      emailAddress: [data.email.trim()], // Ensure valid email format
-      password: generatePassword(data.surname), // Ensure password meets Clerk's security standards
-      publicMetadata: { role: "student" }, // Assign role in metadata
+        const student = await clerkClient.users.createUser({
+      username: data.username.trim(), 
+      emailAddress: [data.email.trim()], 
+      password: generatePassword(data.surname), 
+      publicMetadata: { role: "student" }, 
     });
   
-    console.log("🟢 Clerk User Created:", student);
-
-    // ✅ Create student in Prisma with Clerk's userId
+    console.log("Clerk User Created:", student);
     const newStudent = await prisma.student.create({
       data: {
-        id: student.id, // Use Clerk's user ID
+        id: student.id, 
         surname: data.surname,
         name: data.name,
         username: data.username,
         email: data.email,
+        phone: data.phone,
         sex: data.sex.toUpperCase(),
         img: data.img || null,
         address: data.address || null,
         sessionId,
         gradeId,
         classId,
-        parentId: parentId || null, // ✅ Set parentId to null if not provided
         subjects: {
           create: validSubjectIds.map((subjectId) => ({
             subject: { connect: { id: subjectId } },
           })),
-        }, // ✅ Linking subjects
+        }, 
       },
     });
-
-    console.log("✅ Student Created:", newStudent);
-
-    // Refresh UI
     revalidatePath("/list/students");
     return { success: true, message: "Student created successfully!" };
   }catch (error) {
-    console.error("❌ Error Creating Student in Clerk:", error);
+    console.error("Error Creating Student in Clerk:", error);
   
     if (error.errors) {
-      console.error("📌 Clerk Validation Errors:", JSON.stringify(error.errors, null, 2));
+      console.error("Clerk Validation Errors:", JSON.stringify(error.errors, null, 2));
     }
   
     return { success: false, error: "Failed to create student. Please check input values." };
   }
   
 }
-
-export async function createParent(data) {
+export const updateStudent = async (studentId, data) => {
   try {
-    console.log("🟡 Checking if parent exists:", data.name);
-
-    // ✅ Check if parent already exists
-    let parent = await prisma.parent.findFirst({
-      where: { name: data.name.trim() },
+    const existingStudent = await prisma.student.findUnique({
+      where: { id: studentId },
     });
 
-    if (parent) {
-      console.log("✅ Parent already exists:", parent.id);
-      return parent; // ✅ Return existing parent
+    if (!existingStudent) {
+      console.error("Error: Student Not Found.");
+      return { success: false, error: "Student not found." };
     }
-
-    console.log("🟢 Parent not found, creating new parent...");
-
-    // ✅ Create a new parent
-    const newParent = await prisma.parent.create({
-      data: {
-        name: data.name.trim(),
-      },
-    });
-
-    console.log("✅ New Parent Created:", newParent);
-    return newParent;
-  } catch (error) {
-    console.error("❌ Error creating parent:", error);
-    return null;
-  }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// CREATE SUBJECT WITH TEACHER ASSIGNMENT
-export const createSubject = async (data) => {
-  console.log(data,"helolooooooooooooooooo")
-  try {
-    // Step 1: Create Subject
-    const newSubject = await prisma.subject.create({
-      data: {
-        name: data.name,
-      },
-    });
-
-    console.log("Created Subject:", newSubject);
-
-    // Step 2: Assign Teacher to Subject (if provided)
-    if (data.teacherId) {
-      await prisma.teacherSubject.create({
-        data: {
-          teacherId: data.teacherId,
-          subjectId: newSubject.id,
+    if (data.email !== existingStudent.email || data.username !== existingStudent.username) {
+      const duplicateStudent= await prisma.student.findFirst({
+        where: {
+          OR: [{ email: data.email }, { username: data.username }],
+          NOT: { id: studentId },
         },
       });
 
-      console.log(`✅ Assigned Teacher ${data.teacherId} to Subject ${newSubject.id}`);
+      if (duplicateStudent) {
+        if (duplicateStudent.email === data.email) {
+          return { success: false, error: "A teacher with this email already exists." };
+        }
+        if (duplicateStudent.username === data.username) {
+          console.error("Error: Duplicate Username Detected.");
+          return { success: false, error: "A teacher with this username already exists." };
+        }
+      }
+    }
+    await clerkClient.users.updateUser(studentId, {
+      emailAddress: [data.email],
+      username: data.username,
+    });
+
+    const updatedStudent = await prisma.student.update({
+      where: { id: studentId },
+      data: {
+        surname: data.surname,
+        phone: data.phone,
+        name: data.name,
+        username: data.username,
+        email: data.email,
+        sex: data.sex,
+        address: data.address || null,
+      },
+    });
+
+    console.log("Teacher Updated:", updatedStudent);
+
+    if (Array.isArray(data.subjects)) {
+      console.log("Updating teacher subjects...");
+
+      await prisma.studentSubject.deleteMany({
+        where: { studentId },
+      });
+
+      if (data.subjects.length > 0) {
+        const subjectData = data.subjects.map((subjectId) => ({
+          studentId,
+          subjectId: parseInt(subjectId, 10),
+        }));
+
+        await prisma.studentSubject.createMany({
+          data: subjectData,
+          skipDuplicates: true,
+        });
+
+        console.log("Subjects Updated:", subjectData);
+      } else {
+        console.warn("No subjects provided.");
+      }
     }
 
-    revalidatePath("/list/subjects"); // Refresh UI
-    return { success: true };
+    // Refresh UI
+    revalidatePath("/list/teachers");
+    return { success: true, message: "Teacher updated successfully!" };
+
   } catch (error) {
-    if (error.code === "P2002") {
-      return { success: false, error: "Subject already exists." };
-    }
-    console.error("Error creating subject:", error);
+    console.error("Error Updating Teacher:", error);
     return { success: false, error: "An unexpected error occurred." };
   }
 };
 
+export const deleteStudent= async (studentId) => {
+  try {
+    console.log(`Deleting Student ID: ${studentId}...`);
 
-// UPDATE SUBJECT
+    const existingStudent = await prisma.student.findUnique({
+      where: { id: studentId },
+    });
+
+    if (!existingStudent) {
+      console.error("Error: Student Not Found.");
+      return { success: false, error: "Teacher not found." };
+    }
+    await prisma.student.update({
+      where: { id: studentId },
+      data: {
+        isDeleted: true,
+        deletedAt: new Date(),
+      },
+    });
+
+    console.log("student Soft Deleted Successfully.");
+    return { success: true, message: "student soft deleted successfully!" };
+  } catch (error) {
+    console.error("Error Soft Deleting student:", error);
+    return { success: false, error: "An unexpted error occurred." };
+  }
+};
+// ...................................................................................................................
+export const createSubject = async (data) => {
+  try {
+    const existingSubject = await prisma.subject.findUnique({
+      where: { name: data.name.trim() },
+    });
+
+    if (existingSubject) {
+      return { success: false, error: "Subject already available." };
+    }
+    const newSubject = await prisma.subject.create({
+      data: { name: data.name.trim() },
+    });
+    revalidateTag("subjects");
+
+    return { success: true, message: "Subject created successfully!" };
+
+  } catch (error) {
+    console.error("Error Creating Subject:", error);
+
+    return { success: false, error: "An unexpected error occurred while creating the subject." };
+  }
+};
 export const updateSubject = async (id, data) => {
   try {
     await prisma.subject.update({
@@ -405,9 +410,65 @@ export const updateSubject = async (id, data) => {
   }
 };
 
-// DELETE SUBJECT
+export const deleteSubject = async (id) => {
+  try {
+    const existingSubject = await prisma.subject.findUnique({
+      where:{id}
+    })
 
-// SOFT DELETE SUBJECT
+    if (!existingSubject) {
+      return { success: false, error: "Subject not found." };
+    }
+    await prisma.subject.update({
+      where: { id },
+      data: { isDeleted: true, deletedAt: new Date() },
+    })
+    revalidateTag("subjects");
+    console.log("subject successfully deleted")
+    return { success: true };
+  } catch (error) {
+    console.error("Error deleting subject:", error);
+    return { success: false, error: "An unexpected error occurred." };
+  }
+};
+// .........................................................................................................................
+
+
+
+
+
+
+
+export const fetchSubjectById = async (subjectId) => {
+  try {
+    const subject = await prisma.subject.findUnique({
+      where: { id: subjectId },
+      include: {
+        teachers: {
+          include: {
+            teacher: true, // ✅ Fetch actual teacher details
+          },
+        },
+      },
+    });
+
+    if (!subject) {
+      return { success: false, error: "Subject not found." };
+    }
+
+    return { success: true, data: subject };
+  } catch (error) {
+    console.error("Error fetching subject:", error);
+    return { success: false, error: "An unexpected error occurred." };
+  }
+};
+
+
+
+
+
+
+
 
 
 // GET ALL THE RESULT 

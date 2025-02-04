@@ -14,6 +14,7 @@
     "@clerk/nextjs": "^6.10.2",
     "@hookform/resolvers": "^3.10.0",
     "@prisma/client": "^6.2.1",
+    "@radix-ui/react-select": "^2.1.5",
     "@radix-ui/react-slot": "^1.1.1",
     "autoprefixer": "^10.4.20",
     "class-variance-authority": "^0.7.1",

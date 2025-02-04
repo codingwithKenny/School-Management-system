@@ -40,18 +40,27 @@ const studentListPage = async({ searchParams}) => {
     }
 
   // FETCH STUDENT FROM DATABASE AND COUNT
- const studentData = await prisma.student.findMany({
-  where:query,
-  include:{
-    grade: true,
-    class: true,
-  },
-  take:ITEM_PER_PAGE,
-  skip: (p-1)* ITEM_PER_PAGE
- })
+  const studentData = await prisma.student.findMany({
+    where: {
+      ...query,
+      isDeleted: false, // ✅ Exclude students who are marked as deleted
+    },
+    include: {
+      grade: true,
+      class: true,
+    },
+    take: ITEM_PER_PAGE,
+    skip: (p - 1) * ITEM_PER_PAGE,
+  });
+  
 
- const count = await prisma.student.count({where:query})
- 
+  const count = await prisma.student.count({
+    where: {
+      ...query,
+      isDeleted: false, // ✅ Only count students who are NOT deleted
+    },
+  });
+   
  const column = [
   { header: 'Info', accessor: 'info' },
   { header: 'Student Id', accessor: 'studentId', className: 'hidden md:table-cell' },

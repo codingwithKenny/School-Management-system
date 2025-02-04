@@ -6,7 +6,7 @@ const SelectField = ({
   label,
   options = [],
   control,
-  multiple = false, // ✅ Supports both single and multiple selections
+  multiple = false, 
   placeholder = "-- Select Option --",
 }) => {
   const {
@@ -16,14 +16,12 @@ const SelectField = ({
 
   const [selectedValues, setSelectedValues] = useState(value || (multiple ? [] : ""));
 
-  // ✅ Only initialize value once on mount
   useEffect(() => {
     if (value) {
       setSelectedValues(value);
     }
-  }, []); // ✅ Empty dependency array ensures it runs only once
+  }, []);
 
-  // Handle selection (single or multiple)
   const handleSelection = (e) => {
     const selectedValue = String(e.target.value);
 
@@ -31,12 +29,9 @@ const SelectField = ({
       if (!selectedValues.includes(selectedValue)) {
         const updatedValues = [...selectedValues, selectedValue];
         setSelectedValues(updatedValues);
-        onChange(updatedValues); // ✅ Update form state
+        onChange(updatedValues);
       }
-    } else {
-      setSelectedValues(selectedValue);
-      onChange(selectedValue); // ✅ Update form state
-    }
+    } 
   };
 
   // Handle removal (only for multiple selections)

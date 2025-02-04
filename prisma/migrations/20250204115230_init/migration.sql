@@ -27,6 +27,7 @@ CREATE TABLE "Teacher" (
     "email" TEXT NOT NULL,
     "img" TEXT,
     "address" TEXT,
+    "phone" BIGINT,
     "password" TEXT NOT NULL,
     "isDeleted" BOOLEAN NOT NULL DEFAULT false,
     "deletedAt" TIMESTAMP(3),
@@ -126,11 +127,11 @@ CREATE TABLE "Student" (
     "sex" "Sex" NOT NULL,
     "img" TEXT,
     "address" TEXT,
+    "phone" BIGINT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "sessionId" INTEGER NOT NULL,
     "gradeId" INTEGER NOT NULL,
     "classId" INTEGER NOT NULL,
-    "parentId" TEXT,
     "paymentStatus" "PaymentStatus" NOT NULL DEFAULT 'NOT_PAID',
     "isDeleted" BOOLEAN NOT NULL DEFAULT false,
     "deletedAt" TIMESTAMP(3),
@@ -233,9 +234,6 @@ ALTER TABLE "Student" ADD CONSTRAINT "Student_gradeId_fkey" FOREIGN KEY ("gradeI
 
 -- AddForeignKey
 ALTER TABLE "Student" ADD CONSTRAINT "Student_classId_fkey" FOREIGN KEY ("classId") REFERENCES "Class"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "Student" ADD CONSTRAINT "Student_parentId_fkey" FOREIGN KEY ("parentId") REFERENCES "Parent"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Result" ADD CONSTRAINT "Result_studentId_fkey" FOREIGN KEY ("studentId") REFERENCES "Student"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

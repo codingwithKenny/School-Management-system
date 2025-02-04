@@ -6,53 +6,65 @@ import { subjectSchema } from "@/lib/formValidation";
 import { createSubject, updateSubject } from "@/lib/actions";
 import { useEffect, useState } from "react";
 
-const SubjectForm = ({ type, data, teachers }) => {
+const SubjectForm = ({ type, data }) => {
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors },
   } = useForm({
     resolver: zodResolver(subjectSchema),
   });
 
-  // HANDLE SUCCESS AND ERROR MESSAGE
+  const assignedTeachers =
+  data?.teachers?.length > 0
+    ? data.teachers.map((t) => `${t.teacher.name} ${t.teacher.surname}`).join(", ")
+    : "No assigned teacher";
+
+  // useEffect(() => {
+  //   if (assignedTeacher) {
+  //     setValue("teacherName", `${assignedTeacher.name} ${assignedTeacher.surname}`);
+  //     setValue("teacherId", assignedTeacher.id);
+  //   }
+  // }, [assignedTeacher, setValue]);
+
+  // ✅ State for success & error messages
   const [state, setState] = useState({
     success: false,
     error: false,
+    errorMessage: "",
   });
 
   const onSubmit = handleSubmit(async (formData) => {
-    console.log("Form Submitted:", formData); // This should log when you submit
+    console.log("Form Submitted:", formData);
 
     try {
       let response;
 
       if (type === "create") {
-        response = await createSubject(formData); // Server action
+        response = await createSubject(formData);
       } else if (type === "update" && data?.id) {
-        response = await updateSubject(data.id, formData); // Server action
+        response = await updateSubject(data.id, formData);
       } else {
-        console.error("Error: No subject ID found for update.");
-        setState({ success: false, error: true });
+        setState({ success: false, error: true, errorMessage: "Invalid subject ID." });
         return;
       }
 
       if (response.success) {
-        setState({ success: true, error: false });
+        setState({ success: true, error: false, errorMessage: "" });
       } else {
-        setState({ success: false, error: true });
+        setState({ success: false, error: true, errorMessage: response.error });
       }
     } catch (error) {
-      console.error("Error submitting form:", error);
-      setState({ success: false, error: true });
+      setState({ success: false, error: true, errorMessage: "An unexpected error occurred." });
     }
   });
 
   useEffect(() => {
     if (state.success) {
       setTimeout(() => {
-        window.location.reload(); // Full-page reload if needed
-      }, 300);
+        window.location.reload();
+      }, 500);
     }
   }, [state.success]);
 
@@ -61,6 +73,7 @@ const SubjectForm = ({ type, data, teachers }) => {
       <h1 className="text-xl font-semibold">
         {type === "create" ? "Create New Subject" : "Update Subject"}
       </h1>
+
       <div className="flex flex-wrap justify-between gap-2">
         <InputField
           label="Subject Name"
@@ -71,31 +84,31 @@ const SubjectForm = ({ type, data, teachers }) => {
         />
       </div>
 
-      {/* Teacher Selection */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700">Assign Teacher</label>
-        <select
-          {...register("teacherId")}
-          className="w-full p-2 border rounded-md"
-          defaultValue={data?.teacherId}
-        >
-          <option value="">-- Select a Teacher --</option>
-          {teachers?.map((teacher) => (
-            <option key={teacher.id} value={teacher.id}>
-              {teacher.name} {teacher.surname} ({teacher.email})
-            </option>
-          ))}
-        </select>
-        {errors.teacherId && <p className="text-red-500">{errors.teacherId.message}</p>}
-      </div>
+      {/* ✅ Assigned Teacher Display */}
+      {type === "create" ? (
+        <p className="text-sm text-purple-500">
+          Teacher will be assigned shortly, go ahead and create a new subject.
+        </p>
+      ) : (
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Assigned Teacher</label>
+          <input
+            type="text"
+            {...register("teacherName")}
+            defaultValue={assignedTeachers}
+            className="w-full p-2 border rounded-md bg-gray-100"
+            readOnly
+          />
+          <input type="hidden" {...register("teacherId")} />
+        </div>
+      )}
 
-      {/* Success and Error Messages */}
       {state.success && (
         <p className="text-green-500">
           Subject {type === "create" ? "created" : "updated"} successfully!
         </p>
       )}
-      {state.error && <p className="text-red-500">Something went wrong.</p>}
+      {state.error && <p className="text-red-500">{state.errorMessage || "Something went wrong."}</p>}
 
       <button
         type="submit"

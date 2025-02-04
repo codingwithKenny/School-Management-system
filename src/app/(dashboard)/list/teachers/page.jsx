@@ -7,16 +7,13 @@ import TableSearch from "@/components/TableSearch";
 import prisma from "@/lib/prisma";
 import { ITEM_PER_PAGE } from "@/lib/settings";
 import { getUserRole } from "@/lib/authUtils";
-// import {role } from '@/lib/authUtils';
 
 export default async function TeacherListPage({ searchParams }) {
   const params = searchParams ? await searchParams : {};
   const role = await getUserRole();
 
-  const page = params.page || 1; // Default to 1 if not provided
+  const page = params.page || 1;
   const p = parseInt(page);
-
-  // Construct query conditions
   const query = {};
   if (params) {
     for (const [key, value] of Object.entries(params)) {
@@ -27,23 +24,21 @@ export default async function TeacherListPage({ searchParams }) {
               some: { classId: parseInt(value) },
             };
             break;
-          // Add additional filters as needed
+          // 
           case "search":
             query.name = { contains: value, mode: "insensitive" };
             break;
-          // Add additional filters as needed
+          // 
           default:
             break;
         }
       }
     }
   }
-
-  // Fetch teachers and count
   const teachersData = await prisma.teacher.findMany({
     where: {
       ...query,
-      isDeleted: false, // ✅ Only fetch active teachers
+      isDeleted: false, 
     },
     include: {
       subjects: {
@@ -58,16 +53,15 @@ export default async function TeacherListPage({ searchParams }) {
   const count = await prisma.teacher.count({
     where: {
       ...query,
-      isDeleted: false, // ✅ Only count active teachers
+      isDeleted: false, 
     },
   });
 
   const subjects = await prisma.subject.findMany({
     select: { id: true, name: true },
-  }); // ✅ Fetch All Subjects
+  });
   console.log(subjects, "subject logged from teacherListPage");
 
-  // Table column definitions
   const column = [
     { header: "Info", accessor: "info" },
     { header: "Teacher Id", accessor: "id", className: "hidden md:table-cell" },
@@ -97,13 +91,11 @@ export default async function TeacherListPage({ searchParams }) {
       : []),
   ];
 
-  // Render table rows href={`/list/teachers/${teacher.id}`
   const renderRow = (teacher) => (
     <tr
       key={teacher.id}
       className="text-xs border-b border-grey-200 even:bg-slate-50 hover:bg-[#F1F0FF]"
     >
-      {/* Teacher Info (Clickable Link) */}
       <td className="flex items-center gap-4 p-4">
         <Link
           href={`/list/teachers/${teacher.id}`}
@@ -136,7 +128,6 @@ export default async function TeacherListPage({ searchParams }) {
       <td className="hidden md:table-cell">{teacher.phone || "N/A"}</td>
       <td className="hidden md:table-cell">{teacher.address || "N/A"}</td>
 
-      {/* Actions (Admin Only) */}
       <td>
         <div className="flex items-center gap-2">
           {role === "admin" && (
@@ -157,7 +148,6 @@ export default async function TeacherListPage({ searchParams }) {
       </td>
     </tr>
   );
-  // Page rendering
   return (
     <div className="bg-white rounded-md p-4 flex-1 m-4 mt-0">
       <div className="flex items-center justify-between">

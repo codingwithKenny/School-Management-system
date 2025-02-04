@@ -6,7 +6,7 @@ import { ITEM_PER_PAGE } from "@/lib/settings";
 import prisma from "@/lib/prisma";
 import Image from "next/image";
 import React from "react";
-import { role } from "@/lib/authUtils";
+import { getUserRole, role } from "@/lib/authUtils";
 
 const column = [
   { header: "Subject Name", accessor: "name" },
@@ -26,6 +26,8 @@ const column = [
 ];
 
 const subjectListPage = async ({ searchParams }) => {
+  const role = await getUserRole();
+
   const params = searchParams ? await searchParams : {};
   const page = params?.page || 1;
   const p = parseInt(page);
@@ -43,13 +45,15 @@ const subjectListPage = async ({ searchParams }) => {
     include: {
       teachers: {
         include: {
-          teacher: true, // ✅ Fetch actual teacher data from TeacherSubject relation
+          teacher: true,
         },
       },
     },
+    orderBy: { id: "desc" }, // ✅ Newest subjects appear first
     take: ITEM_PER_PAGE,
     skip: (p - 1) * ITEM_PER_PAGE,
   });
+  
 
   const count = await prisma.subject.count({ where: query });
 
@@ -64,7 +68,6 @@ const subjectListPage = async ({ searchParams }) => {
           <h3 className="font-semibold">{subject.name}</h3>
         </div>
       </td>
-      {/* ✅ Ensure all teachers are displayed correctly */}
       <td className="hidden md:table-cell">
         {subject.teachers.length > 0
           ? subject.teachers.map(ts => ts.teacher.name).join(", ")
@@ -103,7 +106,7 @@ const subjectListPage = async ({ searchParams }) => {
       </div>
 
       {/* LIST */}
-      <Table column={column} renderRow={renderRow} data={subjectData || []} />
+      <Table column={column} renderRow={renderRow} data={subjectData|| []} />
 
       {/* PAGINATION */}
       <Pagination count={count} page={p} />
