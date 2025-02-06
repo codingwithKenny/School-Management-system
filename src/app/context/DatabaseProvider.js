@@ -11,7 +11,8 @@ export const DatabaseProvider = ({ children }) => {
     grades: [],
     classes: [],
     subjects: [],
-    parents: [], // ✅ Include parents
+    parents: [],
+    teachers:[] // ✅ Include parents
   });
 
   const [loading, setLoading] = useState(true);

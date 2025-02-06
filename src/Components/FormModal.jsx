@@ -13,11 +13,15 @@ const StudentForm = dynamic(() => import("./Forms/StudentForm"), {
 const SubjectForm = dynamic(() => import("./Forms/SubjectForm"), {
   loading: () => <h1>Loading...</h1>,
 });
+const ClassTeacherForm = dynamic(() => import("./Forms/ClassteacherForm"), {
+  loading: () => <h1>Loading...</h1>,
+});
 
 const forms = {
   teacher: (type, data) => <TeachersForm type={type} data={data}/>,
   student: (type, data) => <StudentForm type={type} data={data} />,
   subject: (type, data) => <SubjectForm type={type} data={data} />,
+  classTeacher: (type, data, memoizedClasses) => <ClassTeacherForm type={type} data={data}  memoizedClasses={memoizedClasses || []} />,
 };
 
 const deleteFunctions = {
@@ -26,7 +30,7 @@ const deleteFunctions = {
   subject: deleteSubject,
 };
 
-const FormModal = ({ table, type, data, id }) => {
+const FormModal = ({ table, type, data, id, memoizedClasses }) => {
   const size = type === "create" ? "w-7 h-7" : "w-8 h-8";
   const bgColor = type === "create" ? "#FAE27C" : type === "update" ? "#C3EBFA" : "#CFCEFF";
 
@@ -86,7 +90,7 @@ const FormModal = ({ table, type, data, id }) => {
                 {state.error && <p className="text-red-500 text-center">Failed to delete. Try again.</p>}
               </div>
             ) : (
-              forms[table]?.(type, data) || <h1>Invalid Form</h1>
+              forms[table]?.(type, data,memoizedClasses) || <h1>Invalid Form</h1>
             )}
 
             <div className="absolute top-12 right-4 cursor-pointer" onClick={() => setOpen(false)}>

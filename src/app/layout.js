@@ -20,7 +20,7 @@ export default function RootLayout({ children }) {
       </head>
       <body className="font-sans">
         <ClerkProvider>
-          <DatabaseProvider>  {/* ✅ Wrap the entire app with DatabaseProvider */}
+          <DatabaseProvider> 
             {children}
           </DatabaseProvider>
         </ClerkProvider>

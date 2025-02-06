@@ -30,6 +30,12 @@ export async function getDatabaseData() {
     });
     console.log("✅ Subjects Fetched:", subjects.length);
 
+    // 🔵 Fetch Teachers
+    const teachers = await prisma.teacher.findMany({
+      select: { id: true, surname:true, name: true },
+    });
+    console.log("✅ Teacher Fetched:", teachers.length);
+
     // 🔵 Fetch Parents
     const parents = await prisma.parent.findMany({
       select: { id: true, name: true },
@@ -38,7 +44,7 @@ export async function getDatabaseData() {
 
     return {
       success: true,
-      data: { sessions, grades, classes, subjects, parents },
+      data: { sessions, grades, classes, subjects, parents, teachers },
     };
   } catch (error) {
     console.error("❌ Prisma Error:", error);

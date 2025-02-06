@@ -7,7 +7,7 @@ import { useDatabase } from "@/app/context/DatabaseProvider";
 const GradeComponent = ({ role }) => {
   const { databaseData } = useDatabase();
   const sessions = databaseData.sessions || [];
-
+  const [loading, setLoading] = useState(false);
   const [selectedSession, setSelectedSession] = useState(null);
   const [grades, setGrades] = useState([]);
   const [selectedGrade, setSelectedGrade] = useState(null);
@@ -17,10 +17,14 @@ const GradeComponent = ({ role }) => {
 
   // ✅ Fetch grades when session is selected
   useEffect(() => {
-    const delayFetch = setTimeout(async () => {
+    if (!selectedSession || isNaN(selectedSession)) return;
+    setLoading(true); // ✅ Start loading
+      const delayFetch = setTimeout(async () => {
       if (selectedSession) {
         const sessionGrades = await fetchGrades(selectedSession);
+        console.log("Session:", selectedSession, "Grades:", sessionGrades);
         setGrades(sessionGrades);
+        setLoading(false); // ✅ Stop loading after data arrives
         setSelectedGrade(null);
         setClasses([]);
         setSelectedClass(null);
@@ -78,90 +82,97 @@ const GradeComponent = ({ role }) => {
         <div className="flex flex-wrap justify-around mt-5">
           <div className="flex flex-wrap justify-around">
             {/* GRADES */}
+            
             <div className="mb-6 bg-purple-200 rounded-md p-4 mr-10">
               <div className="flex flex-wrap items-center justify-between">
                 <h2 className="text-xl font-semibold text-gray-700 mb-3">
                   📚 Grade Level
                 </h2>
-                <FormModal type="create" className="bg-white" />
+                <FormModal type="create"  table="classTeacher" className="bg-white" />
               </div>
+              
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                {memoizedGrades.length > 0 ? (
-                  memoizedGrades.map((grade) => (
-                    <button
-                      key={grade.id}
-                      className={`p-4 md:p-5 ${
-                        selectedGrade === grade.id
-                          ? "bg-indigo-600 text-white"
-                          : "bg-gray-100"
-                      } rounded-lg shadow-md transition-all duration-300 border border-gray-300 hover:bg-indigo-600 hover:text-white hover:border-indigo-700 font-medium text-gray-800 hover:shadow-lg active:scale-95`}
-                      onClick={() => handleGradeClick(grade.id)}
-                    >
-                      {grade.name}
-                    </button>
-                  ))
-                ) : (
-                  <p className="text-gray-500">No grades found for this session.</p>
-                )}
-              </div>
+  {loading ? (
+    <p className="text-gray-500">Loading grades...</p>
+  ) : memoizedGrades.length > 0 ? (
+    memoizedGrades.map((grade) => (
+      <button
+        key={grade.id}
+        className={`p-4 md:p-5 ${
+          selectedGrade === grade.id ? "bg-indigo-600 text-white" : "bg-gray-100"
+        } rounded-lg shadow-md transition-all duration-300 border border-gray-300 hover:bg-indigo-600 hover:text-white hover:border-indigo-700 font-medium text-gray-800 hover:shadow-lg active:scale-95`}
+        onClick={() => handleGradeClick(grade.id)}
+      >
+        {grade.name}
+      </button>
+    ))
+  ) : (
+    <p className="text-gray-500">No grades found for this session.</p>
+  )}
+</div>
+
             </div>
 
             {/* CLASSES */}
             {selectedGrade && (
-              <div className="mb-6 bg-purple-200 rounded-md p-4">
-                <div className="flex flex-wrap justify-between items-center">
-                  <h2 className="text-xl font-semibold text-gray-700 mb-3">
-                    🏫 Select a Class
-                  </h2>
-                  <FormModal type="create" />
-                </div>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  {memoizedClasses.length > 0 ? (
-                    memoizedClasses.map((cls) => (
-                      <button
-                        key={cls.id}
-                        className={`p-4 md:p-5 ${
-                          selectedClass === cls.id
-                            ? "bg-green-600 text-white"
-                            : "bg-gray-100"
-                        } rounded-lg shadow-md transition-all duration-300 border border-gray-300 hover:bg-green-600 hover:text-white hover:border-green-700 font-medium text-gray-800 hover:shadow-lg active:scale-95`}
-                        onClick={() => handleStudentShow(cls.id)}
-                      >
-                        {cls.name}
-                      </button>
-                    ))
-                  ) : (
-                    <div>
-                      <p className="text-gray-500">No classes found. Add new class</p>
-                      <FormModal type="create" />
-                    </div>
-                  )}
-                </div>
-              </div>
+             <div className={`mb-6 rounded-md p-4 transition-all duration-300 ${loading ? "bg-gray-300 animate-pulse" : "bg-purple-200"}`}>
+             <div className="flex flex-wrap justify-between items-center">
+               <h2 className="text-xl font-semibold text-gray-700 mb-3">
+                 🏫 Select a Class
+               </h2>
+               <FormModal memoizedClasses={memoizedClasses.length > 0 ? memoizedClasses : null} table="classTeacher" type="create" />
+               </div>
+             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+               {loading ? (
+                 <p className="text-gray-500">Loading classes...</p>
+               ) : memoizedClasses.length > 0 ? (
+                 memoizedClasses.map((cls) => (
+                   <button
+                     key={cls.id}
+                     className={`p-4 md:p-5 ${
+                       selectedClass === cls.id ? "bg-green-600 text-white" : "bg-gray-100"
+                     } rounded-lg shadow-md transition-all duration-300 border border-gray-300 hover:bg-green-600 hover:text-white hover:border-green-700 font-medium text-gray-800 hover:shadow-lg active:scale-95`}
+                     onClick={() => handleStudentShow(cls.id)}
+                   >
+                     {cls.name}
+                   </button>
+                 ))
+               ) : (
+                 <div>
+                   <p className="text-gray-500">No classes found. Add new class</p>
+                   <FormModal type="create" />
+                 </div>
+               )}
+             </div>
+           </div>
+           
             )}
 
             {/* STUDENT LIST */}
             {selectedClass && (
-              <div className="mb-6 bg-purple-200 rounded-md p-4">
-                <h2 className="text-xl font-semibold text-gray-700 mb-3">
-                  👨‍🎓 Students
-                </h2>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  {memoizedStudents.length > 0 ? (
-                    memoizedStudents.map((student) => (
-                      <div
-                        key={student.id}
-                        className="p-4 bg-gray-100 rounded-lg shadow-md border border-gray-300"
-                      >
-                        <h3 className="font-semibold">{student.name}</h3>
-                        <p className="text-sm text-gray-600">@{student.username}</p>
-                      </div>
-                    ))
-                  ) : (
-                    <p className="text-gray-500">No students found in this class.</p>
-                  )}
-                </div>
-              </div>
+             <div className={`mb-6 rounded-md p-4 transition-all duration-300 ${loading ? "bg-gray-300 animate-pulse" : "bg-purple-200"}`}>
+             <h2 className="text-xl font-semibold text-gray-700 mb-3">
+               👨‍🎓 Students
+             </h2>
+             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+               {loading ? (
+                 <p className="text-gray-500">Loading students...</p>
+               ) : memoizedStudents.length > 0 ? (
+                 memoizedStudents.map((student) => (
+                   <div
+                     key={student.id}
+                     className="p-4 bg-gray-100 rounded-lg shadow-md border border-gray-300"
+                   >
+                     <h3 className="font-semibold">{student.name}</h3>
+                     <p className="text-sm text-gray-600">@{student.username}</p>
+                   </div>
+                 ))
+               ) : (
+                 <p className="text-gray-500">No students found in this class.</p>
+               )}
+             </div>
+           </div>
+           
             )}
           </div>
         </div>

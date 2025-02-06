@@ -433,60 +433,6 @@ export const deleteSubject = async (id) => {
   }
 };
 // .........................................................................................................................
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// export async function fetchSessions() {
-//   try {
-//     const sessions = await prisma.session.findMany({
-//       orderBy: { id: "desc" }, // Get the most recent session first
-//     });
-//     return sessions;
-//   } catch (error) {
-//     console.error("❌ Error fetching sessions:", error);
-//     return [];
-//   }
-// }
-
-
-
-
 export async function createSession(sessionName) {
   try {
     if (!sessionName || typeof sessionName !== "string" || sessionName.trim() === "") {
@@ -552,6 +498,82 @@ export async function createSession(sessionName) {
     return { success: false, message: "An error occurred while creating the session." };
   }
 }
+// ............................................................................................................................
+export async function createClassTeacher(sessionId, gradeId, classId, teacherId) {
+  try {
+    if (!sessionId || !gradeId || !classId || !teacherId) {
+      return { success: false, error: "Missing required fields" };
+    }
+
+    // ✅ Ensure `teacherId` remains a STRING
+    await prisma.classTeacher.create({
+      data: {
+        sessionId: parseInt(sessionId, 10),
+        gradeId: parseInt(gradeId, 10),
+        classId: parseInt(classId, 10),
+        teacherId: teacherId,  // ✅ No parseInt(), since it's already a string
+      },
+    });
+
+    return { success: true, message: "Teacher assigned successfully" };
+  } catch (error) {
+    console.error("❌ Error assigning teacher:", error);
+    return { success: false, error: "Internal Server Error" };
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// export async function fetchSessions() {
+//   try {
+//     const sessions = await prisma.session.findMany({
+//       orderBy: { id: "desc" }, // Get the most recent session first
+//     });
+//     return sessions;
+//   } catch (error) {
+//     console.error("❌ Error fetching sessions:", error);
+//     return [];
+//   }
+// }
+
+
+
+
+
 
 
 
@@ -600,7 +622,7 @@ export async function fetchClasses(sessionId, gradeId) {
         id: parseInt(gradeId, 10),
       },
     },
-    select: { id: true, name: true },
+    select: { id: true, name: true,gradeId: true },
   });
 }
 
