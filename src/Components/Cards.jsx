@@ -9,7 +9,6 @@ const Cards = ({ type , data, color,session }) => {
     >
       <div className="flex justify-between gap-4 items-center">
         <span className="bg-white rounded-full text-green-600 text-[10px] p-2">{session}</span>
-        <Image src={'/more.png'} alt='' width={20} height={20} className=""/>
       </div>
       <h1 className="text-2xl font-semibold my-2">{data}</h1>
       <h3 className="text-sm text-gray-500 mt-1">{type}</h3>

@@ -13,6 +13,14 @@ const StudentForm = ({ type, data }) => {
   const { databaseData } = useDatabase();
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState(null);
+  const [selectedGrade, setSelectedGrade] = useState("");
+
+  const activeSession = databaseData.sessions.find((s) => s.isCurrent); // ✅ Get active session
+  const filteredGrades = databaseData.grades.filter((g) => g.sessionId === activeSession?.id); // ✅ Filter grades by active session
+  const filteredClasses = databaseData.classes.filter((c) => c.gradeId === Number(selectedGrade));
+  // console.log(filteredGrades)
+    console.log(activeSession)
+    console.log(filteredClasses,'yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy')
 
   const {
     register,
@@ -28,6 +36,8 @@ const StudentForm = ({ type, data }) => {
       subjects: data?.subjects?.map((s) => String(s.subjectId)) || [],
     },
   });
+   
+  
 
   useEffect(() => {
     if (data && databaseData) {
@@ -72,7 +82,7 @@ const StudentForm = ({ type, data }) => {
 
       const cleanedData = {
         ...formData,
-        sessionId: Number(formData.sessionId),
+        sessionId: Number(activeSession.id),
         gradeId: Number(formData.gradeId),
         classId: Number(formData.classId),
         subjects: formData.subjects.map(Number),
@@ -211,11 +221,7 @@ const StudentForm = ({ type, data }) => {
                 className="border text-sm text-gray-500 mt-2 ring-[1.5px] ring-gray-300 rounded-md p-2 cursor-pointer"
               >
                 <option value="">-- Select Session --</option>
-                {databaseData.sessions.map((s) => (
-                  <option key={s.id} value={String(s.id)}>
-                    {s.name}
-                  </option>
-                ))}
+               <option value={activeSession.name}>{activeSession.name}</option>
               </select>
             </div>
           </div>
@@ -225,9 +231,10 @@ const StudentForm = ({ type, data }) => {
               <select
                 {...register("gradeId")}
                 className="border text-sm text-gray-500 mt-2 ring-[1.5px] ring-gray-300 rounded-md p-2 cursor-pointer"
+                onChange={(e) => setSelectedGrade(e.target.value)}
               >
                 <option value="">-- Grade Level --</option>
-                {databaseData.grades.map((g) => (
+                {filteredGrades.map((g) => (
                   <option key={g.id} value={String(g.id)}>
                     {g.name}
                   </option>
@@ -241,7 +248,7 @@ const StudentForm = ({ type, data }) => {
                 className="border text-sm text-gray-500 mt-2 ring-[1.5px] ring-gray-300 rounded-md p-2 cursor-pointer"
               >
                 <option value="">-- Class --</option>
-                {databaseData.classes.map((c) => (
+                {filteredClasses.map((c) => (
                   <option key={c.id} value={String(c.id)}>
                     {c.name}
                   </option>

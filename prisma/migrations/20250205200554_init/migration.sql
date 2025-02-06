@@ -188,13 +188,16 @@ CREATE UNIQUE INDEX "Parent_email_key" ON "Parent"("email");
 CREATE UNIQUE INDEX "Subject_name_key" ON "Subject"("name");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Class_name_key" ON "Class"("name");
+CREATE UNIQUE INDEX "Class_name_gradeId_key" ON "Class"("name", "gradeId");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Grade_name_key" ON "Grade"("name");
+CREATE UNIQUE INDEX "Grade_name_sessionId_key" ON "Grade"("name", "sessionId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Session_name_key" ON "Session"("name");
+
+-- CreateIndex
+CREATE INDEX "unique_active_session" ON "Session"("isCurrent");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Student_username_key" ON "Student"("username");

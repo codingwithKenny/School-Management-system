@@ -2,26 +2,39 @@
 
 import prisma from "@/lib/prisma";
 
-
 export async function getDatabaseData() {
   try {
     console.log("🟡 Fetching database data...");
 
-    // 🔵 Try fetching each table separately
-    const sessions = await prisma.session.findMany({ select: { id: true, name: true } });
-    console.log("✅ Sessions Fetched:", sessions);
+    // 🔵 Fetch Sessions
+    const sessions = await prisma.session.findMany({
+      select: { id: true, name: true, isCurrent: true },
+    });
+    console.log("✅ Sessions Fetched:", sessions.length);
 
-    const grades = await prisma.grade.findMany({ select: { id: true, name: true } });
-    console.log("✅ Grades Fetched:", grades);
+    // 🔵 Fetch Grades (including sessionId)
+    const grades = await prisma.grade.findMany({
+      select: { id: true, name: true, sessionId: true }, // ✅ Include sessionId properly
+    });
+    console.log("✅ Grades Fetched:", grades.length);
 
-    const classes = await prisma.class.findMany({ select: { id: true, name: true } });
-    console.log("✅ Classes Fetched:", classes);
+    // 🔵 Fetch Classes
+    const classes = await prisma.class.findMany({
+      select: { id: true, name: true, gradeId: true }, // ✅ Include gradeId
+    });
+    console.log("✅ Classes Fetched:", classes.length);
 
-    const subjects = await prisma.subject.findMany({ select: { id: true, name: true } });
-    console.log("✅ Subjects Fetched:", subjects);
+    // 🔵 Fetch Subjects
+    const subjects = await prisma.subject.findMany({
+      select: { id: true, name: true },
+    });
+    console.log("✅ Subjects Fetched:", subjects.length);
 
-    const parents = await prisma.parent.findMany({ select: { id: true, name: true } });
-    console.log("✅ Subjects Fetched:", parents);
+    // 🔵 Fetch Parents
+    const parents = await prisma.parent.findMany({
+      select: { id: true, name: true },
+    });
+    console.log("✅ Parents Fetched:", parents.length);
 
     return {
       success: true,

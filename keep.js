@@ -240,3 +240,58 @@ Initialize selected subjects when editing
 
 
 
+
+
+
+
+
+
+
+export async function createSession(sessionName) {
+  try {
+    if (!sessionName || typeof sessionName !== "string" || sessionName.trim() === "") {
+      console.error("Invalid session name:", sessionName);
+      return { success: false, message: "Invalid session name." };
+    }
+    const existingSession = await prisma.session.findFirst({
+      where: { name: sessionName.trim() },
+    });
+    if (existingSession) {
+      console.error("Session already exists:", sessionName);
+      return { success: false, message: "Session already exists." };
+    }
+    await prisma.$transaction([
+      prisma.session.updateMany({
+        where: { isCurrent: true },
+        data: { isCurrent: false },
+      }),
+      prisma.session.create({
+        data: {
+          name: sessionName.trim(),
+          isCurrent: true,
+          isDeleted: false,
+        },
+      }),
+    ]);
+
+    const grades = ["JSS1", "JSS2", "JSS3", "SSS1", "SSS2", "SSS3"];
+    for (let grade of grades) {
+      const newGrade = await prisma.grade.create({
+        data: { name: grade, sessionId: newSession.id },
+      });
+
+      // Create two classes (A & B) for each grade
+      await prisma.class.createMany({
+        data: [
+          { name: `${grade} A`, gradeId: newGrade.id },
+          { name: `${grade} B`, gradeId: newGrade.id },
+        ],
+      });
+    }
+
+    console.log("✅ New session created with all grades and classes.");
+    return { success: true, message: "Session created successfully!", session: newSession };
+  } catch (error) {
+    return { success: false, message: "An error occurred while creating the session." };
+  }
+}

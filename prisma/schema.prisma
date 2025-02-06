@@ -71,7 +71,7 @@ model StudentSubject {
 
 model Class {
     id           Int       @id @default(autoincrement())
-    name         String    @unique
+    name         String
     grade        Grade     @relation(fields: [gradeId], references: [id])
     gradeId      Int
     supervisor   Teacher?  @relation("SupervisorRelation", fields: [supervisorId], references: [id])
@@ -79,30 +79,40 @@ model Class {
     students     Student[]
     isDeleted    Boolean   @default(false)
     deletedAt    DateTime?
+
+    @@unique([name, gradeId]) // ✅ Unique class names per grade, not globally
 }
+
 
 model Grade {
     id        Int       @id @default(autoincrement())
-    name      String    @unique
-    session   Session   @relation(fields: [sessionId], references: [id]) // ✅ Link to session
+    name      String
+    session   Session   @relation(fields: [sessionId], references: [id])
     sessionId Int
     classes   Class[]
     students  Student[]
     isDeleted Boolean   @default(false)
     deletedAt DateTime?
+
+    @@unique([name, sessionId]) // ✅ Ensure uniqueness per session, not globally
 }
+
 
 model Session {
     id        Int       @id @default(autoincrement())
     name      String    @unique
-    isCurrent Boolean   @default(false) // ✅ Track active session
+    isCurrent Boolean   @default(false)
     terms     Term[]
     results   Result[]
-    grades    Grade[] // ✅ Track grades in this session
-    students  Student[] // ✅ This completes the relation with Student
+    grades    Grade[]
+    students  Student[]
     isDeleted Boolean   @default(false)
     deletedAt DateTime?
+
+    @@index([isCurrent], map: "unique_active_session") // ✅ Corrected syntax
 }
+
+
 
 model Term {
     id         Int          @id @default(autoincrement())

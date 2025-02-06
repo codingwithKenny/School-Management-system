@@ -216,16 +216,18 @@ export async function createStudent(data) {
     console.log("Creating Student in Clerk...");
 
     const generatePassword = (surname) => {
-      return surname + Math.floor(1000 + Math.random() * 9000) + "!"; 
+      return surname.toLowerCase() + "1234!";
     };
+
+    const storedPassword = generatePassword(data.surname);
     
         const student = await clerkClient.users.createUser({
       username: data.username.trim(), 
       emailAddress: [data.email.trim()], 
-      password: generatePassword(data.surname), 
+      password: storedPassword, 
       publicMetadata: { role: "student" }, 
     });
-  
+        console.log(student.password)
     console.log("Clerk User Created:", student);
     const newStudent = await prisma.student.create({
       data: {
@@ -424,7 +426,6 @@ export const deleteSubject = async (id) => {
       data: { isDeleted: true, deletedAt: new Date() },
     })
     revalidateTag("subjects");
-    console.log("subject successfully deleted")
     return { success: true };
   } catch (error) {
     console.error("Error deleting subject:", error);
@@ -439,29 +440,202 @@ export const deleteSubject = async (id) => {
 
 
 
-export const fetchSubjectById = async (subjectId) => {
-  try {
-    const subject = await prisma.subject.findUnique({
-      where: { id: subjectId },
-      include: {
-        teachers: {
-          include: {
-            teacher: true, // ✅ Fetch actual teacher details
-          },
-        },
-      },
-    });
 
-    if (!subject) {
-      return { success: false, error: "Subject not found." };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// export async function fetchSessions() {
+//   try {
+//     const sessions = await prisma.session.findMany({
+//       orderBy: { id: "desc" }, // Get the most recent session first
+//     });
+//     return sessions;
+//   } catch (error) {
+//     console.error("❌ Error fetching sessions:", error);
+//     return [];
+//   }
+// }
+
+
+
+
+export async function createSession(sessionName) {
+  try {
+    if (!sessionName || typeof sessionName !== "string" || sessionName.trim() === "") {
+      return { success: false, message: "Invalid session name." };
     }
 
-    return { success: true, data: subject };
+    console.log("🟡 Checking if any session is active...");
+    const existingSession = await prisma.session.findFirst({
+      where: { name: sessionName.trim() },
+    });
+    if (existingSession) {
+      console.error("Session already exists:", sessionName);
+      return { success: false, message: "Session already exists." };
+    }
+
+    // Create session and deactivate previous ones
+    const [_, newSession] = await prisma.$transaction([
+      // Set all existing `isCurrent: true` sessions to `false`
+      prisma.session.updateMany({
+        where: { isCurrent: true },
+        data: { isCurrent: false },
+      }),
+      // Create a new session and set it as `true`
+      prisma.session.create({
+        data: {
+          name: sessionName.trim(),
+          isCurrent: true,
+          isDeleted: false,
+        },
+      }),
+    ]);
+
+    if (!newSession?.id) {
+      console.error("❌ Failed to create session.");
+      return { success: false, message: "Failed to create a new session." };
+    }
+
+    console.log(`✅ New session '${sessionName}' created.`);
+
+    // Create predefined grades
+    const grades = ["JSS1", "JSS2", "JSS3", "SSS1", "SSS2", "SSS3"];
+    for (let grade of grades) {
+      const newGrade = await prisma.grade.create({
+        data: { name: grade, sessionId: newSession.id }, // ✅ Link to session
+      });
+
+      console.log(`✅ Grade ${grade} created with sessionId ${newSession.id}`);
+
+      await prisma.class.createMany({
+        data: [
+          { name: `${grade} A`, gradeId: newGrade.id },
+          { name: `${grade} B`, gradeId: newGrade.id },
+        ],
+      });
+
+      console.log(`✅ Classes ${grade} A & ${grade} B created.`);
+    }
+
+    console.log(`✅ New session '${sessionName}' created successfully with all grades and classes.`);
+    return { success: true, message: "Session created successfully!", session: newSession };
   } catch (error) {
-    console.error("Error fetching subject:", error);
-    return { success: false, error: "An unexpected error occurred." };
+    console.error("❌ Error creating session:", error);
+    return { success: false, message: "An error occurred while creating the session." };
   }
-};
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+export async function fetchGrades(sessionId) {
+  if (!sessionId || isNaN(parseInt(sessionId, 10))) {
+    console.warn("sessionId is missing or invalid in fetchGrades()");
+    return []; 
+  }
+
+  return await prisma.grade.findMany({
+    where: { sessionId: parseInt(sessionId, 10) },
+    select: { id: true, name: true },
+  });
+}
+
+export async function fetchClasses(sessionId, gradeId) {
+  if (!sessionId || isNaN(parseInt(sessionId, 10))) {
+    console.warn("⚠️ sessionId is missing or invalid in fetchClasses()");
+    return [];
+  }
+  if (!gradeId || isNaN(parseInt(gradeId, 10))) {
+    console.warn("⚠️ gradeId is missing or invalid in fetchClasses()");
+    return [];
+  }
+
+  return await prisma.class.findMany({
+    where: {
+      grade: {
+        sessionId: parseInt(sessionId, 10), // ✅ Check session through grade relation
+        id: parseInt(gradeId, 10),
+      },
+    },
+    select: { id: true, name: true },
+  });
+}
+
+
+
+
+export async function updateSupervisor(classId, teacherId) {
+  return await prisma.class.update({
+    where: { id: classId },
+    data: { supervisorId: teacherId },
+  });
+}
+
+export async function fetchStudents(sessionId, gradeId, classId) {
+  if (!sessionId || !gradeId || !classId) {
+    console.warn("⚠️ sessionId, gradeId, or classId is missing in fetchStudents()");
+    return [];
+  }
+
+  return await prisma.student.findMany({
+    where: {
+      sessionId: parseInt(sessionId, 10),
+      gradeId: parseInt(gradeId, 10),
+      classId: parseInt(classId, 10),
+    },
+    select: {
+      id: true,
+      name: true,
+      username: true,
+      class: { select: { name: true } }, // ✅ Fetch class name for display
+    },
+  });
+}
+
+
 
 
 
