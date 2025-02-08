@@ -450,12 +450,12 @@ export async function createSession(sessionName) {
 
     // Create session and deactivate previous ones
     const [_, newSession] = await prisma.$transaction([
-      // Set all existing `isCurrent: true` sessions to `false`
+      // Deactivate any existing active session
       prisma.session.updateMany({
         where: { isCurrent: true },
         data: { isCurrent: false },
       }),
-      // Create a new session and set it as `true`
+      // Create a new session
       prisma.session.create({
         data: {
           name: sessionName.trim(),
@@ -472,11 +472,20 @@ export async function createSession(sessionName) {
 
     console.log(`✅ New session '${sessionName}' created.`);
 
-    // Create predefined grades
+    // ✅ Auto-create Terms for the session
+    const terms = ["First Term", "Second Term", "Third Term"];
+    for (let term of terms) {
+      await prisma.term.create({
+        data: { name: term, sessionId: newSession.id },
+      });
+      console.log(`✅ ${term} created for session ${sessionName}.`);
+    }
+
+    // ✅ Auto-create predefined grades & classes
     const grades = ["JSS1", "JSS2", "JSS3", "SSS1", "SSS2", "SSS3"];
     for (let grade of grades) {
       const newGrade = await prisma.grade.create({
-        data: { name: grade, sessionId: newSession.id }, // ✅ Link to session
+        data: { name: grade, sessionId: newSession.id },
       });
 
       console.log(`✅ Grade ${grade} created with sessionId ${newSession.id}`);
@@ -491,36 +500,73 @@ export async function createSession(sessionName) {
       console.log(`✅ Classes ${grade} A & ${grade} B created.`);
     }
 
-    console.log(`✅ New session '${sessionName}' created successfully with all grades and classes.`);
+    console.log(`✅ New session '${sessionName}' created successfully with all terms, grades, and classes.`);
     return { success: true, message: "Session created successfully!", session: newSession };
   } catch (error) {
     console.error("❌ Error creating session:", error);
     return { success: false, message: "An error occurred while creating the session." };
   }
 }
+
 // ............................................................................................................................
-export async function createClassTeacher(sessionId, gradeId, classId, teacherId) {
+export async function assignClassTeacher({ classId, teacherId }) {
+  console.log("📌 Assigning Teacher:", classId, teacherId);
+
   try {
-    if (!sessionId || !gradeId || !classId || !teacherId) {
+    if (!classId || !teacherId) {
       return { success: false, error: "Missing required fields" };
     }
 
-    // ✅ Ensure `teacherId` remains a STRING
-    await prisma.classTeacher.create({
-      data: {
-        sessionId: parseInt(sessionId, 10),
-        gradeId: parseInt(gradeId, 10),
-        classId: parseInt(classId, 10),
-        teacherId: teacherId,  // ✅ No parseInt(), since it's already a string
-      },
+    const classIdNum = Number(classId);
+
+    await prisma.$transaction(async (prisma) => {
+      // ✅ Fetch class details including the session
+      const existingClass = await prisma.class.findUnique({
+        where: { id: classIdNum },
+        include: { grade: { include: { session: true } } }, // Include session
+      });
+
+      if (!existingClass) {
+        throw new Error("Class not found");
+      }
+
+      const sessionId = existingClass.grade.sessionId;
+
+      // ✅ Check if the teacher is already assigned in the same session
+      const existingAssignment = await prisma.class.findFirst({
+        where: {
+          grade: {
+            sessionId: sessionId, // Ensure it's within the same session
+          },
+          supervisorId: teacherId,
+          NOT: { id: classIdNum }, // Exclude the current class
+        },
+      });
+
+      if (existingAssignment) {
+        throw new Error("This teacher is already assigned to another class in this session.");
+      }
+
+      // ✅ Assign teacher to class
+      await prisma.class.update({
+        where: { id: classIdNum },
+        data: { supervisorId: teacherId },
+      });
     });
 
+    console.log("✅ Teacher assigned successfully");
     return { success: true, message: "Teacher assigned successfully" };
   } catch (error) {
-    console.error("❌ Error assigning teacher:", error);
-    return { success: false, error: "Internal Server Error" };
+    console.error("❌ Error:", error.message);
+    return { success: false, error: error.message || "Internal Server Error" };
   }
 }
+
+
+
+// ............................................................................................................................
+
+
 
 
 
@@ -622,19 +668,32 @@ export async function fetchClasses(sessionId, gradeId) {
         id: parseInt(gradeId, 10),
       },
     },
-    select: { id: true, name: true,gradeId: true },
-  });
+    select: {
+      id: true,
+      name: true,
+      gradeId: true,
+      supervisor: {
+        select: {
+          id: true,
+          name: true,
+          surname: true,
+          username: true,
+          sex: true,
+        },
+      },
+    },
+      });
 }
 
 
 
 
-export async function updateSupervisor(classId, teacherId) {
-  return await prisma.class.update({
-    where: { id: classId },
-    data: { supervisorId: teacherId },
-  });
-}
+// export async function updateSupervisor(classId, teacherId) {
+//   return await prisma.class.update({
+//     where: { id: classId },
+//     data: { supervisorId: teacherId },
+//   });
+// }
 
 export async function fetchStudents(sessionId, gradeId, classId) {
   if (!sessionId || !gradeId || !classId) {
@@ -652,6 +711,7 @@ export async function fetchStudents(sessionId, gradeId, classId) {
       id: true,
       name: true,
       username: true,
+      surname:true,
       class: { select: { name: true } }, // ✅ Fetch class name for display
     },
   });

@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect, useState } from "react";
 import { useDatabase } from "@/app/context/DatabaseProvider";
-import { createClassTeacher } from "@/lib/actions";
+import { assignClassTeacher, createClassTeacher } from "@/lib/actions";
 
 const ClassTeacherForm = ({ type, data, memoizedClasses }) => {
   const { databaseData, loading } = useDatabase(); // ✅ Use global loading state
@@ -14,31 +14,14 @@ const ClassTeacherForm = ({ type, data, memoizedClasses }) => {
 
   // ✅ State for selected class, grade, and session
   const [selectedClass, setSelectedClass] = useState(null);
-  const [selectedGrade, setSelectedGrade] = useState(null);
-  const [selectedSession, setSelectedSession] = useState(null);
+ 
 
   console.log(memoizedClasses, "class data available");
 
-  // ✅ When `selectedClass` changes, find the `gradeId`
-  useEffect(() => {
-    if (selectedClass) {
-      const grade = memoizedClasses?.find(c => c.id === selectedClass)?.gradeId || null;
-      setSelectedGrade(grade);
-
-      if (grade) {
-        const session = databaseData.grades?.find(g => g.id === grade)?.sessionId || null;
-        console.log(session, "CJECKKKKKKKKKKKKKKKKKK")
-        setSelectedSession(session);
-      }
-    }
-  }, [selectedClass, memoizedClasses, databaseData.grades]);
-
   // ✅ Update form values dynamically
   useEffect(() => {
-    if (selectedSession) setValue("sessionId", selectedSession);
-    if (selectedGrade) setValue("gradeId", selectedGrade);
     if (selectedClass) setValue("classId", selectedClass);
-  }, [selectedSession, selectedGrade, selectedClass, setValue]);
+  }, [selectedClass, setValue]);
 
   // ✅ Form Submission State
   const [state, setState] = useState({
@@ -51,7 +34,7 @@ const ClassTeacherForm = ({ type, data, memoizedClasses }) => {
     console.log("📌 Form Submitted:", formData);
 
     try {
-      let response = await createClassTeacher(formData);
+      let response = await assignClassTeacher(formData);
 
       if (response?.success) {
         setState({ success: true, error: false, errorMessage: "" });
@@ -76,10 +59,6 @@ const ClassTeacherForm = ({ type, data, memoizedClasses }) => {
       <h1 className="text-xl font-semibold">
         {type === "create" ? "Assign Class Teacher" : "Update Assigned Class Teacher"}
       </h1>
-
-      {/* ✅ Hidden Inputs (Automatically inferred from selectedClass) */}
-      <input type="hidden" {...register("sessionId")} value={selectedSession || ""} />
-      <input type="hidden" {...register("gradeId")} value={selectedGrade || ""} />
 
       {/* ✅ Class Dropdown */}
       <div>

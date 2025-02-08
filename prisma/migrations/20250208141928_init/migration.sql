@@ -191,6 +191,9 @@ CREATE UNIQUE INDEX "Subject_name_key" ON "Subject"("name");
 CREATE UNIQUE INDEX "Class_name_gradeId_key" ON "Class"("name", "gradeId");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "Class_supervisorId_gradeId_key" ON "Class"("supervisorId", "gradeId");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "Grade_name_sessionId_key" ON "Grade"("name", "sessionId");
 
 -- CreateIndex

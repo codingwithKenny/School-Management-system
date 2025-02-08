@@ -1,230 +1,216 @@
-import FormModal from '@/components/FormModal';
-import Pagination from '@/components/Pagination';
-import Table from '@/components/Table';
-import TableSearch from '@/components/TableSearch';
-import prisma from '@/lib/prisma';
-import { ITEM_PER_PAGE } from '@/lib/settings';
-import Link from 'next/link';
-import { currentUserId, role } from '@/lib/authUtils';
-import TeacherResultActions from '@/components/TeacherResultActions';
+"use client";
+import { useState, useEffect, useMemo } from "react";
+import { fetchGrades, fetchClasses, fetchStudents } from "@/lib/actions";
+import FormModal from "./FormModal";
+import { useDatabase } from "@/app/context/DatabaseProvider";
 
-const resultListPage = async ({ searchParams }) => {
-  if (!role || !currentUserId) {
-    throw new Error("Unauthorized access: missing role or user ID.");
-  }
+const GradeComponent = ({ role, currentUser }) => {
+  const { databaseData } = useDatabase();
+  const sessions = databaseData.sessions || [];
+  const [loading, setLoading] = useState(false);
+  const [selectedSession, setSelectedSession] = useState(null);
+  const [grades, setGrades] = useState([]);
+  const [selectedGrade, setSelectedGrade] = useState(null);
+  const [classes, setClasses] = useState([]);
+  const [selectedClass, setSelectedClass] = useState(null);
+  const [students, setStudents] = useState([]);
 
-  console.log("Current User ID:", currentUserId);
-  console.log("User Role:", role);
+  // ✅ Fetch grades when session is selected
+  useEffect(() => {
+    if (!selectedSession || isNaN(selectedSession)) return;
+    setLoading(true);
 
-  const params = searchParams || {};
-  const page = params.page || 1;
-  const p = parseInt(page, 10);
-
-  // Define role-based filtering
-  let query = {};
-  switch (role) {
-    case 'admin':
-      break; // Admin sees all results
-    case 'teacher':
-      query.teacherId = currentUserId; // Teachers see only their students' results
-      break;
-    case 'student':
-      query.studentId = currentUserId; // Students see only their own results
-      break;
-    default:
-      throw new Error('Unauthorized access: invalid role.');
-  }
-
-  // Fetch data based on role
-  const [dataRes, count] = await prisma.$transaction([
-    prisma.result.findMany({
-      where: query,
-      include: {
-        student: { 
-          select: { 
-            name: true, 
-            surname: true, 
-            grade: { select: { name: true } }
-          } 
-        },
-        subject: { select: { name: true } },
-        teacher: { select: { id: true, surname: true, name: true } },
-        term: { select: { name: true, session: { select: { name: true } } } },
-      },
-      take: ITEM_PER_PAGE,
-      skip: (p - 1) * ITEM_PER_PAGE,
-    }),
-    prisma.result.count({ where: query }),
-  ]);
-
-  // Map and sanitize data
-  const data = dataRes.map((item) => ({
-    id: item.id,
-    subject: item.subject?.name ?? "Unknown Subject",
-    student: item.student 
-      ? `${item.student.surname ?? "Unknown"} ${item.student.name ?? "Unknown"}`
-      : "Unknown Student",
-    score: item.totalScore || 'N/A',
-    assessmentScore: item.firstAssessment || 'N/A',
-    examScore: item.examScore || 'N/A',
-    teacher: item.teacher
-      ? `${item.teacher.surname ?? "Unknown"} ${item.teacher.name ?? "Unknown"}`
-      : 'No Teacher Assigned',
-    term: `${item.term?.name ?? "Unknown Term"} (${item.term?.session?.name ?? "Unknown Session"})`,
-    date: item.createdAt ? new Date(item.createdAt).toLocaleDateString() : "Unknown Date",
-  }));
-
-  console.log("Mapped Data:", data);
-
-  // Define role-based table columns
-  const adminColumns = [
-    { header: 'Subject', accessor: 'subject' },
-    { header: 'Student', accessor: 'student' },
-    { header: '1st CA', accessor: 'assessmentScore1' },
-    { header: '2nd CA', accessor: 'assessmentScore2' },
-    { header: 'Exam', accessor: 'examScore' },
-    { header: 'Teacher', accessor: 'teacher' },
-    { header: 'Term', accessor: 'term' },
-    { header: 'Date', accessor: 'date' },
-    { header: "Actions", accessor: "actions" }
-  ];
-
-  const teacherColumns = [
-    { header: 'Subject', accessor: 'subject' },
-    { header: 'Student', accessor: 'student' },
-  ];
-
-  const studentColumns = [
-    { header: 'Subject', accessor: 'subject' },
-    { header: 'Score', accessor: 'score' },
-    { header: 'CA', accessor: 'assessmentScore' },
-    { header: 'Exam', accessor: 'examScore' },
-    { header: 'Term', accessor: 'term' },
-    { header: 'Date', accessor: 'date' }
-  ];
-
-
-  // Render rows dynamically
-  const renderRow = (result) => (
-    <tr key={result.id} className="text-xs border-b border-grey-200 even:bg-slate-50 hover:bg-[#F1F0FF]">
-     {(role === 'student') && (
-        <>
-          <td>{result.score}</td>
-          <td>{result.assessmentScore}</td>
-          <td>{result.examScore}</td>
-        </>
-      )}
-      {role === 'admin' && 
-      <>
-      <td>{result.subject}</td>
-      <td>{result.student}</td>
-      <td>{result.assessmentScore1}</td>
-      <td>{result.assessmentScore2}</td>
-      <td>{result.exam}</td>
-      <td>{result.term}</td>
-      <td>
-          <div className="flex items-center gap-2">
-            <Link href={`/list/results/${result.id}`}>
-              <FormModal type="update" table="result" />
-            </Link>
-            <FormModal type="delete" table="result" />
-          </div>
-        </td>
-      </>
+    const delayFetch = setTimeout(async () => {
+      if (selectedSession) {
+        const sessionGrades = await fetchGrades(selectedSession);
+        setGrades(sessionGrades);
+        setLoading(false);
+        setSelectedGrade(null);
+        setClasses([]);
+        setSelectedClass(null);
+        setStudents([]);
       }
-      
-      {role === "teacher" && (
-        <>
-        <td>{result.subject}</td>
-        <td>{result.student}</td>
-        </>
-        
-      )}
-    </tr>
-  );
+    }, 300);
+
+    return () => clearTimeout(delayFetch);
+  }, [selectedSession]);
+
+  const memoizedGrades = useMemo(() => grades, [grades]);
+
+  // ✅ Fetch classes when a grade is selected
+  const handleGradeClick = async (gradeId) => {
+    setSelectedGrade(gradeId);
+    setSelectedClass(null);
+    setStudents([]);
+
+    const gradeClasses = await fetchClasses(selectedSession, gradeId);
+
+    // ✅ Filter classes for teachers: Only show assigned classes
+    const filteredClasses = role === "teacher"
+      ? gradeClasses.filter(cls => cls.supervisor?.id === currentUser)
+      : gradeClasses;
+
+    setClasses(filteredClasses);
+  };
+  // console.log(filteredClasses,'wertyuiop')
+  console.log(classes)
+
+  const memoizedClasses = useMemo(() => classes, [classes]);
+
+  // ✅ Fetch students when a class is selected
+  const handleStudentShow = async (classId) => {
+    setSelectedClass(classId);
+    const classStudents = await fetchStudents(selectedSession, selectedGrade, classId);
+    setStudents(classStudents);
+  };
+
+  const memoizedStudents = useMemo(() => students, [students]);
+     const query = {}
+   switch (role) {
+      case "admin":// ADMIN CAN VIEW ALL 
+        break;
+  
+      case "teacher":
+        query.class = {
+          teacherId: currentUser, // TEACHER CAN ONLY VIEW THIER CLASS IN A GRADE
+        }; 
+        break;
+      default:
+        throw new Error("Unauthorized access");
+    }
 
   return (
-    <div className="bg-white rounded-md p-4 flex-1 m-4 mt-0">
-      {/*TEACHER UI*/}
-      {role === "teacher" && (
-        <>
-          <TeacherResultActions data={data} />
-          <div className="mt-4">
-            <h2 className="text-lg font-semibold">Student</h2>
-            <Table renderRow={renderRow} data={data} column={teacherColumns} />
-          </div>
-        </>
-      )}
+    <div className="p-4 bg-purple-100 h-screen">
+      <h1 className="text-sm text-center text-gray-500 font-bold">
+        School Grade-level and Classes
+      </h1>
+      <div>
+        <label className="text-xs text-gray-500 mr-4">Session</label>
+        <select
+          className="border text-sm text-gray-500 mt-2 ring-[1.5px] ring-gray-300 rounded-md p-2 cursor-pointer"
+          value={selectedSession || ""}
+          onChange={(e) => setSelectedSession(parseInt(e.target.value, 10))}
+        >
+          <option value="">-- Select Session --</option>
+          {sessions.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.name}
+            </option>
+          ))}
+        </select>
+      </div>
 
-      {/*ADMIN UI*/}
-      {role === "admin" && (
-        <>
-          <div className="flex flex-col md:flex-row items-center gap-4 w-full md:w-auto">
-            <TableSearch />
-            <div className="flex items-center gap-4 self-end">
-              <FormModal type="create" table="class" />
+      {selectedSession && (
+        <div className="flex flex-wrap justify-around mt-5">
+          <div className="flex flex-wrap justify-around">
+            {/* GRADES */}
+            <div className="mb-6 bg-purple-200 rounded-md p-4 mr-10">
+              <div className="flex flex-wrap items-center justify-between">
+                <h2 className="text-xl font-semibold text-gray-700 mb-3">
+                  📚 Grade Level
+                </h2>
+                {role === "admin" && <FormModal type="create" table="classTeacher" className="bg-white" />}
+              </div>
+
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                {loading ? (
+                  <p className="text-gray-500">Loading grades...</p>
+                ) : memoizedGrades.length > 0 ? (
+                  memoizedGrades.map((grade) => (
+                    <button
+                      key={grade.id}
+                      className={`p-4 md:p-5 ${
+                        selectedGrade === grade.id ? "bg-indigo-600 text-white" : "bg-gray-100"
+                      } rounded-lg shadow-md transition-all duration-300 border border-gray-300 hover:bg-indigo-600 hover:text-white hover:border-indigo-700 font-medium text-gray-800 hover:shadow-lg active:scale-95`}
+                      onClick={() => handleGradeClick(grade.id)}
+                    >
+                      {grade.name}
+                    </button>
+                  ))
+                ) : (
+                  <p className="text-gray-500">No grades found for this session.</p>
+                )}
+              </div>
             </div>
+
+            {/* CLASSES */}
+            {selectedGrade && (
+              <div className="mb-6 bg-purple-200 rounded-md p-4">
+               <div className="flex flex-wrap justify-around items-center">
+               <h2 className="text-xl font-semibold text-gray-700 mb-3">
+                  🏫 Select a Class
+                </h2>
+                <FormModal memoizedClasses={memoizedClasses.length > 0 ? memoizedClasses : null} table="classTeacher" type="create" />
+               </div>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  {memoizedClasses.length > 0 ? (
+                    memoizedClasses.map((cls) => (
+                      <button
+                        key={cls.id}
+                        className={`p-4 md:p-5 ${
+                          selectedClass === cls.id ? "bg-green-600 text-white" : "bg-gray-100"
+                        } rounded-lg shadow-md transition-all duration-300 border border-gray-300 hover:bg-green-600 hover:text-white hover:border-green-700 font-medium text-gray-800 hover:shadow-lg active:scale-95`}
+                        onClick={() => handleStudentShow(cls.id)}
+                      >
+                        {cls.name}
+                      </button>
+                    ))
+                  ) : (
+                    <p className="text-gray-500">
+                      {role === "teacher" ? "No assigned classes." : "No classes found."}
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* STUDENTS & TEACHER INFO */}
+            {selectedClass && (
+              <div className="mb-6 bg-purple-200 rounded-md p-4">
+                <div className="flex flex-wrap justify-around items-center">
+                  <h2 className="text-xl font-semibold text-gray-700 mb-3">
+                    👨‍🎓 Students
+                  </h2>
+
+                  {/* ✅ Display Assigned Teacher */}
+                  <div className="mt-2 p-2 bg-indigo-100 rounded-md text-center">
+                    <h4 className="text-sm font-semibold">👨‍🏫 Class Teacher</h4>
+                    {memoizedClasses.find(cls => cls.id === selectedClass)?.supervisor ? (
+                      <p className="text-sm">
+                        {memoizedClasses.find(cls => cls.id === selectedClass).supervisor.name} 
+                        (@{memoizedClasses.find(cls => cls.id === selectedClass).supervisor.username})
+                      </p>
+                    ) : (
+                      <p className="text-gray-500 text-sm">No teacher assigned</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Students List */}
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  {loading ? (
+                    <p className="text-gray-500">Loading students...</p>
+                  ) : memoizedStudents.length > 0 ? (
+                    memoizedStudents.map((student) => (
+                      <div
+                        key={student.id}
+                        className="p-4 bg-gray-100 rounded-lg shadow-md border border-gray-300"
+                      >
+                        <h3 className="font-semibold">{student.name}</h3>
+                        <p className="text-sm text-gray-600">@{student.username}</p>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-gray-500">No students found in this class.</p>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
-          <Table renderRow={renderRow} data={data} column={adminColumns} />
-        </>
+        </div>
       )}
-
-      {/* STUDENT UI */}
-      {role === "student" && (
-        <>
-          <h2 className="text-lg font-semibold">My Results</h2>
-          <Table renderRow={renderRow} data={data} column={studentColumns} />
-        </>
-      )}
-
-      {/* PAGINATION SECTION */}
-      <Pagination count={count} page={p} />
     </div>
   );
 };
 
-export default resultListPage;
-
-
-
-
-
-
-
-
-
-
-
-
-try {
-  let response;
-
-  // Prepare data (Ensure subjects are sent correctly)
-  const requestData = {
-    ...formData,
-    subjects: selectedSubjects,
-  };
-
-  if (type === "create") {
-    response = await createStudent(requestData);
-  } else if (type === "update" && data?.id) {
-    response = await updateStudent(data.id, requestData);
-  } else {
-    console.error("❌ No student ID found for update.");
-    return;
-  }
-
-  console.log("Response:", response);
-
-  if (response.success) {
-    alert(`✅ Student ${type === "create" ? "created" : "updated"} successfully!`);
-    window.location.reload();
-  } else {
-    setServerError(response.error);
-  }
-} catch (error) {
-  console.error("❌ Error submitting form:", error);
-  setServerError("An unexpected error occurred. Please try again.");
-}
-
-
+export default GradeComponent;

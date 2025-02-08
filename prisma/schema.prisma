@@ -80,7 +80,8 @@ model Class {
     isDeleted    Boolean   @default(false)
     deletedAt    DateTime?
 
-    @@unique([name, gradeId]) // ✅ Unique class names per grade, not globally
+  @@unique([name, gradeId])  // ✅ Unique class names per grade
+    @@unique([supervisorId, gradeId])
 }
 
 
