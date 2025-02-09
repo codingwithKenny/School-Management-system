@@ -561,10 +561,91 @@ export async function assignClassTeacher({ classId, teacherId }) {
     return { success: false, error: error.message || "Internal Server Error" };
   }
 }
-
-
-
 // ............................................................................................................................
+export const createResult = async (results) => {
+  console.log("🚀 Checking submitted results:", JSON.stringify(results, null, 2));
+
+  try {
+    // ✅ Ensure `results` is an array and not empty
+    if (!Array.isArray(results) || results.length === 0) {
+      console.error("❌ No results provided or invalid format:", JSON.stringify(results, null, 2));
+      return { success: false, error: "❌ No results provided or invalid format." };
+    }
+
+    // ✅ Extract common fields for batch checking
+    const { sessionId, termId, gradeId, classId, subjectId } = results[0];
+
+    if (!sessionId || !termId || !gradeId || !classId || !subjectId) {
+      console.error("❌ Missing required fields:", JSON.stringify(results, null, 2));
+      return { success: false, error: "❌ Missing required fields." };
+    }
+
+    // ✅ Check if results already exist for this class, term, and subject
+    const existingClassResults = await prisma.result.findMany({
+      where: { sessionId, termId, gradeId, classId, subjectId },
+      select: { studentId: true },
+    });
+
+    const existingStudentIds = new Set(existingClassResults.map((r) => r.studentId));
+
+    // ✅ Validate and filter only new results (🚨 Removing `gradePerformance`)
+    const validResults = results
+      .filter((result) => {
+        return (
+          result.studentId &&
+          result.teacherId &&
+          result.subjectId &&
+          result.termId &&
+          result.sessionId &&
+          result.gradeId &&
+          result.classId &&
+          typeof result.firstAssessment === "number" &&
+          result.firstAssessment >= 0 &&
+          typeof result.secondAssessment === "number" &&
+          result.secondAssessment >= 0 &&
+          typeof result.examScore === "number" &&
+          result.examScore >= 0 &&
+          !existingStudentIds.has(result.studentId) // Exclude students who already have a result
+        );
+      })
+      .map(({ gradePerformance, ...result }) => ({
+        studentId: result.studentId,
+        teacherId: result.teacherId,
+        subjectId: result.subjectId,
+        termId: result.termId,
+        sessionId: result.sessionId,
+        gradeId: result.gradeId,
+        classId: result.classId,
+        firstAssessment: result.firstAssessment,
+        secondAssessment: result.secondAssessment,
+        examScore: result.examScore,
+        totalScore: result.totalScore,
+        status: "PENDING", // ✅ Ensure this field exists to match Prisma model
+      }));
+
+    // ✅ If no valid results, return error before calling Prisma
+    if (validResults.length === 0) {
+      console.error("❌ No valid results to insert:", JSON.stringify(results, null, 2));
+      return { success: false, error: "❌ No new results to insert. All students already have results." };
+    }
+
+    console.log("✅ Valid Results to Save:", JSON.stringify(validResults, null, 2));
+
+    // ✅ Insert results in batch using `createMany`
+    const insertedResults = await prisma.result.createMany({ data: validResults });
+
+    console.log("✅ Results successfully inserted!", insertedResults);
+    return { success: true };
+  } catch (error) {
+    console.error("❌ Error creating results:", error);
+    return { success: false, error: "An unexpected error occurred." };
+  }
+};
+
+
+
+
+
 
 
 
@@ -637,6 +718,22 @@ export async function assignClassTeacher({ classId, teacherId }) {
 
 
 
+export async function fetchTerms(sessionId) {
+  if (!sessionId || isNaN(parseInt(sessionId, 10))) {
+    console.warn("⚠️ sessionId is missing or invalid in fetchTerms()");
+    return [];
+  }
+
+  try {
+    return await prisma.term.findMany({
+      where: { sessionId: parseInt(sessionId, 10) },
+      select: { id: true, name: true },
+    });
+  } catch (error) {
+    console.error("❌ Error fetching terms:", error);
+    return [];
+  }
+}
 
 
 export async function fetchGrades(sessionId) {
@@ -686,14 +783,6 @@ export async function fetchClasses(sessionId, gradeId) {
 }
 
 
-
-
-// export async function updateSupervisor(classId, teacherId) {
-//   return await prisma.class.update({
-//     where: { id: classId },
-//     data: { supervisorId: teacherId },
-//   });
-// }
 
 export async function fetchStudents(sessionId, gradeId, classId) {
   if (!sessionId || !gradeId || !classId) {
@@ -749,48 +838,7 @@ export async function allResults() {
 
 // upload result
 
-export const createResult = async (data) => {
-  console.log(data,'check data')
-  try {
-    // Check if result already exists
-    const existingResult = await prisma.result.findFirst({
-      where: {
-        studentId: data.studentId,
-        teacherId: data.teacherId,
-        subjectId: data.subjectId,
-        termId: data.termId,
-      },
-    });
-    console.log(existingResult,'available');
 
-    if (existingResult) {
-      return { success: false, error: "Result for this student already exists!" };
-    }
-
-    // If no existing result, create a new entry
-    await prisma.result.create({
-      data: {
-        studentId: data.studentId,
-        teacherId: data.teacherId,
-        subjectId: data.subjectId,
-        sessionId: data.sessionId,
-        termId: data.termId,
-        firstAssessment: parseFloat(data.firstAssessment) || 0,
-        secondAssessment: parseFloat(data.secondAssessment) || 0,
-        examScore: parseFloat(data.examScore) || 0,
-        totalScore: 
-          (parseFloat(data.firstAssessment) || 0) + 
-          (parseFloat(data.secondAssessment) || 0) + 
-          (parseFloat(data.examScore) || 0),
-      },
-    });
-
-    return { success: true };
-  } catch (error) {
-    console.error("Error creating result:", error);
-    return { success: false, error: "An unexpected error occurred." };
-  }
-};
 
 
 

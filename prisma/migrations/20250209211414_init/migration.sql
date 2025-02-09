@@ -2,6 +2,9 @@
 CREATE TYPE "ResultStatus" AS ENUM ('PENDING', 'FINALIZED');
 
 -- CreateEnum
+CREATE TYPE "PromotionStatus" AS ENUM ('PROMOTED', 'REPEATED', 'NOT_SET');
+
+-- CreateEnum
 CREATE TYPE "Sex" AS ENUM ('MALE', 'FEMALE');
 
 -- CreateEnum
@@ -147,6 +150,8 @@ CREATE TABLE "Result" (
     "teacherId" TEXT NOT NULL,
     "termId" INTEGER NOT NULL,
     "sessionId" INTEGER NOT NULL,
+    "gradeId" INTEGER NOT NULL,
+    "classId" INTEGER NOT NULL,
     "firstAssessment" DOUBLE PRECISION NOT NULL,
     "secondAssessment" DOUBLE PRECISION NOT NULL,
     "examScore" DOUBLE PRECISION NOT NULL,
@@ -156,6 +161,22 @@ CREATE TABLE "Result" (
     "deletedAt" TIMESTAMP(3),
 
     CONSTRAINT "Result_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "ClassRecord" (
+    "id" SERIAL NOT NULL,
+    "studentId" TEXT NOT NULL,
+    "classId" INTEGER NOT NULL,
+    "termId" INTEGER NOT NULL,
+    "teacherId" TEXT NOT NULL,
+    "remark" TEXT,
+    "position" INTEGER,
+    "promotion" "PromotionStatus",
+    "isDeleted" BOOLEAN NOT NULL DEFAULT false,
+    "deletedAt" TIMESTAMP(3),
+
+    CONSTRAINT "ClassRecord_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -255,6 +276,24 @@ ALTER TABLE "Result" ADD CONSTRAINT "Result_termId_fkey" FOREIGN KEY ("termId") 
 
 -- AddForeignKey
 ALTER TABLE "Result" ADD CONSTRAINT "Result_sessionId_fkey" FOREIGN KEY ("sessionId") REFERENCES "Session"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Result" ADD CONSTRAINT "Result_gradeId_fkey" FOREIGN KEY ("gradeId") REFERENCES "Grade"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Result" ADD CONSTRAINT "Result_classId_fkey" FOREIGN KEY ("classId") REFERENCES "Class"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "ClassRecord" ADD CONSTRAINT "ClassRecord_studentId_fkey" FOREIGN KEY ("studentId") REFERENCES "Student"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "ClassRecord" ADD CONSTRAINT "ClassRecord_classId_fkey" FOREIGN KEY ("classId") REFERENCES "Class"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "ClassRecord" ADD CONSTRAINT "ClassRecord_termId_fkey" FOREIGN KEY ("termId") REFERENCES "Term"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "ClassRecord" ADD CONSTRAINT "ClassRecord_teacherId_fkey" FOREIGN KEY ("teacherId") REFERENCES "Teacher"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Attendance" ADD CONSTRAINT "Attendance_studentId_fkey" FOREIGN KEY ("studentId") REFERENCES "Student"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

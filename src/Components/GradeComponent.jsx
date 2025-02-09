@@ -5,6 +5,7 @@ import { useDatabase } from "@/app/context/DatabaseProvider";
 
 import AdminView from "./AdminView";
 import TeacherView from "./TeacherView";
+import FormModal from "./FormModal";
 
 const GradeComponent = ({ role, currentUser }) => {
   const { databaseData } = useDatabase();
@@ -49,7 +50,7 @@ const GradeComponent = ({ role, currentUser }) => {
 
   // ✅ Fix: Ensure `classId` is correctly passed
   const handleStudentShow = async (classId) => {
-    console.log("Selected Class ID:", classId); // Debugging log
+    console.log("Selected Class ID:", classId); 
     setSelectedClass(classId);
     const classStudents = await fetchStudents(selectedSession, selectedGrade, classId);
     setStudents(classStudents);
@@ -118,7 +119,12 @@ const GradeComponent = ({ role, currentUser }) => {
       {/* CLASS SELECTION */}
       {selectedGrade && (
         <div className="mb-6 bg-purple-200 rounded-md p-4">
-          <h2 className="text-xl font-semibold text-gray-700 mb-3">🏫 Select a Class</h2>
+                <div className="flex flex-wrap justify-around items-center">
+               <h2 className="text-xl font-semibold text-gray-700 mb-3">
+                  🏫 Select a Class
+                </h2>
+                <FormModal memoizedClasses={memoizedClasses.length > 0 ? memoizedClasses : null} table="classTeacher" type="create" />
+               </div>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             {classes.length > 0 ? (
               classes.map((cls) => (
