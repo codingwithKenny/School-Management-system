@@ -14,6 +14,14 @@ export default async function AdminPage() {
     orderBy: { id: "desc" },
   });
 
+  // Fetch terms associated with the most recent session (server-side)
+  const terms = await prisma.term.findMany({
+    where: {
+      sessionId: latestSession?.id, // Ensure terms are for the latest session
+    },
+    orderBy: { id: "desc" }, // Assuming you want the most recent terms first
+  });
+  
   // Fetch Card Data (server-side)
   const cardData = {
     admin: await prisma.admin.count(),
@@ -30,7 +38,7 @@ export default async function AdminPage() {
         {/* CARDS SECTION */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* ADMIN CARD WITH SESSION MODAL BUTTON */}
-          <SessionModal sessionName={cardData.session} />
+          <SessionModal sessionName={cardData.session} terms={terms} />
           
           {/* OTHER CARDS */}
           <Cards color="#CFCEFF" type="Student" data={cardData.student} session={cardData.session} />

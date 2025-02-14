@@ -1,7 +1,10 @@
 "use client";
 import { useState, useMemo } from "react";
+import { z } from "zod";
+
 
 const TeacherResultActions = ({ students, sessions, subjects, teacherId, Results }) => {
+  const [uploadStarted, setUploadStarted] = useState(false);
   const [selectedSession, setSelectedSession] = useState(null);
   const [selectedTerm, setSelectedTerm] = useState(null);
   const [selectedSubject, setSelectedSubject] = useState(null);
@@ -10,22 +13,20 @@ const TeacherResultActions = ({ students, sessions, subjects, teacherId, Results
   const [filteredStudents, setFilteredStudents] = useState([]);
   const [results, setResults] = useState({});
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState({});
+
+  
+  // ✅ Zod Schema for Score Validation
+  const scoreSchema = z.object({
+    ca1: z.preprocess((val) => parseFloat(val), z.number().min(0, "Must be ≥ 0").max(40, "Must be ≤ 20")),
+    ca2: z.preprocess((val) => parseFloat(val), z.number().min(0, "Must be ≥ 0").max(40, "Must be ≤ 20")),
+    exam: z.preprocess((val) => parseFloat(val), z.number().min(0, "Must be ≥ 0").max(100, "Must be ≤ 60")),
+  });
 
   // ✅ Get Terms, Grades, and Classes from Selected Session
-  const filteredTerms = useMemo(
-    () => sessions.find((s) => s.id === selectedSession)?.terms || [],
-    [selectedSession, sessions]
-  );
-
-  const filteredGrades = useMemo(
-    () => sessions.find((s) => s.id === selectedSession)?.grades || [],
-    [selectedSession, sessions]
-  );
-
-  const filteredClasses = useMemo(
-    () => filteredGrades.find((g) => g.id === selectedGrade)?.classes || [],
-    [selectedGrade, filteredGrades]
-  );
+  const filteredTerms = useMemo(() => sessions.find((s) => s.id === selectedSession)?.terms || [], [selectedSession, sessions]);
+  const filteredGrades = useMemo(() => sessions.find((s) => s.id === selectedSession)?.grades || [], [selectedSession, sessions]);
+  const filteredClasses = useMemo(() => filteredGrades.find((g) => g.id === selectedGrade)?.classes || [], [selectedGrade, filteredGrades]);
 
   // ✅ Load Students Based on Selected Filters
   const handleLoadStudents = () => {
@@ -48,9 +49,11 @@ const TeacherResultActions = ({ students, sessions, subjects, teacherId, Results
       }));
 
     setFilteredStudents(studentsInGradeAndSubject);
+    setResults({});
+    setErrors({}); // Reset errors when students are loaded
   };
 
-  // ✅ Handle Input Change for CA1, CA2, Exam
+  // ✅ Handle Input Change & Validate Immediately
   const handleInputChange = (studentId, field, value) => {
     setResults((prev) => ({
       ...prev,
@@ -59,42 +62,58 @@ const TeacherResultActions = ({ students, sessions, subjects, teacherId, Results
         [field]: value,
       },
     }));
+
+    // ✅ Validate Input
+    const studentData = { ...results[studentId], [field]: value };
+    const validation = scoreSchema.safeParse(studentData);
+
+    setErrors((prev) => ({
+      ...prev,
+      [studentId]: validation.success ? null : validation.error.format(),
+    }));
   };
 
   // ✅ Calculate Grade Performance
   const calculatePerformance = (ca1, ca2, exam) => {
     const total = (parseFloat(ca1) || 0) + (parseFloat(ca2) || 0) + (parseFloat(exam) || 0);
+    if (total >= 75) return "Excellent";
+    if (total >= 70) return "Very Good";
+    if (total >= 65) return "Good";
+    if (total >= 50) return "Pass";
+    return "Fail";
+  };
 
-    if (total >= 75) return "Excellent"; 
-    if (total >= 70) return "Very Good";   
-    if (total >= 65) return "Good";        
-    if (total >= 45) return "Pass";       
-    if (total >= 40) return "Pass";
-    return "F";
+  // ✅ Validate All Students Before Submission
+  const validateAllResults = () => {
+    let hasErrors = false;
+    let newErrors = {};
+
+    filteredStudents.forEach((student) => {
+      const studentData = results[student.id] || {};
+      const validation = scoreSchema.safeParse(studentData);
+
+      if (!validation.success) {
+        newErrors[student.id] = validation.error.format();
+        hasErrors = true;
+      }
+    });
+
+    setErrors(newErrors);
+    return !hasErrors;
   };
 
   // ✅ Handle Result Submission
   const handleSubmitResults = async () => {
-    if (!selectedSession || !selectedTerm || !selectedSubject || !selectedGrade || !selectedClass) {
-      alert("❌ Please select all required fields.");
+    if (!validateAllResults()) {
+      alert("❌ Some students have invalid scores. Please correct them before submission.");
       return;
     }
-  
-    // ✅ Validate and format results
-    const formattedResults = Object.entries(results).map(([studentId, scores]) => {
-      const ca1Num = parseFloat(scores?.ca1);
-      const ca2Num = parseFloat(scores?.ca2);
-      const examNum = parseFloat(scores?.exam);
-  
-      if (
-        isNaN(ca1Num) || isNaN(ca2Num) || isNaN(examNum) ||
-        ca1Num < 0 || ca2Num < 0 || examNum < 0
-      ) {
-        alert(`❌ Invalid or negative scores detected. Fix Student: ${studentId}.`);
-        return null;
-      }
-  
-      return {
+
+    setLoading(true);
+    try {
+      const createResult = (await import("@/lib/actions")).createResult;
+
+      const formattedResults = Object.entries(results).map(([studentId, scores]) => ({
         studentId,
         teacherId,
         termId: selectedTerm,
@@ -102,26 +121,14 @@ const TeacherResultActions = ({ students, sessions, subjects, teacherId, Results
         gradeId: selectedGrade,
         classId: selectedClass,
         sessionId: selectedSession,
-        firstAssessment: ca1Num,
-        secondAssessment: ca2Num,
-        examScore: examNum,
-        totalScore: ca1Num + ca2Num + examNum,
-        // gradePerformance: calculatePerformance(ca1Num, ca2Num, examNum),
-      };
-    }).filter(Boolean); // Remove null values (invalid results)
-  
-    if (formattedResults.length === 0) {
-      alert("❌ No valid results to submit.");
-      return;
-    }
-  
-    try {
-      setLoading(true);
-      const createResult = (await import("@/lib/actions")).createResult;
-  
-      // ✅ Batch Submission: Send all results at once
+        firstAssessment: parseFloat(scores.ca1),
+        secondAssessment: parseFloat(scores.ca2),
+        examScore: parseFloat(scores.exam),
+        totalScore: parseFloat(scores.ca1) + parseFloat(scores.ca2) + parseFloat(scores.exam),
+      }));
+
       const response = await createResult(formattedResults);
-  
+
       if (!response.success) {
         alert(response.error);
       } else {
@@ -139,10 +146,24 @@ const TeacherResultActions = ({ students, sessions, subjects, teacherId, Results
   
 
   return (
-    <div className="p-4 bg-purple-100">
-      <h1 className="text-sm text-center text-gray-500 font-bold">Teacher Result Upload</h1>
+    <div className="p-6 bg-gray-50 min-h-screen">
+ <h1 className="text-2xl font-bold text-center text-gray-800 mb-4">📄 Teacher Result Management</h1>   
+ <div className="flex flex-wrap justify-center gap-6">
+        <button
+          className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition-all"
+          onClick={() => setUploadStarted(true)}
+        >
+          Upload Result
+        </button>
+        <button className="bg-gray-200 text-gray-700 px-6 py-2 rounded-md hover:bg-gray-300 transition-all">
+          Check Uploaded Results
+        </button>
+      </div>
+      
 
-      <div className="flex flex-wrap justify-around items-center">
+     {uploadStarted && (
+      <div className="mt-6 bg-white p-6 shadow-md rounded-lg">
+         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
        {/* SESSION SELECTION */}
        <div className="mb-4">
         <label className="text-xs text-gray-500 mr-4">Session</label>
@@ -248,7 +269,11 @@ const TeacherResultActions = ({ students, sessions, subjects, teacherId, Results
       </div>
 
       {/* Display Students After Load */}
-      {filteredStudents.length > 0 && (
+      
+      </div>
+     )}
+
+{filteredStudents.length > 0 && (
         <div className="mt-6 w-full overflow-x-auto">
           <h3 className="text-md font-semibold text-center">Students in Selected Class</h3>
           <table className="w-full mt-2 border-collapse border border-gray-300">
@@ -277,13 +302,12 @@ const TeacherResultActions = ({ students, sessions, subjects, teacherId, Results
               ))}
             </tbody>
           </table>
-        </div>
-      )}
-
-      {/* Submit Button */}
+            {/* Submit Button */}
       <button onClick={handleSubmitResults} className="mt-4 bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700">
         {loading ? "Submitting..." : "Submit Results"}
       </button>
+        </div>
+      )}
     </div>
   );
 };

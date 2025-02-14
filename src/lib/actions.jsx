@@ -2,6 +2,7 @@
 import { clerkClient } from "@clerk/clerk-sdk-node";
 import prisma from "@/lib/prisma";
 import { revalidatePath, revalidateTag } from "next/cache";
+import { PromotionStatus } from "@prisma/client";
 
 
 
@@ -186,11 +187,13 @@ export async function createStudent(data) {
     const sessionId = parseInt(data.sessionId, 10);
     const gradeId = parseInt(data.gradeId, 10);
     const classId = parseInt(data.classId, 10);
+    const termId = parseInt(data.termId, 10);
     
     const [existingSession, existingGrade, existingClass] = await Promise.all([
       prisma.session.findUnique({ where: { id: sessionId } }),
       prisma.grade.findUnique({ where: { id: gradeId } }),
       prisma.class.findUnique({ where: { id: classId } }),
+      prisma.term.findUnique({ where: { id: termId } }),
     ]);
 
     if (!existingSession) return { success: false, error: "Invalid session selected." };
@@ -243,6 +246,7 @@ export async function createStudent(data) {
         sessionId,
         gradeId,
         classId,
+        termId,
         subjects: {
           create: validSubjectIds.map((subjectId) => ({
             subject: { connect: { id: subjectId } },
@@ -265,16 +269,16 @@ export async function createStudent(data) {
 }
 export const updateStudent = async (studentId, data) => {
   try {
+    // Fetch existing student
     const existingStudent = await prisma.student.findUnique({
       where: { id: studentId },
     });
 
-    if (!existingStudent) {
-      console.error("Error: Student Not Found.");
-      return { success: false, error: "Student not found." };
-    }
+    if (!existingStudent) return { success: false, error: "Student not found." };
+
+    // Check for duplicate email/username
     if (data.email !== existingStudent.email || data.username !== existingStudent.username) {
-      const duplicateStudent= await prisma.student.findFirst({
+      const duplicateStudent = await prisma.student.findFirst({
         where: {
           OR: [{ email: data.email }, { username: data.username }],
           NOT: { id: studentId },
@@ -282,20 +286,29 @@ export const updateStudent = async (studentId, data) => {
       });
 
       if (duplicateStudent) {
-        if (duplicateStudent.email === data.email) {
-          return { success: false, error: "A teacher with this email already exists." };
-        }
-        if (duplicateStudent.username === data.username) {
-          console.error("Error: Duplicate Username Detected.");
-          return { success: false, error: "A teacher with this username already exists." };
-        }
+        return { success: false, error: "Email or username already taken." };
       }
     }
+
+    // Validate classId and gradeId
+    const classId = parseInt(data.classId, 10);
+    const gradeId = parseInt(data.gradeId, 10);
+
+    const [existingClass, existingGrade] = await Promise.all([
+      prisma.class.findUnique({ where: { id: classId } }),
+      prisma.grade.findUnique({ where: { id: gradeId } }),
+    ]);
+
+    if (!existingClass) return { success: false, error: "Invalid class selected." };
+    if (!existingGrade) return { success: false, error: "Invalid grade selected." };
+
+    // Update Clerk User
     await clerkClient.users.updateUser(studentId, {
-      emailAddress: [data.email],
-      username: data.username,
+      emailAddress: [data.email.trim()],
+      username: data.username.trim(),
     });
 
+    // Update Prisma Student
     const updatedStudent = await prisma.student.update({
       where: { id: studentId },
       data: {
@@ -304,46 +317,42 @@ export const updateStudent = async (studentId, data) => {
         name: data.name,
         username: data.username,
         email: data.email,
-        sex: data.sex,
+        sex: data.sex.toUpperCase(),
         address: data.address || null,
+        classId,
+        gradeId,
       },
     });
 
-    console.log("Teacher Updated:", updatedStudent);
+    console.log("Student Updated:", updatedStudent);
 
+    // Update subjects only if provided
     if (Array.isArray(data.subjects)) {
-      console.log("Updating teacher subjects...");
-
-      await prisma.studentSubject.deleteMany({
-        where: { studentId },
-      });
+      await prisma.studentSubject.deleteMany({ where: { studentId } });
 
       if (data.subjects.length > 0) {
-        const subjectData = data.subjects.map((subjectId) => ({
-          studentId,
-          subjectId: parseInt(subjectId, 10),
-        }));
-
         await prisma.studentSubject.createMany({
-          data: subjectData,
+          data: data.subjects.map((subjectId) => ({
+            studentId,
+            subjectId: parseInt(subjectId, 10),
+          })),
           skipDuplicates: true,
         });
 
-        console.log("Subjects Updated:", subjectData);
-      } else {
-        console.warn("No subjects provided.");
+        console.log("Subjects Updated:", data.subjects);
       }
     }
 
-    // Refresh UI
-    revalidatePath("/list/teachers");
-    return { success: true, message: "Teacher updated successfully!" };
+    revalidatePath("/list/students");
+    return { success: true, message: "Student updated successfully!" };
 
   } catch (error) {
-    console.error("Error Updating Teacher:", error);
+    console.error("Error Updating Student:", error);
     return { success: false, error: "An unexpected error occurred." };
   }
 };
+
+
 
 export const deleteStudent= async (studentId) => {
   try {
@@ -433,80 +442,100 @@ export const deleteSubject = async (id) => {
   }
 };
 // .........................................................................................................................
-export async function createSession(sessionName) {
-  try {
-    if (!sessionName || typeof sessionName !== "string" || sessionName.trim() === "") {
-      return { success: false, message: "Invalid session name." };
-    }
+// export async function createSession(sessionName) {
+//   try {
+//     if (!sessionName || typeof sessionName !== "string" || sessionName.trim() === "") {
+//       return { success: false, message: "Invalid session name." };
+//     }
 
-    console.log("🟡 Checking if any session is active...");
-    const existingSession = await prisma.session.findFirst({
-      where: { name: sessionName.trim() },
-    });
-    if (existingSession) {
-      console.error("Session already exists:", sessionName);
-      return { success: false, message: "Session already exists." };
-    }
+//     console.log("🟡 Checking if any session is active...");
+//     const existingSession = await prisma.session.findFirst({
+//       where: { name: sessionName.trim() },
+//     });
+//     if (existingSession) {
+//       console.error("Session already exists:", sessionName);
+//       return { success: false, message: "Session already exists." };
+//     }
 
-    // Create session and deactivate previous ones
-    const [_, newSession] = await prisma.$transaction([
-      // Deactivate any existing active session
-      prisma.session.updateMany({
-        where: { isCurrent: true },
-        data: { isCurrent: false },
-      }),
-      // Create a new session
-      prisma.session.create({
-        data: {
-          name: sessionName.trim(),
-          isCurrent: true,
-          isDeleted: false,
-        },
-      }),
-    ]);
+//     // Use a transaction to ensure atomicity
+//     const [_, newSession] = await prisma.$transaction([
+//       // Deactivate any existing active session
+//       prisma.session.updateMany({
+//         where: { isCurrent: true },
+//         data: { isCurrent: false },
+//       }),
+//       // Create a new session
+//       prisma.session.create({
+//         data: {
+//           name: sessionName.trim(),
+//           isCurrent: true,
+//           isDeleted: false,
+//         },
+//       }),
+//     ]);
 
-    if (!newSession?.id) {
-      console.error("❌ Failed to create session.");
-      return { success: false, message: "Failed to create a new session." };
-    }
+//     if (!newSession?.id) {
+//       console.error("❌ Failed to create session.");
+//       return { success: false, message: "Failed to create a new session." };
+//     }
 
-    console.log(`✅ New session '${sessionName}' created.`);
+//     console.log(`✅ New session '${sessionName}' created.`);
 
-    // ✅ Auto-create Terms for the session
-    const terms = ["First Term", "Second Term", "Third Term"];
-    for (let term of terms) {
-      await prisma.term.create({
-        data: { name: term, sessionId: newSession.id },
-      });
-      console.log(`✅ ${term} created for session ${sessionName}.`);
-    }
+//     // Auto-create Terms for the session
+//     const terms = ["First Term", "Second Term", "Third Term"];
+//     for (let term of terms) {
+//       await prisma.term.create({
+//         data: { name: term, sessionId: newSession.id },
+//       });
+//       console.log(`✅ ${term} created for session ${sessionName}.`);
+//     }
 
-    // ✅ Auto-create predefined grades & classes
-    const grades = ["JSS1", "JSS2", "JSS3", "SSS1", "SSS2", "SSS3"];
-    for (let grade of grades) {
-      const newGrade = await prisma.grade.create({
-        data: { name: grade, sessionId: newSession.id },
-      });
+//     // Auto-create predefined grades & classes
+//     const grades = ["JSS1", "JSS2", "JSS3", "SSS1", "SSS2", "SSS3"];
 
-      console.log(`✅ Grade ${grade} created with sessionId ${newSession.id}`);
+//     for (let grade of grades) {
+//       const newGrade = await prisma.grade.create({
+//         data: { name: grade, sessionId: newSession.id },
+//       });
+    
+//       console.log(`✅ Grade ${grade} created with sessionId ${newSession.id}`);
+    
+//       let classes = [
+//         { name: `${grade} A`, gradeId: newGrade.id },
+//         { name: `${grade} B`, gradeId: newGrade.id },
+//       ];
+    
+//       // Add C section for Senior Secondary (SSS)
+//       if (grade.startsWith("SSS")) {
+//         classes.push({ name: `${grade} C`, gradeId: newGrade.id });
+//       }
+    
+//       await prisma.class.createMany({
+//         data: classes,
+//       });
+    
+//       console.log(`✅ Classes created: ${classes.map(cls => cls.name).join(", ")}`);
+//     }
+    
+//     console.log(`✅ New session '${sessionName}' created successfully with all terms, grades, and classes.`);
 
-      await prisma.class.createMany({
-        data: [
-          { name: `${grade} A`, gradeId: newGrade.id },
-          { name: `${grade} B`, gradeId: newGrade.id },
-        ],
-      });
+//     // Trigger promotion handling and move students to the next class
+//     const promotionResult = await handlePromotionAndMoveToNewClass();
 
-      console.log(`✅ Classes ${grade} A & ${grade} B created.`);
-    }
+//     if (!promotionResult.success) {
+//       console.log("❌ Error handling promotion:", promotionResult.message);
+//     } else {
+//       console.log("✅ Promotion and class progression handled successfully.");
+//     }
 
-    console.log(`✅ New session '${sessionName}' created successfully with all terms, grades, and classes.`);
-    return { success: true, message: "Session created successfully!", session: newSession };
-  } catch (error) {
-    console.error("❌ Error creating session:", error);
-    return { success: false, message: "An error occurred while creating the session." };
-  }
-}
+//     return { success: true, message: "Session created successfully!", session: newSession };
+//   } catch (error) {
+//     console.error("❌ Error creating session:", error);
+//     return { success: false, message: "An error occurred while creating the session." };
+//   }
+// }
+
+
 
 // ............................................................................................................................
 export async function assignClassTeacher({ classId, teacherId }) {
@@ -563,82 +592,151 @@ export async function assignClassTeacher({ classId, teacherId }) {
 }
 // ............................................................................................................................
 export const createResult = async (results) => {
-  console.log("🚀 Checking submitted results:", JSON.stringify(results, null, 2));
-
   try {
-    // ✅ Ensure `results` is an array and not empty
     if (!Array.isArray(results) || results.length === 0) {
-      console.error("❌ No results provided or invalid format:", JSON.stringify(results, null, 2));
-      return { success: false, error: "❌ No results provided or invalid format." };
+      return { success: false, error: "❌ No results provided." };
     }
 
-    // ✅ Extract common fields for batch checking
     const { sessionId, termId, gradeId, classId, subjectId } = results[0];
 
     if (!sessionId || !termId || !gradeId || !classId || !subjectId) {
-      console.error("❌ Missing required fields:", JSON.stringify(results, null, 2));
       return { success: false, error: "❌ Missing required fields." };
     }
 
-    // ✅ Check if results already exist for this class, term, and subject
-    const existingClassResults = await prisma.result.findMany({
+    // ✅ Check if the class already has submitted results
+    const existingClassResults = await prisma.result.findFirst({
       where: { sessionId, termId, gradeId, classId, subjectId },
-      select: { studentId: true },
     });
 
-    const existingStudentIds = new Set(existingClassResults.map((r) => r.studentId));
-
-    // ✅ Validate and filter only new results (🚨 Removing `gradePerformance`)
-    const validResults = results
-      .filter((result) => {
-        return (
-          result.studentId &&
-          result.teacherId &&
-          result.subjectId &&
-          result.termId &&
-          result.sessionId &&
-          result.gradeId &&
-          result.classId &&
-          typeof result.firstAssessment === "number" &&
-          result.firstAssessment >= 0 &&
-          typeof result.secondAssessment === "number" &&
-          result.secondAssessment >= 0 &&
-          typeof result.examScore === "number" &&
-          result.examScore >= 0 &&
-          !existingStudentIds.has(result.studentId) // Exclude students who already have a result
-        );
-      })
-      .map(({ gradePerformance, ...result }) => ({
-        studentId: result.studentId,
-        teacherId: result.teacherId,
-        subjectId: result.subjectId,
-        termId: result.termId,
-        sessionId: result.sessionId,
-        gradeId: result.gradeId,
-        classId: result.classId,
-        firstAssessment: result.firstAssessment,
-        secondAssessment: result.secondAssessment,
-        examScore: result.examScore,
-        totalScore: result.totalScore,
-        status: "PENDING", // ✅ Ensure this field exists to match Prisma model
-      }));
-
-    // ✅ If no valid results, return error before calling Prisma
-    if (validResults.length === 0) {
-      console.error("❌ No valid results to insert:", JSON.stringify(results, null, 2));
-      return { success: false, error: "❌ No new results to insert. All students already have results." };
+    if (existingClassResults) {
+      return { success: false, error: "❌ This class already has submitted results." };
     }
 
-    console.log("✅ Valid Results to Save:", JSON.stringify(validResults, null, 2));
+    // ✅ Validate student results
+    const validResults = results.map((result) => {
+      if (
+        !result.studentId || !result.teacherId || !result.firstAssessment ||
+        !result.secondAssessment || !result.examScore
+      ) {
+        return null;
+      }
 
-    // ✅ Insert results in batch using `createMany`
-    const insertedResults = await prisma.result.createMany({ data: validResults });
+      return {
+        studentId: result.studentId,
+        teacherId: result.teacherId,
+        subjectId,
+        termId,
+        sessionId,
+        gradeId,
+        classId,
+        firstAssessment: parseFloat(result.firstAssessment),
+        secondAssessment: parseFloat(result.secondAssessment),
+        examScore: parseFloat(result.examScore),
+        totalScore: parseFloat(result.firstAssessment) + parseFloat(result.secondAssessment) + parseFloat(result.examScore),
+      };
+    }).filter(Boolean);
 
-    console.log("✅ Results successfully inserted!", insertedResults);
+    if (validResults.length === 0) {
+      return { success: false, error: "❌ Some results are invalid. Fix them before submission." };
+    }
+
+    // ✅ Insert results
+    await prisma.result.createMany({ data: validResults });
+
     return { success: true };
   } catch (error) {
     console.error("❌ Error creating results:", error);
-    return { success: false, error: "An unexpected error occurred." };
+    return { success: false, error: "❌ An unexpected error occurred." };
+  }
+};
+// ............................................................................................................................
+
+export const createClassRecord = async (records) => {
+  console.log("🚀 Incoming Records:", JSON.stringify(records, null, 2));
+
+  try {
+    if (!Array.isArray(records) || records.length === 0) {
+      return { success: false, error: "❌ No valid record provided." };
+    }
+
+    const { sessionId, termId, classId, teacherId } = records[0];
+
+    if (!sessionId || !termId || !classId || !teacherId) {
+      return { success: false, error: "❌ Missing required fields: sessionId, termId, classId, or teacherId." };
+    }
+
+    // ✅ Check if term exists
+    const selectedTerm = await prisma.term.findUnique({
+      where: { id: termId },
+    });
+
+    if (!selectedTerm) {
+      return { success: false, error: "❌ Term not found." };
+    }
+
+    const TermName = selectedTerm.name;
+
+    // ✅ Prevent duplicate records
+    const existingRecord = await prisma.classRecord.findFirst({
+      where: { sessionId, termId, classId, teacherId },
+    });
+
+    if (existingRecord) {
+      console.log("❌ Class record already exists.");
+      return { success: false, error: "❌ This class already has submitted records for this term." };
+    }
+
+    // ✅ Validate records and include `preferredClass` for JSS3 students
+    const validRecords = records
+  .map((record, index) => {
+    if (!record.studentId || !record.teacherId || !record.remark) {
+      console.warn(`⚠️ Skipping invalid record at index ${index}:`, record);
+      return null;
+    }
+
+    // ✅ Directly use preferredClass if provided (frontend ensures only JSS3 students have it)
+    const preferredClass = record.preferredClass?.toUpperCase() || null;
+
+    console.log("🚀 Incoming Record:", JSON.stringify(record, null, 2));
+    console.log("🔍 Processed Preferred Class:", preferredClass);
+
+    return {
+      studentId: record.studentId,
+      teacherId: record.teacherId,
+      termId,
+      sessionId,
+      classId,
+      remark: record.remark || "N/A",
+      position: parseInt(record.position, 10) || null,
+      promotion: TermName === "Third Term" ? "PROMOTED" : "REPEAT",
+      preferredClass, // ✅ Automatically included if available, else null
+    };
+  })
+  .filter(Boolean);
+
+  
+  console.log("💾 Saving Class Records:", JSON.stringify(validRecords, null, 2));
+  
+
+    // ✅ Save class records
+    await prisma.classRecord.createMany({
+      data: validRecords,
+      skipDuplicates: true,
+    });
+
+    // ✅ Mark students as promoted if it's Third Term
+    if (TermName === "Third Term") {
+      console.log("🔄 Marking students for promotion...");
+
+      const promotedStudents = validRecords.filter((r) => r.promotion === "PROMOTED");
+
+      console.log(promotedStudents);
+    }
+
+    return { success: true, message: "✅ Class records saved successfully!" };
+  } catch (error) {
+    console.error("❌ Error saving class record:", error.message);
+    return { success: false, error: "❌ An unexpected error occurred." };
   }
 };
 
@@ -653,6 +751,290 @@ export const createResult = async (results) => {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+export async function createSession(sessionName) {
+  try {
+    if (!sessionName || typeof sessionName !== "string" || sessionName.trim() === "") {
+      return { success: false, message: "Invalid session name." };
+    }
+
+    console.log("🟡 Checking current active session...");
+    
+    // ✅ Get the last active session before deactivating it
+    const lastSession = await prisma.session.findFirst({
+      where: { isCurrent: true },
+    });
+
+    console.log(lastSession, "📌 Last active session before deactivation");
+
+    // ✅ Ensure no duplicate session name
+    const existingSession = await prisma.session.findFirst({
+      where: { name: sessionName.trim() },
+    });
+    if (existingSession) {
+      console.error("❌ Session already exists:", sessionName);
+      return { success: false, message: "Session already exists." };
+    }
+
+    // ✅ Deactivate old session
+    if (lastSession) {
+      await prisma.session.update({
+        where: { id: lastSession.id },
+        data: { isCurrent: false },
+      });
+    }
+
+    // ✅ Create new session
+    const newSession = await prisma.session.create({
+      data: { name: sessionName.trim(), isCurrent: true, isDeleted: false },
+    });
+
+    if (!newSession?.id) {
+      console.error("❌ Failed to create session.");
+      return { success: false, message: "Failed to create a new session." };
+    }
+
+    console.log(`✅ New session '${sessionName}' created.`);
+
+    // ✅ Auto-create Terms
+    const terms = ["First Term", "Second Term", "Third Term"];
+    await prisma.term.createMany({
+      data: terms.map(term => ({ name: term, sessionId: newSession.id })),
+    });
+
+    console.log(`✅ Terms created: ${terms.join(", ")}`);
+
+    // ✅ Auto-create Grades and Classes
+    const grades = ["JSS1", "JSS2", "JSS3", "SSS1", "SSS2", "SSS3"];
+
+    for (let grade of grades) {
+      const newGrade = await prisma.grade.create({
+        data: { name: grade, sessionId: newSession.id },
+      });
+
+      console.log(`✅ Grade ${grade} created`);
+
+      let classes = [
+        { name: `${grade} A`, gradeId: newGrade.id },
+        { name: `${grade} B`, gradeId: newGrade.id },
+      ];
+
+      if (grade.startsWith("SSS")) {
+        classes.push({ name: `${grade} C`, gradeId: newGrade.id });
+      }
+
+      await prisma.class.createMany({ data: classes });
+      console.log(`✅ Classes created: ${classes.map(cls => cls.name).join(", ")}`);
+    }
+
+    console.log(`✅ Session '${sessionName}' fully set up.`);
+
+    // 🔄 Pass `lastSession.id` to promotion function
+    if (lastSession?.id) {
+      console.log("🔄 Initiating student promotion process...", "from last session", lastSession.id, "to new session", newSession.id);
+      const promotionResult = await handlePromotionAndMoveToNewClass(lastSession.id, newSession.id);
+
+      if (!promotionResult.success) {
+        console.log("❌ Error handling promotion:", promotionResult.message);
+      } else {
+        console.log("✅ Promotion and class progression handled successfully.");
+      }
+    } else {
+      console.log("⚠️ No last session found, skipping promotion.");
+    }
+
+    return { success: true, message: "Session created successfully!", session: newSession };
+
+  } catch (error) {
+    console.error("❌ Error creating session:", error);
+    return { success: false, message: "An error occurred while creating the session." };
+  }
+}
+
+
+const classPromotionMap = {
+  "JSS1A": "JSS2A",
+  "JSS1B": "JSS2B",
+  "JSS2A": "JSS3A",
+  "JSS2B": "JSS3B",
+  "JSS3A": null, // No auto-promotion
+  "JSS3B": null, // No auto-promotion
+  "SSS1A": "SSS2A",
+  "SSS1B": "SSS2B",
+  "SSS1C": "SSS2C",
+  "SSS2A": "SSS3A",
+  "SSS2B": "SSS3B",
+  "SSS2C": "SSS3C",
+};
+
+
+
+async function handlePromotionAndMoveToNewClass(lastSessionId, newSessionId) {
+  try {
+    // Fetch the new session details
+    const newSession = await prisma.session.findUnique({
+      where: { id: newSessionId },
+      select: {
+        id: true,
+        grades: {
+          select: {
+            id: true,
+            name: true,
+            classes: { select: { id: true, name: true } },
+          },
+        },
+      },
+    });
+
+    if (!newSession) return { success: false, message: "No active session found." };
+
+    // Create class ID mapping with consistent formatting
+    const classIdMap = {};
+    const gradeIdMap = {};
+    newSession.grades.forEach((grade) => {
+      grade.classes.forEach((cls) => {
+        const formattedClassName = cls.name.replace(/\s+/g, "").toUpperCase();
+        classIdMap[formattedClassName] = cls.id;
+        gradeIdMap[formattedClassName] = grade.id;
+      });
+    });
+
+    console.log(classIdMap, "📌 New Session Class ID Map");
+    console.log(gradeIdMap, "📌 New Session Grade ID Map");
+
+    // Fetch promoted students
+    const promotedStudents = await prisma.classRecord.findMany({
+      where: { sessionId: lastSessionId, promotion: "PROMOTED" },
+      select: { studentId: true, class: { select: { name: true } }, preferredClass: true },
+    });
+
+    if (promotedStudents.length === 0) {
+      return { success: false, message: "No promoted students found in the last session." };
+    }
+
+    // Prepare student updates
+    const updatePromises = promotedStudents.map(async (record) => {
+      const formattedCurrentClass = record.class?.name?.replace(/\s+/g, "").toUpperCase();
+      console.log(formattedCurrentClass, "🔍 Current Class");
+
+
+      const studentId = record.studentId;
+
+      // Fetch all results for this student in the last session
+      const studentResults = await prisma.result.findMany({
+        where: { studentId, sessionId: lastSessionId },
+      });
+    
+      // Find the student's class record for linking
+      const studentClassRecord = await prisma.classRecord.findFirst({
+        where: { studentId, sessionId: lastSessionId },
+      });
+    
+      // Insert history before updating student class
+      await prisma.studentHistory.create({
+        data: {
+          studentId,
+          sessionId: lastSessionId,
+          classId: classIdMap[formattedCurrentClass],
+          gradeId: gradeIdMap[formattedCurrentClass],
+          classRecordId: studentClassRecord?.id || null, // Store remarks, promotion status, position
+          results: { connect: studentResults.map((r) => ({ id: r.id })) }, // Link past results
+        },
+      });
+    
+      console.log(`📌 Student history recorded for ${studentId}`);
+      // Handle JSS3 to SSS1 Promotion (Preferred Class)
+      if (formattedCurrentClass.startsWith("JSS3")) {
+        const formattedPreferredClass = record.preferredClass?.replace(/\s+/g, "").toUpperCase();
+        console.log(`Preferred Class for ${record.studentId}: ${formattedPreferredClass || "None Specified"}`);
+
+        if (!formattedPreferredClass) {
+          console.warn(`⚠️ Student ${record.studentId} has no preferred class. Manual selection required.`);
+          return null;
+        }
+
+        // Ensure lookup uses formatted names
+        const preferredClassId = classIdMap[formattedPreferredClass];
+        const preferredGradeId = gradeIdMap[formattedPreferredClass];
+
+        if (!preferredClassId || !preferredGradeId) {
+          console.error(`❌ Preferred class ${formattedPreferredClass} not found for student ${record.studentId}.`);
+          return null;
+        }
+
+        console.log(`✅ Assigning JSS3 student ${record.studentId} to ${formattedPreferredClass}`);
+
+        return prisma.student.update({
+          where: { id: record.studentId },
+          data: {
+            classId: preferredClassId,
+            sessionId: newSessionId,
+            gradeId: preferredGradeId,
+          },
+        });
+      }
+
+      // Normal Promotion for Other Classes
+      const nextClassName = classPromotionMap[formattedCurrentClass];
+      console.log(nextClassName, "🔄 Next Class");
+
+      if (!nextClassName) {
+        console.warn(`⚠️ No promotion mapping found for ${formattedCurrentClass}`);
+        return null;
+      }
+
+      const newClassId = classIdMap[nextClassName.replace(/\s+/g, "").toUpperCase()];
+      const newGradeId = gradeIdMap[nextClassName.replace(/\s+/g, "").toUpperCase()];
+
+      console.log(newClassId, "✅ New Class ID");
+      console.log(newGradeId, "✅ New Grade ID");
+
+      if (!newClassId || !newGradeId) {
+        console.warn(`⚠️ No class ID or grade ID found for ${nextClassName} in new session`);
+        return null;
+      }
+
+      console.log("Before Update:", record.studentId, formattedCurrentClass, newClassId, newGradeId);
+
+      return prisma.student.update({
+        where: { id: record.studentId },
+        data: {
+          classId: newClassId,
+          sessionId: newSessionId,
+          gradeId: newGradeId,
+        },
+      });
+    });
+
+    // Wait for all updates to complete
+    const updatedStudents = await Promise.all(updatePromises.filter(Boolean));
+
+    console.log("Updated Students:", updatedStudents);
+    console.log("✅ Students successfully moved to new class");
+    return { success: true, message: "Students moved to the next class", updatedStudents };
+  } catch (error) {
+    console.error("❌ Error moving students:", error);
+    return { success: false, message: "Error occurred while moving students" };
+  }
+}
 
 
 
@@ -800,8 +1182,13 @@ export async function fetchStudents(sessionId, gradeId, classId) {
       id: true,
       name: true,
       username: true,
-      surname:true,
-      class: { select: { name: true } }, // ✅ Fetch class name for display
+      surname: true,
+      class: { select: { name: true } }, // ✅ Fetch class name
+      session: { select: { name: true } }, // ✅ Fetch session name
+      term: { select: { name: true } },
+      subjects: { 
+        select: { subject: { select: { name: true } } } // ✅ Fetch subjects
+      }
     },
   });
 }

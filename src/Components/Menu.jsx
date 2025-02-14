@@ -54,15 +54,15 @@ const menuItems = [
       },
       {
         icon: "/exam.png",
-        label: "Exams",
-        href: "/list/exams",
-        visible: ["admin", "teacher", "student", "parent"],
+        label: "Check Result",
+        href: "/list/checkresult",
+        visible: ["student", "parent"],
       },
       {
         icon: "/result.png",
         label: "Results",
         href: "/list/results",
-        visible: ["admin", "teacher", "student", "parent"],
+        visible: ["teacher" ],
       },
       {
         icon: "/attendance.png",

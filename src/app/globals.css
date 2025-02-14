@@ -185,3 +185,20 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+
+  #printable-area, #printable-area * {
+    visibility: visible;
+  }
+
+  #printable-area {
+    /* position: absolute; */
+    left: 0;
+    margin-top: 0;
+    width: 100%;
+  }
+}

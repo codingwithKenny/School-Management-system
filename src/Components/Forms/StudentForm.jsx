@@ -18,9 +18,8 @@ const StudentForm = ({ type, data }) => {
   const activeSession = databaseData.sessions.find((s) => s.isCurrent); // ✅ Get active session
   const filteredGrades = databaseData.grades.filter((g) => g.sessionId === activeSession?.id); // ✅ Filter grades by active session
   const filteredClasses = databaseData.classes.filter((c) => c.gradeId === Number(selectedGrade));
-  // console.log(filteredGrades)
-    console.log(activeSession)
-    console.log(filteredClasses,'yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy')
+  // const activeSession = databaseData.sessions.find((s) => s.isCurrent);
+const filteredTerms = databaseData.terms.filter((t) => t.sessionId === activeSession?.id);
 
   const {
     register,
@@ -51,6 +50,7 @@ const StudentForm = ({ type, data }) => {
         address: data?.address || "",
         sex: data?.sex ||"",
         paymentStatus: data?.paymentStatus || "",
+        termId: data?.termId ? String(data.termId) : "", // ✅ Set default term if editing
         sessionId: data?.sessionId ? String(data.sessionId) : "",
         gradeId: data?.gradeId ? String(data.gradeId) : "",
         classId: data?.classId ? String(data.classId) : "",
@@ -77,12 +77,14 @@ const StudentForm = ({ type, data }) => {
   const onSubmit = handleSubmit(async (formData) => {
     console.log("🟢 Form submission started!");
 
+
     try {
       let response;
 
       const cleanedData = {
         ...formData,
         sessionId: Number(activeSession.id),
+        termId: Number(formData.termId), // ✅ Ensure termId is included
         gradeId: Number(formData.gradeId),
         classId: Number(formData.classId),
         subjects: formData.subjects.map(Number),
@@ -91,7 +93,9 @@ const StudentForm = ({ type, data }) => {
       };
 
       console.log("Submitting cleaned data:", cleanedData);
-
+      console.log("Filtered Terms:", filteredTerms);
+      console.log("Term ID from Form:", data?.termId);
+      console.log("Cleaned Data before submission:", cleanedData);
       if (type === "create") {
         response = await createStudent(cleanedData);
       } else if (type === "update" && data?.id) {
@@ -221,7 +225,7 @@ const StudentForm = ({ type, data }) => {
                 className="border text-sm text-gray-500 mt-2 ring-[1.5px] ring-gray-300 rounded-md p-2 cursor-pointer"
               >
                 <option value="">-- Select Session --</option>
-               <option value={activeSession.name}>{activeSession.name}</option>
+               <option value={activeSession.id}>{activeSession.name}</option>
               </select>
             </div>
           </div>
@@ -267,6 +271,25 @@ const StudentForm = ({ type, data }) => {
             />
           </div>
           <div className="flex flex-col justify-center">
+          <div className="flex flex-col w-full md:w-1/4">
+  <label className="text-xs text-gray-500">Term</label>
+  <select
+    {...register("termId")}
+    className="border text-sm text-gray-500 mt-2 ring-[1.5px] ring-gray-300 rounded-md p-2 cursor-pointer"
+    onChange={(e) => console.log("Selected Term ID:", e.target.value)} // Debugging
+    defaultValue={data?.termId || ""}
+
+
+  >
+    <option value="">-- Select Term --</option>
+    {filteredTerms.map((t) => (
+      <option key={t.id} value={String(t.id)}>
+        {t.name}
+      </option>
+    ))}
+  </select>
+</div>
+
             <label
               className="text-xs text-gray-500 flex items-center cursor-pointer gap-2"
               htmlFor="img"

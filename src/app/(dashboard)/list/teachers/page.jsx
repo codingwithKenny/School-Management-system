@@ -9,7 +9,7 @@ import { ITEM_PER_PAGE } from "@/lib/settings";
 import { getUserRole } from "@/lib/authUtils";
 
 export default async function TeacherListPage({ searchParams }) {
-  const params = searchParams ? await searchParams : {};
+  const  params = searchParams || {}; 
   const role = await getUserRole();
 
   const page = params.page || 1;

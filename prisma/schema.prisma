@@ -79,7 +79,8 @@ model Class {
   supervisorId String?
   students     Student[]
   results      Result[]
-  classRecords ClassRecord[] // ✅ New relation for class teacher remarks
+  classRecords ClassRecord[] 
+     histories     StudentHistory[] // ✅ New relation to track movement across sessions// ✅ New relation for class teacher remarks
   isDeleted    Boolean   @default(false)
   deletedAt    DateTime?
 
@@ -95,6 +96,7 @@ model Grade {
   classes   Class[]
   students  Student[]
   results   Result[]
+    histories     StudentHistory[] // ✅ New relation to track movement across sessions
   isDeleted Boolean   @default(false)
   deletedAt DateTime?
 
@@ -107,6 +109,8 @@ model Session {
   isCurrent Boolean   @default(false)
   terms     Term[]
   results   Result[]
+  classRecord  ClassRecord[]
+  histories     StudentHistory[] // ✅ New relation to track movement across sessions
   grades    Grade[]
   students  Student[]
   isDeleted Boolean   @default(false)
@@ -120,6 +124,8 @@ model Term {
   name       String
   session    Session      @relation(fields: [sessionId], references: [id])
   sessionId  Int
+  students   Student[] // ✅ Link students to a specific term
+
   results    Result[]
   attendance Attendance[]
   classRecords ClassRecord[] // ✅ Class teacher uploads remarks per term
@@ -148,10 +154,31 @@ model Student {
   paymentStatus PaymentStatus    @default(NOT_PAID)
   results       Result[]
   attendance    Attendance[]
-  classRecords  ClassRecord[]    // ✅ Link to class teacher's remarks
+  classRecords  ClassRecord[]
+  histories     StudentHistory[] // ✅ New relation to track movement across sessions
+  term          Term           @relation(fields: [termId], references: [id]) // ✅ Track payment per term
+  termId        Int  
   isDeleted     Boolean          @default(false)
   deletedAt     DateTime?
 }
+model StudentHistory {
+  id            Int       @id @default(autoincrement())
+  student       Student   @relation(fields: [studentId], references: [id])
+  studentId     String
+  session       Session   @relation(fields: [sessionId], references: [id])
+  sessionId     Int
+  grade         Grade     @relation(fields: [gradeId], references: [id])
+  gradeId       Int
+  class         Class     @relation(fields: [classId], references: [id])
+  classId       Int
+  results       Result[]  // ✅ Store all results for the session  
+  classRecord   ClassRecord? @relation(fields: [classRecordId], references: [id])  
+  classRecordId Int?       
+  createdAt     DateTime  @default(now())  
+
+  @@unique([studentId, sessionId]) // ✅ One history record per student per session
+}
+
 
 model Result {
   id               Int          @id @default(autoincrement())
@@ -169,6 +196,7 @@ model Result {
   gradeId          Int
   class            Class        @relation(fields: [classId], references: [id])
   classId          Int
+  histories     StudentHistory[] // ✅ New relation to track movement across sessions
   firstAssessment  Float
   secondAssessment Float
   examScore        Float
@@ -186,11 +214,16 @@ model ClassRecord {
   classId     Int
   term        Term     @relation(fields: [termId], references: [id])
   termId      Int
+   session     Session  @relation(fields: [sessionId], references: [id]) // ✅ Added sessionId
+  sessionId   Int  // ✅ New foreign key
   teacher     Teacher  @relation(fields: [teacherId], references: [id])
   teacherId   String
   remark      String?  // ✅ Class teacher's remarks
   position    Int?     // ✅ Student's position in class
-  promotion   PromotionStatus? // ✅ Promotion status at the end of the year
+  promotion   PromotionStatus? 
+    preferredClass String? // ✅ Stores JSS3 students' preferred class for SSS1
+
+    histories     StudentHistory[] // ✅ New relation to track movement across sessions// ✅ Promotion status at the end of the year
   isDeleted   Boolean  @default(false)
   deletedAt   DateTime?
 }

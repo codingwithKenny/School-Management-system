@@ -2,6 +2,7 @@ import prisma from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/authUtils';
 import TeacherResultActions from '@/components/TeacherResultActions';
 import { allResults } from '@/lib/actions';
+import StudentResultView from '@/components/StudentResultView';
 
 const resultListPage = async () => {
   const { role, userId } = await getCurrentUser();
@@ -62,13 +63,24 @@ const resultListPage = async () => {
 
     return (
       <div className="bg-white rounded-md p-4 flex-1 m-4 mt-0">
-        <TeacherResultActions
+      {role =="teacher" && (
+          <TeacherResultActions
           students={students}
-          sessions={sessions} // ✅ Sessions now include terms, grades, and classes
+          sessions={sessions} 
           subjects={subjects}
           teacherId={userId}
           Results={Results.data || []}
         />
+      )}
+       {role =="student" && (
+          <StudentResultView
+          students={students}
+          sessions={sessions} 
+          subjects={subjects}
+          teacherId={userId}
+          Results={Results.data || []}
+        />
+      )}
       </div>
     );
   } catch (error) {

@@ -136,10 +136,24 @@ CREATE TABLE "Student" (
     "gradeId" INTEGER NOT NULL,
     "classId" INTEGER NOT NULL,
     "paymentStatus" "PaymentStatus" NOT NULL DEFAULT 'NOT_PAID',
+    "termId" INTEGER NOT NULL,
     "isDeleted" BOOLEAN NOT NULL DEFAULT false,
     "deletedAt" TIMESTAMP(3),
 
     CONSTRAINT "Student_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "StudentHistory" (
+    "id" SERIAL NOT NULL,
+    "studentId" TEXT NOT NULL,
+    "sessionId" INTEGER NOT NULL,
+    "gradeId" INTEGER NOT NULL,
+    "classId" INTEGER NOT NULL,
+    "classRecordId" INTEGER,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "StudentHistory_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -169,10 +183,12 @@ CREATE TABLE "ClassRecord" (
     "studentId" TEXT NOT NULL,
     "classId" INTEGER NOT NULL,
     "termId" INTEGER NOT NULL,
+    "sessionId" INTEGER NOT NULL,
     "teacherId" TEXT NOT NULL,
     "remark" TEXT,
     "position" INTEGER,
     "promotion" "PromotionStatus",
+    "preferredClass" TEXT,
     "isDeleted" BOOLEAN NOT NULL DEFAULT false,
     "deletedAt" TIMESTAMP(3),
 
@@ -191,6 +207,14 @@ CREATE TABLE "Attendance" (
     "deletedAt" TIMESTAMP(3),
 
     CONSTRAINT "Attendance_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "_ResultToStudentHistory" (
+    "A" INTEGER NOT NULL,
+    "B" INTEGER NOT NULL,
+
+    CONSTRAINT "_ResultToStudentHistory_AB_pkey" PRIMARY KEY ("A","B")
 );
 
 -- CreateIndex
@@ -229,6 +253,12 @@ CREATE UNIQUE INDEX "Student_username_key" ON "Student"("username");
 -- CreateIndex
 CREATE UNIQUE INDEX "Student_email_key" ON "Student"("email");
 
+-- CreateIndex
+CREATE UNIQUE INDEX "StudentHistory_studentId_sessionId_key" ON "StudentHistory"("studentId", "sessionId");
+
+-- CreateIndex
+CREATE INDEX "_ResultToStudentHistory_B_index" ON "_ResultToStudentHistory"("B");
+
 -- AddForeignKey
 ALTER TABLE "TeacherSubject" ADD CONSTRAINT "TeacherSubject_teacherId_fkey" FOREIGN KEY ("teacherId") REFERENCES "Teacher"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
@@ -263,6 +293,24 @@ ALTER TABLE "Student" ADD CONSTRAINT "Student_gradeId_fkey" FOREIGN KEY ("gradeI
 ALTER TABLE "Student" ADD CONSTRAINT "Student_classId_fkey" FOREIGN KEY ("classId") REFERENCES "Class"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "Student" ADD CONSTRAINT "Student_termId_fkey" FOREIGN KEY ("termId") REFERENCES "Term"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "StudentHistory" ADD CONSTRAINT "StudentHistory_studentId_fkey" FOREIGN KEY ("studentId") REFERENCES "Student"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "StudentHistory" ADD CONSTRAINT "StudentHistory_sessionId_fkey" FOREIGN KEY ("sessionId") REFERENCES "Session"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "StudentHistory" ADD CONSTRAINT "StudentHistory_gradeId_fkey" FOREIGN KEY ("gradeId") REFERENCES "Grade"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "StudentHistory" ADD CONSTRAINT "StudentHistory_classId_fkey" FOREIGN KEY ("classId") REFERENCES "Class"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "StudentHistory" ADD CONSTRAINT "StudentHistory_classRecordId_fkey" FOREIGN KEY ("classRecordId") REFERENCES "ClassRecord"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "Result" ADD CONSTRAINT "Result_studentId_fkey" FOREIGN KEY ("studentId") REFERENCES "Student"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -293,6 +341,9 @@ ALTER TABLE "ClassRecord" ADD CONSTRAINT "ClassRecord_classId_fkey" FOREIGN KEY 
 ALTER TABLE "ClassRecord" ADD CONSTRAINT "ClassRecord_termId_fkey" FOREIGN KEY ("termId") REFERENCES "Term"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "ClassRecord" ADD CONSTRAINT "ClassRecord_sessionId_fkey" FOREIGN KEY ("sessionId") REFERENCES "Session"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "ClassRecord" ADD CONSTRAINT "ClassRecord_teacherId_fkey" FOREIGN KEY ("teacherId") REFERENCES "Teacher"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -303,3 +354,9 @@ ALTER TABLE "Attendance" ADD CONSTRAINT "Attendance_subjectId_fkey" FOREIGN KEY 
 
 -- AddForeignKey
 ALTER TABLE "Attendance" ADD CONSTRAINT "Attendance_termId_fkey" FOREIGN KEY ("termId") REFERENCES "Term"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "_ResultToStudentHistory" ADD CONSTRAINT "_ResultToStudentHistory_A_fkey" FOREIGN KEY ("A") REFERENCES "Result"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "_ResultToStudentHistory" ADD CONSTRAINT "_ResultToStudentHistory_B_fkey" FOREIGN KEY ("B") REFERENCES "StudentHistory"("id") ON DELETE CASCADE ON UPDATE CASCADE;

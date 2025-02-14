@@ -1,244 +1,325 @@
-"use client";
-import { useState, useEffect, useMemo } from "react";
-import { fetchGrades, fetchClasses, fetchStudents } from "@/lib/actions";
-import FormModal from "./FormModal";
-import { useDatabase } from "@/app/context/DatabaseProvider";
-
-const GradeComponent = ({ role, currentUser }) => {
-  const { databaseData } = useDatabase();
-  const sessions = databaseData.sessions || [];
-  const [loading, setLoading] = useState(false);
-  const [selectedSession, setSelectedSession] = useState(null);
-  const [grades, setGrades] = useState([]);
-  const [selectedGrade, setSelectedGrade] = useState(null);
-  const [classes, setClasses] = useState([]);
-  const [selectedClass, setSelectedClass] = useState(null);
-  const [students, setStudents] = useState([]);
-
-  // ✅ Fetch grades when session is selected
-  useEffect(() => {
-    if (!selectedSession || isNaN(selectedSession)) return;
-    setLoading(true);
-
-    const delayFetch = setTimeout(async () => {
-      if (selectedSession) {
-        const sessionGrades = await fetchGrades(selectedSession);
-        setGrades(sessionGrades);
-        setLoading(false);
-        setSelectedGrade(null);
-        setClasses([]);
-        setSelectedClass(null);
-        setStudents([]);
-      }
-    }, 300);
-
-    return () => clearTimeout(delayFetch);
-  }, [selectedSession]);
-
-  const memoizedGrades = useMemo(() => grades, [grades]);
-
-  // ✅ Fetch classes when a grade is selected
-  const handleGradeClick = async (gradeId) => {
-    setSelectedGrade(gradeId);
-    setSelectedClass(null);
-    setStudents([]);
-
-    const gradeClasses = await fetchClasses(selectedSession, gradeId);
-
-    // ✅ Filter classes for teachers: Only show assigned classes
-    const filteredClasses = role === "teacher"
-      ? gradeClasses.filter(cls => cls.supervisor?.id === currentUser)
-      : gradeClasses;
-
-    setClasses(filteredClasses);
-  };
-  // console.log(filteredClasses,'wertyuiop')
-  console.log(classes)
-
-  const memoizedClasses = useMemo(() => classes, [classes]);
-
-  // ✅ Fetch students when a class is selected
-  const handleStudentShow = async (classId) => {
-    setSelectedClass(classId);
-    const classStudents = await fetchStudents(selectedSession, selectedGrade, classId);
-    setStudents(classStudents);
-  };
-
-  const memoizedStudents = useMemo(() => students, [students]);
-     const query = {}
-   switch (role) {
-      case "admin":// ADMIN CAN VIEW ALL 
-        break;
-  
-      case "teacher":
-        query.class = {
-          teacherId: currentUser, // TEACHER CAN ONLY VIEW THIER CLASS IN A GRADE
-        }; 
-        break;
-      default:
-        throw new Error("Unauthorized access");
+export async function createSession(sessionName) {
+  try {
+    if (!sessionName || typeof sessionName !== "string" || sessionName.trim() === "") {
+      return { success: false, message: "Invalid session name." };
     }
 
-  return (
-    <div className="p-4 bg-purple-100 h-screen">
-      <h1 className="text-sm text-center text-gray-500 font-bold">
-        School Grade-level and Classes
-      </h1>
-      <div>
-        <label className="text-xs text-gray-500 mr-4">Session</label>
-        <select
-          className="border text-sm text-gray-500 mt-2 ring-[1.5px] ring-gray-300 rounded-md p-2 cursor-pointer"
-          value={selectedSession || ""}
-          onChange={(e) => setSelectedSession(parseInt(e.target.value, 10))}
-        >
-          <option value="">-- Select Session --</option>
-          {sessions.map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.name}
-            </option>
-          ))}
-        </select>
-      </div>
+    console.log("🟡 Checking if any session is active...");
+    const existingSession = await prisma.session.findFirst({
+      where: { name: sessionName.trim() },
+    });
+    if (existingSession) {
+      console.error("Session already exists:", sessionName);
+      return { success: false, message: "Session already exists." };
+    }
 
-      {selectedSession && (
-        <div className="flex flex-wrap justify-around mt-5">
-          <div className="flex flex-wrap justify-around">
-            {/* GRADES */}
-            <div className="mb-6 bg-purple-200 rounded-md p-4 mr-10">
-              <div className="flex flex-wrap items-center justify-between">
-                <h2 className="text-xl font-semibold text-gray-700 mb-3">
-                  📚 Grade Level
-                </h2>
-                {role === "admin" && <FormModal type="create" table="classTeacher" className="bg-white" />}
-              </div>
+    // Create session and deactivate previous ones
+    const [_, newSession] = await prisma.$transaction([
+      // Deactivate any existing active session
+      prisma.session.updateMany({
+        where: { isCurrent: true },
+        data: { isCurrent: false },
+      }),
+      // Create a new session
+      prisma.session.create({
+        data: {
+          name: sessionName.trim(),
+          isCurrent: true,
+          isDeleted: false,
+        },
+      }),
+    ]);
 
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                {loading ? (
-                  <p className="text-gray-500">Loading grades...</p>
-                ) : memoizedGrades.length > 0 ? (
-                  memoizedGrades.map((grade) => (
-                    <button
-                      key={grade.id}
-                      className={`p-4 md:p-5 ${
-                        selectedGrade === grade.id ? "bg-indigo-600 text-white" : "bg-gray-100"
-                      } rounded-lg shadow-md transition-all duration-300 border border-gray-300 hover:bg-indigo-600 hover:text-white hover:border-indigo-700 font-medium text-gray-800 hover:shadow-lg active:scale-95`}
-                      onClick={() => handleGradeClick(grade.id)}
-                    >
-                      {grade.name}
-                    </button>
-                  ))
-                ) : (
-                  <p className="text-gray-500">No grades found for this session.</p>
-                )}
-              </div>
-            </div>
+    if (!newSession?.id) {
+      console.error("❌ Failed to create session.");
+      return { success: false, message: "Failed to create a new session." };
+    }
 
-            {/* CLASSES */}
-            {selectedGrade && (
-              <div className="mb-6 bg-purple-200 rounded-md p-4">
-               <div className="flex flex-wrap justify-around items-center">
-               <h2 className="text-xl font-semibold text-gray-700 mb-3">
-                  🏫 Select a Class
-                </h2>
-                <FormModal memoizedClasses={memoizedClasses.length > 0 ? memoizedClasses : null} table="classTeacher" type="create" />
-               </div>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  {memoizedClasses.length > 0 ? (
-                    memoizedClasses.map((cls) => (
-                      <button
-                        key={cls.id}
-                        className={`p-4 md:p-5 ${
-                          selectedClass === cls.id ? "bg-green-600 text-white" : "bg-gray-100"
-                        } rounded-lg shadow-md transition-all duration-300 border border-gray-300 hover:bg-green-600 hover:text-white hover:border-green-700 font-medium text-gray-800 hover:shadow-lg active:scale-95`}
-                        onClick={() => handleStudentShow(cls.id)}
-                      >
-                        {cls.name}
-                      </button>
-                    ))
-                  ) : (
-                    <p className="text-gray-500">
-                      {role === "teacher" ? "No assigned classes." : "No classes found."}
-                    </p>
-                  )}
-                </div>
-              </div>
-            )}
+    console.log(`✅ New session '${sessionName}' created.`);
 
-            {/* STUDENTS & TEACHER INFO */}
-            {selectedClass && (
-              <div className="mb-6 bg-purple-200 rounded-md p-4">
-                <div className="flex flex-wrap justify-around items-center">
-                  <h2 className="text-xl font-semibold text-gray-700 mb-3">
-                    👨‍🎓 Students
-                  </h2>
+    // ✅ Auto-create Terms for the session
+    const terms = ["First Term", "Second Term", "Third Term"];
+    for (let term of terms) {
+      await prisma.term.create({
+        data: { name: term, sessionId: newSession.id },
+      });
+      console.log(`✅ ${term} created for session ${sessionName}.`);
+    }
 
-                  {/* ✅ Display Assigned Teacher */}
-                  <div className="mt-2 p-2 bg-indigo-100 rounded-md text-center">
-                    <h4 className="text-sm font-semibold">👨‍🏫 Class Teacher</h4>
-                    {memoizedClasses.find(cls => cls.id === selectedClass)?.supervisor ? (
-                      <p className="text-sm">
-                        {memoizedClasses.find(cls => cls.id === selectedClass).supervisor.name} 
-                        (@{memoizedClasses.find(cls => cls.id === selectedClass).supervisor.username})
-                      </p>
-                    ) : (
-                      <p className="text-gray-500 text-sm">No teacher assigned</p>
-                    )}
-                  </div>
-                </div>
+    // ✅ Auto-create predefined grades & classes
+    const grades = ["JSS1", "JSS2", "JSS3", "SSS1", "SSS2", "SSS3"];
 
-                {/* Students List */}
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  {loading ? (
-                    <p className="text-gray-500">Loading students...</p>
-                  ) : memoizedStudents.length > 0 ? (
-                    memoizedStudents.map((student) => (
-                      <div
-                        key={student.id}
-                        className="p-4 bg-gray-100 rounded-lg shadow-md border border-gray-300"
-                      >
-                        <h3 className="font-semibold">{student.name}</h3>
-                        <p className="text-sm text-gray-600">@{student.username}</p>
-                      </div>
-                    ))
-                  ) : (
-                    <p className="text-gray-500">No students found in this class.</p>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
+    for (let grade of grades) {
+      const newGrade = await prisma.grade.create({
+        data: { name: grade, sessionId: newSession.id },
+      });
+    
+      console.log(`✅ Grade ${grade} created with sessionId ${newSession.id}`);
+    
+      let classes = [
+        { name: `${grade} A`, gradeId: newGrade.id },
+        { name: `${grade} B`, gradeId: newGrade.id },
+      ];
+    
+      // ✅ Add C section for Senior Secondary (SSS)
+      if (grade.startsWith("SSS")) {
+        classes.push({ name: `${grade} C`, gradeId: newGrade.id });
+      }
+    
+      await prisma.class.createMany({
+        data: classes,
+      });
+    
+      console.log(`✅ Classes created: ${classes.map(cls => cls.name).join(", ")}`);
+    }
+    
 
-export default GradeComponent;
+    console.log(`✅ New session '${sessionName}' created successfully with all terms, grades, and classes.`);
+    return { success: true, message: "Session created successfully!", session: newSession };
+  } catch (error) {
+    console.error("❌ Error creating session:", error);
+    return { success: false, message: "An error occurred while creating the session." };
+  }
+}
 
 
+async function handlePromotionAndMoveToNewClass(lastSessionId, newSessionId) {
+  try {
+    // Fetch the new session details
+    const newSession = await prisma.session.findUnique({
+      where: { id: newSessionId },
+      select: {
+        id: true,
+        grades: {
+          select: {
+            id: true,
+            name: true,
+            classes: { select: { id: true, name: true } },
+          },
+        },
+      },
+    });
+
+    if (!newSession) return { success: false, message: "No active session found." };
+
+    // Create a class ID mapping for the new session
+    const classIdMap = {};
+    const gradeIdMap = {};
+    newSession.grades.forEach((grade) => {
+      grade.classes.forEach((cls) => {
+        classIdMap[cls.name.toUpperCase()] = cls.id;
+        gradeIdMap[cls.name.toUpperCase()] = grade.id; // Map class names to grade IDs
+      });
+    });
+
+    console.log(classIdMap, "📌 New Session Class ID Map");
+    console.log(gradeIdMap, "📌 New Session Grade ID Map");
+
+    // Fetch promoted students from the just-concluded session
+    const promotedStudents = await prisma.classRecord.findMany({
+      where: {
+        sessionId: lastSessionId, // Only get students from the just-concluded session
+        promotion: "PROMOTED",
+      },
+      select: {
+        studentId: true,
+        class: { select: { name: true } }, // Fetch class name
+      },
+    });
+
+    if (promotedStudents.length === 0) {
+      return { success: false, message: "No promoted students found in the last session." };
+    }
+
+    // Prepare student updates
+    const updatePromises = promotedStudents.map(async (record) => {
+      const currentClassName = record.class?.name?.trim().toUpperCase();
+      console.log(currentClassName, "🔍 Current Class");
+
+      const nextClassName = classPromotionMap[currentClassName]; // Get next class
+      console.log(nextClassName, "🔄 Next Class");
+
+      if (nextClassName === null) {
+        console.log(`⏳ JSS3 students need to choose a new class manually: ${record.studentId}`);
+        return null; // Skip JSS3 students
+      }
+
+      if (!nextClassName) {
+        console.warn(`⚠️ No promotion mapping found for ${currentClassName}`);
+        return null;
+      }
+
+      const newClassId = classIdMap[nextClassName]; // Get new class ID
+      const newGradeId = gradeIdMap[nextClassName]; // Get new grade ID
+
+      console.log(newClassId, "✅ New Class ID");
+      console.log(newGradeId, "✅ New Grade ID");
+
+      if (!newClassId || !newGradeId) {
+        console.warn(`⚠️ No class ID or grade ID found for ${nextClassName} in new session`);
+        return null;
+      }
+
+      console.log("Before Update:", record.studentId, currentClassName, newClassId, newGradeId);
+
+      // Update the student record in the database
+      const updatedStudent = await prisma.student.update({
+        where: { id: record.studentId },
+        data: {
+          classId: newClassId,
+          sessionId: newSessionId,
+          gradeId: newGradeId,
+        },
+      });
+      console.log("Updated Student:", updatedStudent);
+      
+      // Return updated student after update
+      return updatedStudent;
+    });
+
+    // Wait for all updates to complete
+    const updatedStudents = await Promise.all(updatePromises.filter(Boolean));
+
+    console.log("Updated Students:", updatedStudents); // Log the updated student records
+
+    console.log("✅ Students successfully moved to new class");
+    return { success: true, message: "Students moved to the next class", updatedStudents };
+
+  } catch (error) {
+    console.error("❌ Error moving students:", error);
+    return { success: false, message: "Error occurred while moving students" };
+  }
+}
 
 
 
 
 
+async function handlePromotionAndMoveToNewClass(lastSessionId, newSessionId) {
+  try {
+    // Fetch the new session details
+    const newSession = await prisma.session.findUnique({
+      where: { id: newSessionId },
+      select: {
+        id: true,
+        grades: {
+          select: {
+            id: true,
+            name: true,
+            classes: { select: { id: true, name: true } },
+          },
+        },
+      },
+    });
 
+    if (!newSession) return { success: false, message: "No active session found." };
 
+    // Create a class ID mapping for the new session
+    const classIdMap = {};
+    const gradeIdMap = {};
+    newSession.grades.forEach((grade) => {
+      grade.classes.forEach((cls) => {
+        classIdMap[cls.name.toUpperCase()] = cls.id;
+        gradeIdMap[cls.name.toUpperCase()] = grade.id; // Map class names to grade IDs
+      });
+    });
 
+    console.log(classIdMap, "📌 New Session Class ID Map");
+    console.log(gradeIdMap, "📌 New Session Grade ID Map");
 
+    // Fetch promoted students from the just-concluded session
+    const promotedStudents = await prisma.classRecord.findMany({
+      where: {
+        sessionId: lastSessionId, // Only get students from the just-concluded session
+        promotion: "PROMOTED",
+      },
+      select: {
+        studentId: true,
+        class: { select: { name: true } }, // Fetch class name
+        student: { select: { preferredClass: true } }, // Assuming 'preferredClass' field exists
+      },
+    });
+      console.log(promotedStudents, "checkingggggggggggg")
+    if (promotedStudents.length === 0) {
+      return { success: false, message: "No promoted students found in the last session." };
+    }
 
+    // Prepare student updates
+    const updatePromises = promotedStudents.map(async (record) => {
+      const currentClassName = record.class?.name?.trim().toUpperCase();
+      console.log(currentClassName, "🔍 Current Class");
 
+      const nextClassName = classPromotionMap[currentClassName]; // Get next class
+      console.log(nextClassName, "🔄 Next Class");
+      console.log(currentClassName, "chechingggggggggggggg1")
+      console.log(nextClassName, "chechingggggggggggggg2222222222")
 
+      // Handle automatic progression (e.g., JSS1 → JSS2)
+      if (nextClassName) {
+        const newClassId = classIdMap[nextClassName]; // Get new class ID
+        const newGradeId = gradeIdMap[nextClassName]; // Get new grade ID
 
+        if (!newClassId || !newGradeId) {
+          console.warn(`⚠️ No class ID or grade ID found for ${nextClassName} in new session`);
+          return null;
+        }
 
+        // Update student for automatic class progression
+        console.log("Before Update (Automatic Promotion):", record.studentId, currentClassName, newClassId, newGradeId);
+        const updatedStudent = await prisma.student.update({
+          where: { id: record.studentId },
+          data: {
+            classId: newClassId,
+            sessionId: newSessionId,
+            gradeId: newGradeId,
+          },
+        });
+        console.log("Updated Student (Automatic Promotion):", updatedStudent);
+        return updatedStudent;
+      }
 
+      // Handle JSS3 to SSS1 with preferred class
+      if (currentClassName.startsWith("JSS3")) {
+        const preferredClass = record.student?.preferredClass?.toUpperCase() || "SSS1 A"; // Default to SSS1 A if no preference
+        console.log(`Preferred Class: ${preferredClass}`);
 
+        // Check if preferred class exists in new session
+        const preferredClassId = classIdMap[preferredClass];
+        const preferredGradeId = gradeIdMap[preferredClass];
 
+        if (preferredClassId && preferredGradeId) {
+          // Assign student to preferred class
+          console.log(`Assigning student ${record.studentId} to ${preferredClass}`);
+          const updatedStudent = await prisma.student.update({
+            where: { id: record.studentId },
+            data: {
+              classId: preferredClassId,
+              sessionId: newSessionId,
+              gradeId: preferredGradeId,
+            },
+          });
+          console.log("Updated Student (Preferred Class):", updatedStudent);
+          return updatedStudent;
+        } else {
+          console.warn(`⚠️ Preferred class ${preferredClass} not found in new session for student ${record.studentId}`);
+        }
+      }
 
+      // Fallback if no promotion rules match
+      console.warn(`⚠️ No valid promotion mapping for ${currentClassName}`);
+      return null;
+    });
 
+    // Wait for all updates to complete
+    const updatedStudents = await Promise.all(updatePromises.filter(Boolean));
 
+    console.log("Updated Students:", updatedStudents); // Log the updated student records
 
+    console.log("✅ Students successfully moved to new class");
+    return { success: true, message: "Students moved to the next class", updatedStudents };
 
-
-
-
-
+  } catch (error) {
+    console.error("❌ Error moving students:", error);
+    return { success: false, message: "Error occurred while moving students" };
+  }
+}

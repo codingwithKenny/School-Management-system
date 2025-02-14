@@ -30,11 +30,25 @@ const studentSchema = z.object({
   phone: z.string().regex(/^\d{7,15}$/, "Enter a valid phone number (7-15 digits)") .optional(),
   address: z.string().optional(),
   sessionId: z.union([z.string(), z.number()]).transform((val) => Number(val)), // Convert string to number
+  termId: z.union([z.string(), z.number()]).transform((val) => Number(val)), // Added termId
+
   gradeId: z.union([z.string(), z.number()]).transform((val) => Number(val)),
   classId: z.union([z.string(), z.number()]).transform((val) => Number(val)),
   paymentStatus: z.enum(["PAID", "NOT_PAID", "PARTIALLY_PAID"], { message: "Select payment status" }),
   subjects: z.array(z.union([z.string(), z.number()])).min(1, { message: "At least one subject must be selected" }).transform((arr) => arr.map(Number)),
 });
 
+
+const recordSchema = z.object({
+  studentId: z.string().nonempty("Student ID is required"),
+  teacherId: z.string().nonempty("Teacher ID is required"),
+  termId: z.number().min(1, "Term is required"),
+  sessionId: z.number().min(1, "Session is required"),
+  classId: z.number().min(1, "Class is required"),
+  remark: z.string().trim().min(1, "Remark cannot be empty"),
+  position: z.number().min(1, "Position must be greater than 0"),
+  promotion: z.string().optional(),
+});
+
 // ✅ Export all schemas in a single object
-module.exports = { studentSchema, teacherSchema, subjectSchema };
+module.exports = { studentSchema, teacherSchema, subjectSchema,recordSchema };
