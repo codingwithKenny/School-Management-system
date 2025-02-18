@@ -16,25 +16,24 @@ const TeacherResultActions = ({ students, sessions, subjects, teacherId, Results
   const [errors, setErrors] = useState({});
 
   
-  // ✅ Zod Schema for Score Validation
   const scoreSchema = z.object({
     ca1: z.preprocess((val) => parseFloat(val), z.number().min(0, "Must be ≥ 0").max(40, "Must be ≤ 20")),
     ca2: z.preprocess((val) => parseFloat(val), z.number().min(0, "Must be ≥ 0").max(40, "Must be ≤ 20")),
     exam: z.preprocess((val) => parseFloat(val), z.number().min(0, "Must be ≥ 0").max(100, "Must be ≤ 60")),
   });
 
-  // ✅ Get Terms, Grades, and Classes from Selected Session
+  // GRADE,TERM AND CLASS FROM SELECTEDSESSIOM
   const filteredTerms = useMemo(() => sessions.find((s) => s.id === selectedSession)?.terms || [], [selectedSession, sessions]);
   const filteredGrades = useMemo(() => sessions.find((s) => s.id === selectedSession)?.grades || [], [selectedSession, sessions]);
   const filteredClasses = useMemo(() => filteredGrades.find((g) => g.id === selectedGrade)?.classes || [], [selectedGrade, filteredGrades]);
 
-  // ✅ Load Students Based on Selected Filters
+//  LOAD STUDENT ACCORDING TO THE FILTERED
   const handleLoadStudents = () => {
     if (!selectedGrade || !selectedSubject || !selectedClass) {
       alert("Please select a grade, subject, and class to load students.");
       return;
     }
-
+    // FETCH STUDENT IN THAT GRADE/CLASS THAT OFFERS THE SELECTED SUBJECT
     const studentsInGradeAndSubject = students
       .filter(
         (student) =>
@@ -50,10 +49,9 @@ const TeacherResultActions = ({ students, sessions, subjects, teacherId, Results
 
     setFilteredStudents(studentsInGradeAndSubject);
     setResults({});
-    setErrors({}); // Reset errors when students are loaded
+    setErrors({}); 
   };
 
-  // ✅ Handle Input Change & Validate Immediately
   const handleInputChange = (studentId, field, value) => {
     setResults((prev) => ({
       ...prev,
@@ -62,8 +60,6 @@ const TeacherResultActions = ({ students, sessions, subjects, teacherId, Results
         [field]: value,
       },
     }));
-
-    // ✅ Validate Input
     const studentData = { ...results[studentId], [field]: value };
     const validation = scoreSchema.safeParse(studentData);
 
@@ -72,8 +68,6 @@ const TeacherResultActions = ({ students, sessions, subjects, teacherId, Results
       [studentId]: validation.success ? null : validation.error.format(),
     }));
   };
-
-  // ✅ Calculate Grade Performance
   const calculatePerformance = (ca1, ca2, exam) => {
     const total = (parseFloat(ca1) || 0) + (parseFloat(ca2) || 0) + (parseFloat(exam) || 0);
     if (total >= 75) return "Excellent";
@@ -82,8 +76,6 @@ const TeacherResultActions = ({ students, sessions, subjects, teacherId, Results
     if (total >= 50) return "Pass";
     return "Fail";
   };
-
-  // ✅ Validate All Students Before Submission
   const validateAllResults = () => {
     let hasErrors = false;
     let newErrors = {};
@@ -102,10 +94,9 @@ const TeacherResultActions = ({ students, sessions, subjects, teacherId, Results
     return !hasErrors;
   };
 
-  // ✅ Handle Result Submission
   const handleSubmitResults = async () => {
     if (!validateAllResults()) {
-      alert("❌ Some students have invalid scores. Please correct them before submission.");
+      alert("Some students have invalid scores. Please correct them before submission.");
       return;
     }
 
@@ -137,8 +128,8 @@ const TeacherResultActions = ({ students, sessions, subjects, teacherId, Results
         setFilteredStudents([]);
       }
     } catch (error) {
-      console.error("❌ Upload Error:", error);
-      alert("❌ An error occurred while uploading results.");
+      console.error("Upload Error:", error);
+      alert("An error occurred while uploading results.");
     } finally {
       setLoading(false);
     }

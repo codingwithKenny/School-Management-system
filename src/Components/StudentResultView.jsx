@@ -1,44 +1,43 @@
 "use client";
 import React, { useState } from "react";
 import ResultDisplay from "./ResultDisplay";
+import { useDatabase } from "@/app/context/DatabaseProvider";
 
-const StudentResultView = ({ sessions, results, studentInfo }) => {
-  const [selectedSession, setSelectedSession] = useState(null);
+// HANDLES BOTH OLD AND RECENT RESULT DISPLAY FOR STUDENT
+const StudentResultView = ({ sessions, results, studentInfo,userId }) => {
+  const [selectedSession, setSelectedSession] = useState(null) 
   const [selectedTerm, setSelectedTerm] = useState(null);
-
-  console.log("Sessions Data:", sessions);
-  console.log("Results Data:", results);
-
-  // ✅ Retrieve session, grade, and class data
+    const { databaseData } = useDatabase();
+       
+    const studentHistory = databaseData.studentHistory.find(
+      (history) => history.session.id === selectedSession && history.studentId === userId
+    );
+  // GET iD
   const sessionData = sessions?.find((session) => session.id === selectedSession) || null;
-  const studentGradeData = sessionData?.grades?.find((grade) => grade.id === studentInfo?.grade?.id) || null;
-  const studentClassData = studentGradeData?.classes?.find((cls) => cls.id === studentInfo?.class?.id) || null;
+  const studentGradeData = sessionData?.grades?.find((grade) => grade.id === studentInfo?.grade?.id) || studentHistory?.grade.id;
+  const studentClassData = studentGradeData?.classes?.find((cls) => cls.id === studentInfo?.class?.id) || studentHistory?.class.id;
   const terms = sessionData?.terms || [];
 
-  // ✅ Extract names for display
+//  GET NAME
   const sessionName = sessionData?.name || "Session Not Found";
-  const gradeName = studentGradeData?.name || "Grade Not Found";
-  const className = studentClassData?.name || "Class Not Found";
+  const gradeName = studentGradeData?.name || studentHistory?.grade.name || "Grade Not Found";
+  const className = studentClassData?.name || studentHistory?.class.name || "Class Not Found";
 
-  console.log(`Selected: Session: ${sessionName}, Grade: ${gradeName}, Class: ${className}`);
-
-  // ✅ Filter results dynamically
+// GET RESULTS ACCORDING TO SELECTED TERM, CLASS,GRADE AND SESSION
   const filteredResults = results.filter(
     (result) =>
       result.sessionId === selectedSession &&
-      result.gradeId === studentGradeData?.id &&
-      result.classId === studentClassData?.id &&
+      result.gradeId === studentGradeData?.id || studentHistory?.grade?.id &&
+      result.classId === studentClassData?.id || studentHistory?.class?.id  &&
       result.termId === selectedTerm
   );
 
   return (
     <div className="p-6 bg-gray-100 min-h-screen">
-      <h2 className="text-xl font-bold text-center mb-6 text-gray-800">📄 Student Result Viewer</h2>
+      <h2 className="text-xl font-bold text-center mb-6 text-gray-800">📄 CHECK RESULT</h2>
 
-      {/* FILTER SELECTION CONTAINER */}
       <div className="bg-white shadow-md rounded-lg p-6 flex flex-wrap gap-6 justify-between items-center">
         
-        {/* SESSION SELECTION */}
         <div className="w-full sm:w-auto">
           <label className="block text-sm font-semibold text-gray-700">Select Session</label>
           <select
@@ -59,7 +58,6 @@ const StudentResultView = ({ sessions, results, studentInfo }) => {
           </select>
         </div>
 
-        {/* DISPLAY STUDENT'S GRADE */}
         {studentGradeData && (
           <div className="w-full sm:w-auto">
             <p className="text-sm font-semibold text-gray-700">Grade:</p>
@@ -67,7 +65,6 @@ const StudentResultView = ({ sessions, results, studentInfo }) => {
           </div>
         )}
 
-        {/* DISPLAY STUDENT'S CLASS */}
         {studentClassData && (
           <div className="w-full sm:w-auto">
             <p className="text-sm font-semibold text-gray-700">Class:</p>
@@ -75,7 +72,6 @@ const StudentResultView = ({ sessions, results, studentInfo }) => {
           </div>
         )}
 
-        {/* TERM SELECTION */}
         {selectedSession && terms.length > 0 && (
           <div className="w-full sm:w-auto">
             <label className="block text-sm font-semibold text-gray-700">Select Term</label>
@@ -95,7 +91,6 @@ const StudentResultView = ({ sessions, results, studentInfo }) => {
         )}
       </div>
 
-      {/* DISPLAY RESULTS */}
       {selectedTerm && filteredResults.length > 0 ? (
         <div className="mt-6">
           <ResultDisplay 

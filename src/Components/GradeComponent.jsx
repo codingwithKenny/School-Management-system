@@ -17,7 +17,7 @@ const GradeComponent = ({ role, currentUser }) => {
   const [selectedClass, setSelectedClass] = useState(null);
   const [students, setStudents] = useState([]);
 
-  // ✅ Fetch grades when session is selected
+  //GET GRADE IN SELECTED SESSION
   useEffect(() => {
     if (!selectedSession || isNaN(selectedSession)) return;
     setLoading(true);
@@ -34,6 +34,7 @@ const GradeComponent = ({ role, currentUser }) => {
     setSelectedClass(null);
     setStudents([]);
 
+    // FILTER CLASS AND DISPLAY ONLY CLASS ASSIGNED TO THE LOGGED IN TEACHER(USER)
     const gradeClasses = await fetchClasses(selectedSession, gradeId);
     const filteredClasses =
       role === "teacher"
@@ -42,12 +43,14 @@ const GradeComponent = ({ role, currentUser }) => {
 
     setClasses(filteredClasses);
   };
-  // console.log(selectedSession)
-
+  //  GET STUDENT TO DISPALY
   const handleStudentShow = async (classId) => {
-    console.log("Selected Class ID:", classId);
     setSelectedClass(classId);
-    const classStudents = await fetchStudents(selectedSession, selectedGrade, classId);
+    const classStudents = await fetchStudents(
+      selectedSession,
+      selectedGrade,
+      classId
+    );
     setStudents(classStudents);
   };
 
@@ -57,11 +60,14 @@ const GradeComponent = ({ role, currentUser }) => {
 
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
-      <h1 className="text-2xl font-bold text-center text-gray-800 mb-6">📚 Grade & Class Management</h1>
+      <h1 className="text-2xl font-bold text-center text-gray-800 mb-6">
+        📚 Grade & Class Management
+      </h1>
 
-      {/* SESSION SELECTION */}
       <div className="bg-white shadow-md rounded-lg p-6 mb-6">
-        <label className="block text-sm font-semibold text-gray-700 mb-2">Select Session</label>
+        <label className="block text-sm font-semibold text-gray-700 mb-2">
+          Select Session
+        </label>
         <select
           className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500"
           value={selectedSession || ""}
@@ -80,7 +86,9 @@ const GradeComponent = ({ role, currentUser }) => {
         {/* GRADE SELECTION */}
         {selectedSession && (
           <div className="w-full md:w-5/12 bg-white shadow-md rounded-lg p-6">
-            <h2 className="text-xl font-semibold text-gray-700 mb-3">📌 Select Grade Level</h2>
+            <h2 className="text-xl font-semibold text-gray-700 mb-3">
+              📌 Select Grade Level
+            </h2>
             {loading ? (
               <p className="text-gray-500">Loading grades...</p>
             ) : memoizedGrades.length > 0 ? (
@@ -109,8 +117,18 @@ const GradeComponent = ({ role, currentUser }) => {
         {selectedGrade && (
           <div className="w-full md:w-5/12 bg-white shadow-md rounded-lg p-6">
             <div className="flex justify-between items-center mb-3">
-              <h2 className="text-xl font-semibold text-gray-700">🏫 Select Class</h2>
-              <FormModal memoizedClasses={memoizedClasses.length > 0 ? memoizedClasses : null} table="classTeacher" type="create" />
+              <h2 className="text-xl font-semibold text-gray-700">
+                🏫 Select Class
+              </h2>
+              {role === "admin" && (
+                <FormModal
+                  memoizedClasses={
+                    memoizedClasses.length > 0 ? memoizedClasses : null
+                  }
+                  table="classTeacher"
+                  type="create"
+                />
+              )}
             </div>
             {memoizedClasses.length > 0 ? (
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -118,7 +136,9 @@ const GradeComponent = ({ role, currentUser }) => {
                   <button
                     key={cls.id}
                     className={`p-4 md:p-5 ${
-                      selectedClass === cls.id ? "bg-green-600 text-white" : "bg-gray-100"
+                      selectedClass === cls.id
+                        ? "bg-green-600 text-white"
+                        : "bg-gray-100"
                     } rounded-lg shadow-md transition-all duration-300 border border-gray-300 hover:bg-green-600 hover:text-white`}
                     onClick={() => handleStudentShow(cls.id)}
                   >
@@ -128,21 +148,34 @@ const GradeComponent = ({ role, currentUser }) => {
               </div>
             ) : (
               <p className="text-gray-500">
-                {role === "teacher" ? "No assigned classes." : "No classes found."}
+                {role === "teacher"
+                  ? "No assigned classes."
+                  : "No classes found."}
               </p>
             )}
           </div>
         )}
       </div>
 
-
       {/* STUDENT TABLE */}
       {selectedClass && (
         <div className="mt-6">
           {role === "admin" ? (
-            <AdminView students={students} memoizedClasses={memoizedClasses} selectedClass={selectedClass} selectedSession={selectedSession} />
+            <AdminView
+              students={students}
+              memoizedClasses={memoizedClasses}
+              selectedClass={selectedClass}
+              selectedSession={selectedSession}
+            />
           ) : (
-            <TeacherView students={students} memoizedClasses={memoizedClasses} memoizedGrades={memoizedGrades} selectedClass={selectedClass} selectedSession={selectedSession} currentUser={currentUser} />
+            <TeacherView
+              students={students}
+              memoizedClasses={memoizedClasses}
+              memoizedGrades={memoizedGrades}
+              selectedClass={selectedClass}
+              selectedSession={selectedSession}
+              currentUser={currentUser}
+            />
           )}
         </div>
       )}

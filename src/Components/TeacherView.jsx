@@ -4,13 +4,9 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  checkClassRecordExists,
-  createClassRecord,
-  fetchTerms,
-} from "@/lib/actions";
+import {checkClassRecordExists,createClassRecord,fetchTerms,} from "@/lib/actions";
 
-// ✅ Define Zod Validation Schema
+
 const recordSchema = z.object({
   remarks: z.record(z.string().min(3, "Remark must be at least 3 characters")),
   positions: z.record(
@@ -20,17 +16,10 @@ const recordSchema = z.object({
       .positive("Position must be greater than 0")
   ),
   promotions: z.record(z.string().optional()),
-  preferredClass: z.record(z.string().optional()), // Only used for JSS3
+  preferredClass: z.record(z.string().optional()), 
 });
 
-const TeacherView = ({
-  students,
-  memoizedClasses,
-  memoizedGrades,
-  selectedClass,
-  selectedSession,
-  currentUser,
-}) => {
+const TeacherView = ({students,memoizedClasses,memoizedGrades,selectedClass,selectedSession,currentUser}) => {
   const teacherId = currentUser;
   const [terms, setTerms] = useState([]);
   const [selectedTerm, setSelectedTerm] = useState(null);
@@ -38,7 +27,6 @@ const TeacherView = ({
   const [classRecordExists, setClassRecordExists] = useState(false);
   const [error, setError] = useState(false);
 
-  // ✅ Initialize useForm with Zod Resolver
   const {
     register,
     handleSubmit,
@@ -54,7 +42,6 @@ const TeacherView = ({
     },
   });
 
-  // ✅ Fetch Terms for Selected Session
   useEffect(() => {
     if (!selectedSession) return;
     const loadTerms = async () => {
@@ -64,14 +51,12 @@ const TeacherView = ({
     loadTerms();
   }, [selectedSession]);
 
-  // ✅ Handle Form Submission
   const onSubmit = async (data) => {
     if (!selectedTerm || !selectedSession || !selectedClass) {
       alert("Please select a session, term, and class before saving.");
       return;
     }
-  
-    // Extract entered positions and check for duplicates
+    // BLOCK DUPLICATE POSITION
     const positionsArray = Object.values(data.positions).filter((pos) => pos);
     const uniquePositions = new Set(positionsArray);
   
@@ -94,24 +79,20 @@ const TeacherView = ({
         promotion: selectedTermName === "Third Term" ? data.promotions[student.id] || "Not Set" : undefined,
         preferredClass: isJSS3 && selectedTermName === "Third Term" ? data.preferredClass[student.id] || "Not Selected" : undefined,
       }));
-       console.log(records, "dddddddddddddddddddddddddddddd")
       const response = await createClassRecord(records);
       if (response.success) {
-        alert("✅ Remarks and positions saved successfully!");
+        alert("cLASS RECORD saved successfully!");
       } else {
-        alert(response.error); // Error message when record exists or other issues
+        alert(response.error); 
       }
     } catch (error) {
-      console.error("❌ Error saving class record:", error.message);
-      alert("❌ An unexpected error occurred.");
+      console.error("Error saving class record:", error.message);
+      alert("An unexpected error occurred.");
     } finally {
       setLoading(false);
     }
   };
-  
-  
-
-  const selectedTermObj = terms.find((term) => term.id === selectedTerm);
+    const selectedTermObj = terms.find((term) => term.id === selectedTerm);
   const selectedTermName = selectedTermObj?.name;
   const selectedClassObj = memoizedClasses.find(
     (cl) => cl.id === selectedClass
@@ -127,8 +108,6 @@ const TeacherView = ({
       <h2 className="text-xl font-bold text-gray-800">
         📘 Student Performance
       </h2>
-
-      {/* Term Selection */}
       <div className="mb-4">
         <label className="text-sm font-semibold text-gray-700">
           Select Term
@@ -149,11 +128,10 @@ const TeacherView = ({
 
       {classRecordExists && (
         <div className="p-3 mb-4 text-red-800 bg-red-200 border border-red-300 rounded-md">
-          ❌ This class already has submitted records for this term.
+          This class already has submitted records for this term.
         </div>
       )}
 
-      {/* Students Table */}
       <div className="overflow-x-auto">
         <form onSubmit={handleSubmit(onSubmit)}>
           <table className="w-full bg-white rounded-lg shadow-md">
@@ -189,8 +167,6 @@ const TeacherView = ({
                         </p>
                       )}
                     </td>
-
-                    {/* Position Input */}
                     <td className="p-3">
                       <input
                         type="number"
@@ -212,8 +188,7 @@ const TeacherView = ({
                         </p>
                       )}
                     </td>
-
-                    {/* Promotion Dropdown (For Third Term Only) */}
+                     {/* PROMOTION FOR THIRD TERM */}
                     {isThirdTerm && (
                       <td className="p-3">
                         <select
@@ -235,8 +210,7 @@ const TeacherView = ({
                         )}
                       </td>
                     )}
-
-                    {/* JSS3 Preferred Class Dropdown */}
+                        {/* PREFEERED CLASS FOR JS3 */}
                     {isThirdTerm && isJSS3 && (
                       <td className="p-3">
                         <select

@@ -12,7 +12,7 @@ const teacherSchema = z.object({
   username: z.string().min(3, { message: "Username must be at least 3 characters!" }),
   email: z.string().email({ message: "Invalid email format!" }),
   img: z.string().optional(),
-
+  phone: z.string().regex(/^\d{7,15}$/, "Enter a valid phone number (7-15 digits)") .optional(),
   password: z.string().min(9, { message: "Password must be at least 9 characters!" }),
   sex: z.enum(["MALE", "FEMALE"], { message: "Select your gender" }),
   address: z.string().optional(),

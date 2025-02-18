@@ -10,7 +10,7 @@ import SelectField from "../SelectField";
 import { CldUploadWidget } from "next-cloudinary";
 import { useDatabase } from "@/app/context/DatabaseProvider";
 
-const TeacherForm = ({ type, data }) => {
+const AdminForm = ({ type, data }) => {
   const { databaseData } = useDatabase();
   const [message, setMessage] = useState(null);
   const [img, setImg] = useState(data?.img || ""); 
@@ -89,7 +89,7 @@ const TeacherForm = ({ type, data }) => {
       if (response.success) {
         setMessage({ 
           type: "success", 
-          text: type === "create" ? "Teacher created successfully!" : "Teacher updated successfully!"
+          text: type === "create" ? "Admin created successfully!" : "Teacher updated successfully!"
         });
 
         setTimeout(() => {
@@ -111,7 +111,7 @@ const TeacherForm = ({ type, data }) => {
   return (
     <form className="flex flex-col gap-4" onSubmit={handleSubmit(onSubmit)}>
       <h1 className="text-xl font-semibold">
-        {type === "create" ? "Add New Teacher" : "Update Teacher"}
+        {type === "create" ? "Add New Admin" : "Update Admin"}
       </h1>
 {message && (
   <div
@@ -190,10 +190,10 @@ const TeacherForm = ({ type, data }) => {
         {errors.img && <p className="text-red-400 text-xs">{errors.img.message}</p>}
       </div> */}
       <button type="submit" className="bg-purple-400 rounded-md text-white p-2">
-        {type === "create" ? "Add Teacher" : "Update"}
+        {type === "create" ? "Add Admin" : "Update"}
       </button>
     </form>
   );
 };
 
-export default TeacherForm;
+export default AdminForm;

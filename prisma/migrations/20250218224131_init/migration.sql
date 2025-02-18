@@ -30,7 +30,7 @@ CREATE TABLE "Teacher" (
     "email" TEXT NOT NULL,
     "img" TEXT,
     "address" TEXT,
-    "phone" BIGINT,
+    "phone" TEXT,
     "password" TEXT NOT NULL,
     "isDeleted" BOOLEAN NOT NULL DEFAULT false,
     "deletedAt" TIMESTAMP(3),
@@ -114,6 +114,7 @@ CREATE TABLE "Term" (
     "id" SERIAL NOT NULL,
     "name" TEXT NOT NULL,
     "sessionId" INTEGER NOT NULL,
+    "isCurrent" BOOLEAN NOT NULL DEFAULT false,
     "isDeleted" BOOLEAN NOT NULL DEFAULT false,
     "deletedAt" TIMESTAMP(3),
 
@@ -130,7 +131,7 @@ CREATE TABLE "Student" (
     "sex" "Sex" NOT NULL,
     "img" TEXT,
     "address" TEXT,
-    "phone" BIGINT,
+    "phone" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "sessionId" INTEGER NOT NULL,
     "gradeId" INTEGER NOT NULL,
@@ -141,6 +142,23 @@ CREATE TABLE "Student" (
     "deletedAt" TIMESTAMP(3),
 
     CONSTRAINT "Student_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "PaymentHistory" (
+    "id" SERIAL NOT NULL,
+    "studentId" TEXT NOT NULL,
+    "termId" INTEGER NOT NULL,
+    "sessionId" INTEGER NOT NULL,
+    "amount" DOUBLE PRECISION,
+    "status" "PaymentStatus" NOT NULL DEFAULT 'NOT_PAID',
+    "paidAt" TIMESTAMP(3),
+    "paymentMethod" TEXT,
+    "transactionRef" TEXT,
+    "updatedBy" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "PaymentHistory_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -254,6 +272,9 @@ CREATE UNIQUE INDEX "Student_username_key" ON "Student"("username");
 CREATE UNIQUE INDEX "Student_email_key" ON "Student"("email");
 
 -- CreateIndex
+CREATE INDEX "PaymentHistory_studentId_sessionId_termId_idx" ON "PaymentHistory"("studentId", "sessionId", "termId");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "StudentHistory_studentId_sessionId_key" ON "StudentHistory"("studentId", "sessionId");
 
 -- CreateIndex
@@ -294,6 +315,15 @@ ALTER TABLE "Student" ADD CONSTRAINT "Student_classId_fkey" FOREIGN KEY ("classI
 
 -- AddForeignKey
 ALTER TABLE "Student" ADD CONSTRAINT "Student_termId_fkey" FOREIGN KEY ("termId") REFERENCES "Term"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "PaymentHistory" ADD CONSTRAINT "PaymentHistory_studentId_fkey" FOREIGN KEY ("studentId") REFERENCES "Student"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "PaymentHistory" ADD CONSTRAINT "PaymentHistory_termId_fkey" FOREIGN KEY ("termId") REFERENCES "Term"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "PaymentHistory" ADD CONSTRAINT "PaymentHistory_sessionId_fkey" FOREIGN KEY ("sessionId") REFERENCES "Session"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "StudentHistory" ADD CONSTRAINT "StudentHistory_studentId_fkey" FOREIGN KEY ("studentId") REFERENCES "Student"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

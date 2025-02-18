@@ -6,24 +6,21 @@ import FinanceChart from "@/components/FinanceChart";
 import EventCalender from "@/components/EventCalender";
 import Annoucement from "@/components/Annoucement";
 import prisma from "@/lib/prisma";
-import SessionModal from "@/components/SessionModal"; // Client Component for modal
+import SessionModal from "@/components/SessionModal"; 
 
 export default async function AdminPage() {
-  // Fetch the most recent session (server-side)
   const latestSession = await prisma.session.findFirst({
     orderBy: { id: "desc" },
   });
 
-  // Fetch terms associated with the most recent session (server-side)
   const terms = await prisma.term.findMany({
     where: {
-      sessionId: latestSession?.id, // Ensure terms are for the latest session
+      sessionId: latestSession?.id,
     },
-    orderBy: { id: "desc" }, // Assuming you want the most recent terms first
+    orderBy: { id: "desc" }, 
   });
-  
-  // Fetch Card Data (server-side)
-  const cardData = {
+    //  cARD iNFO FROM DB
+    const cardData = {
     admin: await prisma.admin.count(),
     student: await prisma.student.count(),
     teacher: await prisma.teacher.count(),
@@ -33,11 +30,11 @@ export default async function AdminPage() {
 
   return (
     <div className="p-4 flex flex-col md:flex-row gap-2">
-      {/* LEFT PANEL */}
+      {/* LEFT SIDE */}
       <div className="w-full lg:w-2/3 flex flex-col gap-8">
         {/* CARDS SECTION */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {/* ADMIN CARD WITH SESSION MODAL BUTTON */}
+          {/* SESSION MODAL */}
           <SessionModal sessionName={cardData.session} terms={terms} />
           
           {/* OTHER CARDS */}
@@ -62,7 +59,7 @@ export default async function AdminPage() {
         </div>
       </div>
 
-      {/* RIGHT PANEL */}
+      {/* RIGHT SIDE */}
       <div className="w-full lg:w-1/3 flex flex-col gap-8">
         <EventCalender />
         <Annoucement />

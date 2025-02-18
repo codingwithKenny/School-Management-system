@@ -1,3 +1,4 @@
+
 "use client";
 
 import { createContext, useContext, useState, useEffect } from "react";
@@ -13,7 +14,9 @@ export const DatabaseProvider = ({ children }) => {
     subjects: [],
     parents: [],
     teachers:[] ,
-    term:[]// ✅ Include parents
+    term:[],
+    paymentHistory:[],
+    studentHistory: []
   });
 
   const [loading, setLoading] = useState(true);
@@ -41,3 +44,4 @@ export const DatabaseProvider = ({ children }) => {
 };
 
 export const useDatabase = () => useContext(DatabaseContext);
+ 

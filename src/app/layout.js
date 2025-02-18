@@ -19,7 +19,7 @@ export default function RootLayout({ children }) {
         <meta name="description" content={metadata.description} />
       </head>
       <body className="font-sans">
-        <ClerkProvider>
+        <ClerkProvider frontendApi="pk_test_cHJvLWRpbmdvLTUxLmNsZXJrLmFjY291bnRzLmRldiQ">
           <DatabaseProvider> 
             {children}
           </DatabaseProvider>

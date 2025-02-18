@@ -21,6 +21,8 @@
 .env
 .env*.local
 
+trash.js
+
 # production
 /build
 

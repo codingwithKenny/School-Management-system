@@ -20,7 +20,9 @@ const studentPage = async () => {
       name: true,
       username: true,
       paymentStatus: true,
+      img:true,
       email: true,
+      term: {select:{id:true, name:true}},
       phone: true,
       class: {  
         select: {
@@ -32,6 +34,7 @@ const studentPage = async () => {
     },
   });
   
+  console.log(student)
 
   const subjectCount = await prisma.subject.count({
     where: {
@@ -80,7 +83,7 @@ const studentPage = async () => {
             {/* USER IMAGE */}
             <div className="w-32 h-32 md:w-48 md:h-48 rounded-full overflow-hidden aspect-square">
               <img
-                src="https://images.pexels.com/photos/1187765/pexels-photo-1187765.jpeg?auto=compress&cs=tinysrgb&w=1200"
+                src={student.img}
                 alt="Student Profile"
                 className="w-full h-full object-cover object-center block"
               />
@@ -115,7 +118,7 @@ const studentPage = async () => {
                   <Image src="/date.png" alt="Session" width={14} height={14} />
                   <span className="text-gray-700">
                     {latestSession?.name || "N/A"} -{" "}
-                    {latestSession?.term || "Unknown Term"}
+                    {student?.term.name|| "Unknown Term"}
                   </span>
                 </div>
 

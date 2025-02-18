@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import InputField from "../InputField";
@@ -8,18 +8,25 @@ import Image from "next/image";
 import { studentSchema } from "@/lib/formValidation";
 import { useDatabase } from "@/app/context/DatabaseProvider";
 import { createStudent, updateStudent } from "@/lib/actions";
+import { CldUploadWidget } from "next-cloudinary";
 
 const StudentForm = ({ type, data }) => {
   const { databaseData } = useDatabase();
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState(null);
   const [selectedGrade, setSelectedGrade] = useState("");
+  const [img, setImg] = useState(data?.img || "");
 
-  const activeSession = databaseData.sessions.find((s) => s.isCurrent); // ✅ Get active session
-  const filteredGrades = databaseData.grades.filter((g) => g.sessionId === activeSession?.id); // ✅ Filter grades by active session
-  const filteredClasses = databaseData.classes.filter((c) => c.gradeId === Number(selectedGrade));
-  // const activeSession = databaseData.sessions.find((s) => s.isCurrent);
-const filteredTerms = databaseData.terms.filter((t) => t.sessionId === activeSession?.id);
+  const activeSession = databaseData.sessions.find((s) => s.isCurrent);
+  const filteredGrades = databaseData.grades.filter(
+    (g) => g.sessionId === activeSession?.id
+  );
+  const filteredClasses = databaseData.classes.filter(
+    (c) => c.gradeId === Number(selectedGrade)
+  );
+  const filteredTerms = databaseData.terms.filter(
+    (t) => t.sessionId === activeSession?.id
+  );
 
   const {
     register,
@@ -30,53 +37,49 @@ const filteredTerms = databaseData.terms.filter((t) => t.sessionId === activeSes
     formState: { errors },
   } = useForm({
     resolver: zodResolver(studentSchema),
-    defaultValues: {
-      ...data,
-      subjects: data?.subjects?.map((s) => String(s.subjectId)) || [],
-    },
+    defaultValues: useMemo(
+      () => ({
+        surname: data?.surname ?? "",
+        name: data?.name ?? "",
+        username: data?.username ?? "",
+        phone: data?.phone ?? "",
+        email: data?.email ?? "",
+        address: data?.address ?? "",
+        img: data?.img ?? "",
+        sex: data?.sex ?? "",
+        paymentStatus: data?.paymentStatus ?? "",
+        sessionId: data?.session?.id ?? "",
+        termId: data?.term?.id ?? "",
+        gradeId: data?.grade?.id ?? "",
+        classId: data?.class?.id ? String(data.class.id) : "", // ✅ Corrected classId
+        subjects: data?.subjects?.map((s) => String(s.subject.id)) || [],
+      }),
+      [data]
+    ),
   });
-   
-  
 
   useEffect(() => {
-    if (data && databaseData) {
+    console.log("Received data:", data);
+
+    if (data) {
       reset({
         ...data,
-        surname: data?.surname || "",
-        name: data?.name || "",
-        username: data?.username || "",
-        email: data?.email || "",
-        phone: data?.phone ? String(data.phone) : "",
-        address: data?.address || "",
-        sex: data?.sex ||"",
-        paymentStatus: data?.paymentStatus || "",
-        termId: data?.termId ? String(data.termId) : "", // ✅ Set default term if editing
-        sessionId: data?.sessionId ? String(data.sessionId) : "",
-        gradeId: data?.gradeId ? String(data.gradeId) : "",
-        classId: data?.classId ? String(data.classId) : "",
-        subjects: data?.subjects?.map((s) => String(s.subjectId)) || [],
+        sex: data?.sex ?? "",
+        classId: data?.class?.id ? String(data.class.id) : "", // ✅ Fixed classId
+        phone: data?.phone || "",
+        img: data?.img || "",
+        subjects: data?.subjects?.map((s) => String(s.subject.id)) || [],
       });
-
-      // ✅ Ensure subjects are explicitly set after reset()
-      setTimeout(() => {
-        setValue(
-          "subjects",
-          data?.subjects?.map((s) => String(s.subjectId)) || []
-        );
-      }, 200); // Small delay ensures it runs after reset()
     }
-  }, [data, databaseData, reset, setValue]);
 
-  const handleFileChange = (event) => {
-    const file = event.target.files[0];
-    if (file) {
-      setValue("img", file.name);
+    if (data?.grade?.id) {
+      setSelectedGrade(String(data.grade.id));
     }
-  };
+  }, [data, reset]);
 
   const onSubmit = handleSubmit(async (formData) => {
     console.log("🟢 Form submission started!");
-
+    console.log("Raw form data:", formData);
 
     try {
       let response;
@@ -84,18 +87,16 @@ const filteredTerms = databaseData.terms.filter((t) => t.sessionId === activeSes
       const cleanedData = {
         ...formData,
         sessionId: Number(activeSession.id),
-        termId: Number(formData.termId), // ✅ Ensure termId is included
+        termId: Number(formData.termId),
         gradeId: Number(formData.gradeId),
-        classId: Number(formData.classId),
-        subjects: formData.subjects.map(Number),
-        phone: formData.phone ? Number(formData.phone) : null,
-        img: formData.img || null,
+        classId: formData.classId ? Number(formData.classId) : null, // ✅ Ensuring correct conversion
+        subjects: formData.subjects.map((s) => Number(s)),
+        phone: formData.phone ? String(formData.phone) : null,
+        img: formData.img || img?.secure_url || data?.img,
       };
 
       console.log("Submitting cleaned data:", cleanedData);
-      console.log("Filtered Terms:", filteredTerms);
-      console.log("Term ID from Form:", data?.termId);
-      console.log("Cleaned Data before submission:", cleanedData);
+
       if (type === "create") {
         response = await createStudent(cleanedData);
       } else if (type === "update" && data?.id) {
@@ -112,6 +113,7 @@ const filteredTerms = databaseData.terms.filter((t) => t.sessionId === activeSes
               ? "Student created successfully!"
               : "Student updated successfully!",
         });
+
         setTimeout(() => {
           window.location.reload();
         }, 2000);
@@ -125,7 +127,6 @@ const filteredTerms = databaseData.terms.filter((t) => t.sessionId === activeSes
       setLoading(false);
     }
   });
-
   return (
     <div className="w-full max-w-4xl mx-auto md:p-6 md:h-auto h-screen overflow-y-auto md:overflow-visible">
       {databaseData ? (
@@ -183,15 +184,11 @@ const filteredTerms = databaseData.terms.filter((t) => t.sessionId === activeSes
               error={errors.phone}
             />
           </div>
-          <div className="flex justify-between items-center gap-5 ">
+          <div className="flex flex-wrap justify-between items-center gap-5 ">
             <div className="flex flex-col w-full md:w-1/4">
               <label className="text-xs text-gray-500">Sex</label>
-              <select
-                {...register("sex")}
-                defaultValue={data?.sex ||""}
-                className="border text-sm text-gray-500 mt-2 ring-[1.5px] ring-gray-300 rounded-md p-2 cursor-pointer"
-              >
-                <option value="MALE">-- Select Gender --</option>
+              <select {...register("sex")} defaultValue={data?.sex || ""}>
+                <option value="">Select gender</option>
                 <option value="MALE">Male</option>
                 <option value="FEMALE">Female</option>
               </select>
@@ -225,11 +222,23 @@ const filteredTerms = databaseData.terms.filter((t) => t.sessionId === activeSes
                 className="border text-sm text-gray-500 mt-2 ring-[1.5px] ring-gray-300 rounded-md p-2 cursor-pointer"
               >
                 <option value="">-- Select Session --</option>
-               <option value={activeSession.id}>{activeSession.name}</option>
+                <option value={activeSession.id}>{activeSession.name}</option>
               </select>
             </div>
           </div>
-          <div className="flex justify-between items-center gap-5">
+
+          
+          <div className="flex flex-wrap justify-between items-center gap-5">
+          <SelectField
+              name="subjects"
+              label="Subjects"
+
+              control={control}
+              options={databaseData?.subjects || []}
+              multiple={true}
+              placeholder="-- Select Subjects --"
+              error={errors.subjects}
+            />
             <div className="flex flex-col w-full md:w-1/4">
               <label className="text-xs text-gray-500">Grade Level</label>
               <select
@@ -250,6 +259,7 @@ const filteredTerms = databaseData.terms.filter((t) => t.sessionId === activeSes
               <select
                 {...register("classId")}
                 className="border text-sm text-gray-500 mt-2 ring-[1.5px] ring-gray-300 rounded-md p-2 cursor-pointer"
+                defaultValue={data?.class?.id || ""}
               >
                 <option value="">-- Class --</option>
                 {filteredClasses.map((c) => (
@@ -260,50 +270,51 @@ const filteredTerms = databaseData.terms.filter((t) => t.sessionId === activeSes
               </select>
             </div>
 
-            <SelectField
-              name="subjects"
-              label="Subjects"
-              control={control}
-              options={databaseData?.subjects || []}
-              multiple
-              placeholder="-- Select Subjects --"
-              error={errors.subjects}
-            />
+           
           </div>
-          <div className="flex flex-col justify-center">
-          <div className="flex flex-col w-full md:w-1/4">
-  <label className="text-xs text-gray-500">Term</label>
-  <select
-    {...register("termId")}
-    className="border text-sm text-gray-500 mt-2 ring-[1.5px] ring-gray-300 rounded-md p-2 cursor-pointer"
-    onChange={(e) => console.log("Selected Term ID:", e.target.value)} // Debugging
-    defaultValue={data?.termId || ""}
+          <div className="flex flex-wrap justify-between">
+            <div className="flex flex-col w-full md:w-1/4">
+              <label className="text-xs text-gray-500">Term</label>
+              <select
+                {...register("termId")}
+                className="border text-sm text-gray-500 mt-2 ring-[1.5px] ring-gray-300 rounded-md p-2 cursor-pointer"
+                onChange={(e) =>
+                  console.log("Selected Term ID:", e.target.value)
+                } // Debugging
+                defaultValue={data?.termId || ""}
+              >
+                <option value="">-- Select Term --</option>
+                {filteredTerms.map((t) => (
+                  <option key={t.id} value={String(t.id)}>
+                    {t.name}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-
-  >
-    <option value="">-- Select Term --</option>
-    {filteredTerms.map((t) => (
-      <option key={t.id} value={String(t.id)}>
-        {t.name}
-      </option>
-    ))}
-  </select>
-</div>
-
-            <label
-              className="text-xs text-gray-500 flex items-center cursor-pointer gap-2"
-              htmlFor="img"
+            <CldUploadWidget
+              uploadPreset="MuslimSchool"
+              onSuccess={(result, { widget }) => {
+                setImg(result.info.secure_url);
+                setValue("img", result.info.secure_url); // Ensures img is included in formData
+                widget.close();
+              }}
             >
-              <Image src="/upload.png" alt="Upload" width={28} height={28} />
-              <span>Upload Image</span>
-            </label>
-            <input
-              type="file"
-              id="img"
-              accept="image/*"
-              className="hidden"
-              onChange={handleFileChange}
-            />
+              {({ open }) => (
+                <div
+                  className="text-xs text-gray-500 flex items-center cursor-pointer gap-2"
+                  onClick={() => open()}
+                >
+                  <Image
+                    src={img || data?.img || "/avatar.png"}
+                    alt="Upload"
+                    width={28}
+                    height={28}
+                  />
+                  <span>Upload Image</span>
+                </div>
+              )}
+            </CldUploadWidget>
             {errors.img && (
               <p className="text-red-400 text-xs">{errors.img.message}</p>
             )}

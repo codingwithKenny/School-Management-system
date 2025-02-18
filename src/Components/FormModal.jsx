@@ -16,12 +16,18 @@ const SubjectForm = dynamic(() => import("./Forms/SubjectForm"), {
 const ClassTeacherForm = dynamic(() => import("./Forms/ClassteacherForm"), {
   loading: () => <h1>Loading...</h1>,
 });
+const AdminForm = dynamic(() => import("./Forms/AdminForm"), {
+  loading: () => <h1>Loading...</h1>,
+});
 
 const forms = {
   teacher: (type, data) => <TeachersForm type={type} data={data}/>,
-  student: (type, data) => <StudentForm type={type} data={data} />,
-  subject: (type, data) => <SubjectForm type={type} data={data} />,
+  student: (type, data) => {
+    console.log("Data passed to StudentForm:", data);
+    return <StudentForm type={type} data={data} />;
+  },  subject: (type, data) => <SubjectForm type={type} data={data} />,
   classTeacher: (type, data, memoizedClasses) => <ClassTeacherForm type={type} data={data}  memoizedClasses={memoizedClasses || []} />,
+  admin: (type, data) => <AdminForm type={type} data={data}/>,
 };
 
 const deleteFunctions = {

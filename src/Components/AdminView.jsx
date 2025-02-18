@@ -1,19 +1,22 @@
 import { useState } from "react";
 import FormModal from "./FormModal";
+import { useDatabase } from "@/app/context/DatabaseProvider";
 
 const AdminView = ({ memoizedClasses, selectedClass, students }) => {
   const [loading, setLoading] = useState(false);
+  const { databaseData } = useDatabase();
+  const activeSession = databaseData.sessions.find((s) => s.isCurrent);
+  const filteredTerms = databaseData.terms.filter((t) => t.sessionId === activeSession?.id);
+
+  const selectedClassData = memoizedClasses.find((cls) => cls.id === selectedClass);
   
-  // 🔍 Debugging Output: Check if student IDs exist
-  console.log("Checking Student IDs:", students.map(s => ({ name: s.name, id: s.id })));
-  console.log("Checking Subject IDs:", students.map(s => s.subjects?.map(sub => sub.subject?.id)));
 
   return (
     <div className="mb-6 bg-purple-200 rounded-md p-4">
       <div className="flex flex-wrap justify-between items-center mb-4">
         <h2 className="text-xl font-semibold text-gray-700">👨‍🎓 Students</h2>
 
-        {/* ✅ Display Assigned Teacher */}
+        {/* Display Assigned Teacher */}
         <div className="p-2 bg-indigo-100 rounded-md text-center">
           <h4 className="text-sm font-semibold">👨‍🏫 Class Teacher</h4>
           {memoizedClasses.find((cls) => cls.id === selectedClass)?.supervisor ? (
@@ -48,7 +51,7 @@ const AdminView = ({ memoizedClasses, selectedClass, students }) => {
                 <tr key={student?.id ?? `student-${studentIndex}`} className="text-center">
                   <td className="border border-gray-300 p-2">
                     <img
-                      src={student.image || "/avatar.png"}
+                      src={student.img || "/avatar.png"}
                       alt={student.name}
                       className="w-10 h-10 rounded-full mx-auto"
                     />
@@ -57,12 +60,9 @@ const AdminView = ({ memoizedClasses, selectedClass, students }) => {
                     {student.surname} {student.name}
                   </td>
                   <td className="border border-gray-300 p-2">
-                    {student.paymentStatus ? (
-                      <span className="text-green-600 font-semibold">Paid</span>
-                    ) : (
-                      <span className="text-red-600 font-semibold">Not Paid</span>
-                    )}
+                    {student.paymentStatus}
                   </td>
+
                   <td className="border border-gray-300 p-2">
                     {student?.subjects?.length > 0 ? (
                       <div className="flex flex-wrap gap-1">
@@ -81,6 +81,9 @@ const AdminView = ({ memoizedClasses, selectedClass, students }) => {
                   </td>
                   <td className="border border-gray-300 p-2">
                     {student?.term?.name || "N/A"} / {student?.session?.name || "N/A"}
+                  </td>
+                  <td className="border border-gray-300 p-2 hidden">
+                    {student?.class?.name || "N/A"} / {student?.grade?.name || "N/A"}
                   </td>
                   <td className="border border-gray-300 flex justify-center items-center p-3">
                     <FormModal type="update" table="student" data={student} />

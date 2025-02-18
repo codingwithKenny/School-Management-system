@@ -16,7 +16,7 @@ const WelcomePage = () => {
       router.push(`/${role}`); // Redirect dynamically based on role
     } else {
       console.log("No role found. Redirecting to /dashboard");
-      router.push("/");
+      router.push("/sign-in");
     }
   }, [isLoaded, user, router]);
 

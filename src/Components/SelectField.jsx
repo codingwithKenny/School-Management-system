@@ -58,10 +58,10 @@ const SelectField = ({
       {/* Display selected items if multiple */}
       {multiple && selectedValues.length > 0 && (
         <div className="flex flex-wrap gap-2 mt-2 ">
-          {selectedValues.map((val) => {
+          {selectedValues.map((val, index) => {
             const item = options.find((opt) => String(opt.id) === val);
             return (
-              <span key={val} className="bg-gray-200 px-2 py-1 rounded-md text-sm flex items-center">
+              <span key={`${val}-${index}`} className="bg-gray-200 rounded-md text-[8px] flex items-center">
                 {item?.name || "Unknown"}
                 <button type="button" className="ml-2 text-red-500 font-bold" onClick={() => handleRemove(val)}>
                   ×

@@ -7,6 +7,7 @@ import prisma from '@/lib/prisma';
 import Image from 'next/image';
 import React from 'react';
 import { getUserRole } from '@/lib/authUtils';
+import { fetchStudents } from '@/lib/actions';
 
 
 const studentListPage = async({ searchParams}) => {
@@ -14,7 +15,7 @@ const studentListPage = async({ searchParams}) => {
   
   const params = searchParams ? await searchParams : {};
 
-  const page = params.page || 1; // Default to 1 if not provided
+  const page = params.page || 1; 
   const p = parseInt(page);
 
     // QUERY CONDITIONS
@@ -43,16 +44,36 @@ const studentListPage = async({ searchParams}) => {
   const studentData = await prisma.student.findMany({
     where: {
       ...query,
-      isDeleted: false, // ✅ Exclude students who are marked as deleted
+      isDeleted: false,
     },
-    include: {
-      grade: true,
-      class: true,
+    select: {  
+      id: true,  
+      name: true,
+      surname: true,  
+      username: true,
+      phone: true,
+      address: true,
+      email: true,
+      img: true,
+      sex: true,  // ✅ Change `gender` to `sex`
+      paymentStatus: true,
+      sessionId: true,
+      termId: true,
+      classId: true,
+      gradeId: true,
+      class: { select: { id: true, name: true } }, 
+      grade: { select: { id: true, name: true } }, 
+      subjects: { select: { subject: { select: { id: true, name: true } } } },
+      createdAt: true,  
+      isDeleted: true,  
     },
     take: ITEM_PER_PAGE,
     skip: (p - 1) * ITEM_PER_PAGE,
   });
   
+  
+  console.log(studentData, "cccccccccccccccccccccccc");
+
 
   const count = await prisma.student.count({
     where: {
@@ -74,8 +95,8 @@ const studentListPage = async({ searchParams}) => {
     []),];
 
 
-  const renderRow = (student) => (
-    <tr key={student.id} className='text-xs border-b border-grey-200 even:bg-slate-50 hover:bg-[#F1F0FF]'>
+  const renderRow = (student, index) => (
+    <tr key={student.id || `fallback-${index}`} className='text-xs border-b border-grey-200 even:bg-slate-50 hover:bg-[#F1F0FF]'>
       <td className='flex items-center  gap-4 p-4 '>
         <Image
           src={student.photo || '/noAvatar.png'}

@@ -1,4 +1,5 @@
 "use client";
+
 import * as Clerk from "@clerk/elements/common";
 import * as SignIn from "@clerk/elements/sign-in";
 import Image from "next/image";
@@ -45,6 +46,11 @@ const LoginPage = () => {
           >
             Sign In
           </SignIn.Action>
+          <div className="text-right mt-2">
+            <a href="/forgot-password" className="text-sm text-purple-500">
+              Forgot your password?
+            </a>
+          </div>
         </SignIn.Step>
       </SignIn.Root>
     </div>
