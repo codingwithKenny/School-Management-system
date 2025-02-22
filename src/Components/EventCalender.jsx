@@ -41,7 +41,7 @@ const EventCalendar = () => {
   }
 
   return (
-    <div className="rounded-md bg-white p-4 shadow-md">
+    <div className="rounded-md bg-purple-50 p-4 shadow-md">
       {/* Calendar Component */}
       <Calendar onChange={setValue} value={value} className="text-xs" locale="en-US" />
 

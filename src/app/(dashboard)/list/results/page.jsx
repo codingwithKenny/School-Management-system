@@ -21,24 +21,34 @@ const resultUploadPage = async () => {
       return <div className="p-4 text-red-500">No students found for your subjects.</div>;
     }
     //  FETCH SESSION WITH RELATED TERMS AND GRADES
+   // Fetch only the current session (where isCurrent is true)
+    // and within that, only fetch the current term (where isCurrent is true)
     const sessions = await prisma.session.findMany({
+      where: { isCurrent: true },
       select: {
         id: true,
         name: true,
-        terms: { select: { id: true, name: true, sessionId: true } }, 
+        terms: {
+          where: { isCurrent: true },
+          select: { id: true, name: true, sessionId: true },
+        },
         grades: {
           select: {
             id: true,
             name: true,
             sessionId: true,
-            classes: { select: { id: true, name: true, gradeId: true } }
-          }
-        }
-      }
+            classes: { select: { id: true, name: true, gradeId: true } },
+          },
+        },
+      },
     });
+    
+    if (!sessions) {
+      return <div className="p-4 text-red-500">No current session available.</div>;
+    }
     // FETCH STUDENT OFFERING THE COURSE
     const students = await prisma.student.findMany({
-      where: { subjects: { some: { subjectId: { in: subjectIds } } } },
+      where: { isDeleted: false,subjects: { some: { subjectId: { in: subjectIds } } } },
       select: {
         id: true,
         name: true,
@@ -57,7 +67,7 @@ const resultUploadPage = async () => {
     const Results = await allResults();
 
     return (
-      <div className="bg-white rounded-md p-4 flex-1 m-4 mt-0">
+      <div className=" rounded-md p-4 flex-1 m-4 mt-0">
       {role =="teacher" && (
           <TeacherResultActions
           students={students}

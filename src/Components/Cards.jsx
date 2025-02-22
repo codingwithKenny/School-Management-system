@@ -4,7 +4,7 @@ import React from "react";
 const Cards = ({ type , data, color,session }) => {
   return (
     <div
-      className="rounded-2xl p-4 flex-1 min-w-[130px] items-center"
+      className=" p-4 flex-1 min-w-[130px] items-center"
       style={{ backgroundColor: color }}
     >
       <div className="flex justify-between gap-4 items-center">

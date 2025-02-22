@@ -4,15 +4,15 @@ import React from "react";
 import { PieChart, Pie, Sector, Cell, ResponsiveContainer } from "recharts";
 
 const data = [
-  { name: "Group A", value: 70, fill: "#CFCEFF" },
-  { name: "Group B", value: 30, fill: "#DAA06D" },
+  { name: "Group A", value: 70, fill: "#84cdee" },
+  { name: "Group B", value: 30, fill: "#ffbcda" },
 ];
 
 const Performance = () => {
   return (
     <div className="bg-white p-4 rounded-md h-80 relative">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">Performance</h1>
+        <h1 className="text-lg font-bold text-[#69BEC9]">PERFORMANCE</h1>
         <Image src="/moreDark.png" alt="" width={16} height={16} />
       </div>
       <ResponsiveContainer width="100%" height="100%">
@@ -34,7 +34,7 @@ const Performance = () => {
         <p className="text-xs text-gray-300">of 10 max Total</p>
         <div>
           <h2 className="font-bold m-auto absolute text-xs text-center">
-            1st term - 3rd term
+            1st - 3rd term
           </h2>
         </div>
       </div>

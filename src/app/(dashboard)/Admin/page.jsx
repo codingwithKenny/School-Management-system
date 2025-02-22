@@ -7,18 +7,26 @@ import EventCalender from "@/components/EventCalender";
 import Annoucement from "@/components/Annoucement";
 import prisma from "@/lib/prisma";
 import SessionModal from "@/components/SessionModal"; 
+import { getUserRole } from "@/lib/authUtils";
 
 export default async function AdminPage() {
+  const role = await getUserRole(); // get the user role from Clerk
+  
   const latestSession = await prisma.session.findFirst({
     orderBy: { id: "desc" },
   });
-
+  const sessionId = latestSession ? latestSession.id : null;
+  
   const terms = await prisma.term.findMany({
     where: {
-      sessionId: latestSession?.id,
+      sessionId: latestSession?.id
     },
-    orderBy: { id: "desc" }, 
+    orderBy: { id: "desc" }
   });
+  
+  // Get the current term from the fetched terms
+  const currentTerm = terms.find(term => term.isCurrent);
+
     //  cARD iNFO FROM DB
     const cardData = {
     admin: await prisma.admin.count(),
@@ -35,12 +43,12 @@ export default async function AdminPage() {
         {/* CARDS SECTION */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* SESSION MODAL */}
-          <SessionModal sessionName={cardData.session} terms={terms} />
+          <SessionModal sessionName={cardData.session} terms={terms} role={role} sessionId={sessionId} currentTerm={currentTerm} />
           
           {/* OTHER CARDS */}
-          <Cards color="#CFCEFF" type="Student" data={cardData.student} session={cardData.session} />
-          <Cards color="#E6C5AD" type="Teacher" data={cardData.teacher} session={cardData.session} />
-          <Cards color="#CFCEFF" type="Parent" data={cardData.parent} session={cardData.session} />
+          <Cards color="#29B48B" type="Student" data={cardData.student} session={cardData.session} />
+          <Cards color="#FBD44D" type="Teacher" data={cardData.teacher} session={cardData.session} />
+          <Cards color="#FFAE9E" type="Parent" data={cardData.parent} session={cardData.session} />
         </div>
 
         {/* MIDDLE CHARTS */}

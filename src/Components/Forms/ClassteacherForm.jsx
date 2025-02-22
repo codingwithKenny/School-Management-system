@@ -5,16 +5,18 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect, useState } from "react";
 import { useDatabase } from "@/app/context/DatabaseProvider";
 import { assignClassTeacher, createClassTeacher } from "@/lib/actions";
+import { useRouter } from "next/navigation";
 
-const ClassTeacherForm = ({ type, data, memoizedClasses }) => {
+const ClassTeacherForm = ({ type, data, memoizedClasses,setOpen }) => {
   const { databaseData, loading } = useDatabase(); // ✅ Use global loading state
   const DbTeachers = databaseData.teachers || [];
+  const [isloading,setIsLoading] = useState(false)
 
   const { register, handleSubmit, setValue, formState: { errors } } = useForm();
 
   // ✅ State for selected class, grade, and session
   const [selectedClass, setSelectedClass] = useState(null);
- 
+ const router =useRouter()
 
   console.log(memoizedClasses, "class data available");
 
@@ -32,6 +34,7 @@ const ClassTeacherForm = ({ type, data, memoizedClasses }) => {
 
   const onSubmit = handleSubmit(async (formData) => {
     console.log("📌 Form Submitted:", formData);
+    setIsLoading(true);
 
     try {
       let response = await assignClassTeacher(formData);
@@ -49,8 +52,9 @@ const ClassTeacherForm = ({ type, data, memoizedClasses }) => {
   useEffect(() => {
     if (state.success) {
       setTimeout(() => {
-        window.location.reload();
-      }, 500);
+        setOpen(false);
+        router.refresh();
+            }, 500);
     }
   }, [state.success]);
 
@@ -107,10 +111,10 @@ const ClassTeacherForm = ({ type, data, memoizedClasses }) => {
       {/* ✅ Submit Button */}
       <button
         type="submit"
-        className="bg-purple-400 rounded-md text-white p-2"
-        disabled={state.success}
+        className="bg-purple-400 rounded-md text-white p-2 disabled:opacity-50 disabled:cursor-not-allowed"
+        disabled={isloading}
       >
-        {type === "create" ? "Assign" : "Update"}
+        { isloading? "saving" :type === "create" ? "Assign" : "Update"}
       </button>
     </form>
   );

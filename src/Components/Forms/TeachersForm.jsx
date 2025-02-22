@@ -9,11 +9,14 @@ import Image from "next/image";
 import SelectField from "../SelectField";
 import { CldUploadWidget } from "next-cloudinary";
 import { useDatabase } from "@/app/context/DatabaseProvider";
+import { useRouter } from "next/navigation";
 
-const TeacherForm = ({ type, data }) => {
+const TeacherForm = ({ type, data,setOpen }) => {
   const { databaseData } = useDatabase();
   const [message, setMessage] = useState(null);
   const [img, setImg] = useState(data?.img || ""); 
+  const [loading, setLoading] = useState(false);
+  const router =useRouter()
 
   const [serverError, setServerError] = useState("");
 
@@ -59,6 +62,7 @@ const TeacherForm = ({ type, data }) => {
 
   const onSubmit = handleSubmit(async (formData) => {
     console.log("Form Submitted:", formData);
+    setLoading(true);
 
     try {
       let response;
@@ -93,11 +97,23 @@ const TeacherForm = ({ type, data }) => {
         });
 
         setTimeout(() => {
-          window.location.reload();
+          setOpen(false)
+          router.refresh()
         }, 2000);
-      } else {
-        throw new Error(response.error || "Unknown error occurred.");
       }
+        else {
+          if (response.error) {
+            console.error(response.error)
+            setMessage({
+              type: "error",
+              text: type === "create" ? response.error : response.error,
+            });
+            throw new Error(response.error || "Unknown error occurred.");
+          }
+        }
+        setLoading(false);
+
+       
     } catch (error) {
       console.error("Error submitting form:", error);
       setServerError("An unexpected error occurred. Please try again.");
@@ -130,7 +146,24 @@ const TeacherForm = ({ type, data }) => {
         <InputField label="Surname" name="surname" register={register} error={errors.surname} />
         <InputField label="Name" name="name" register={register} error={errors.name} />
         <InputField label="Username" name="username" register={register} error={errors.username} />
-        <InputField label="Email" name="email" register={register} error={errors.email} />
+       
+        { type === "update" ? (
+  <InputField 
+    disabled={true}
+    label="Email" 
+    name="email" 
+    register={register} 
+    error={errors.email} 
+    className="disabled:opacity-50 disabled:cursor-not-allowed"
+  />
+) : (
+  <InputField 
+    label="Email" 
+    name="email" 
+    register={register} 
+    error={errors.email} 
+  />
+)}
         <InputField label="Password" name="password" type="password" register={register} error={errors.password} />
         <InputField label="Address" name="address" register={register} error={errors.address} />
       </div>
@@ -189,8 +222,8 @@ const TeacherForm = ({ type, data }) => {
         <input type="file" id="img" accept="image/*" className="hidden" onChange={handleFileChange} />
         {errors.img && <p className="text-red-400 text-xs">{errors.img.message}</p>}
       </div> */}
-      <button type="submit" className="bg-purple-400 rounded-md text-white p-2">
-        {type === "create" ? "Add Teacher" : "Update"}
+      <button type="submit" disabled={loading} className="bg-purple-400 rounded-md text-white p-2 disabled:opacity-50 disabled:cursor-not-allowed">
+      {loading ? "Saving..." : type === "create" ? "Add new Teacher" : "Update Teacher"}
       </button>
     </form>
   );

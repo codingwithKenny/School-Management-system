@@ -3,6 +3,7 @@ import './globals.css';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import { ClerkProvider } from '@clerk/nextjs';
 import { DatabaseProvider } from './context/DatabaseProvider';
+import { Toaster } from '@/components/ui/toaster';
 
 export const metadata = {
   title: 'Create Next App',
@@ -18,10 +19,12 @@ export default function RootLayout({ children }) {
         <title>{metadata.title}</title>
         <meta name="description" content={metadata.description} />
       </head>
-      <body className="font-sans">
+      <body className="">
         <ClerkProvider frontendApi="pk_test_cHJvLWRpbmdvLTUxLmNsZXJrLmFjY291bnRzLmRldiQ">
           <DatabaseProvider> 
             {children}
+            <Toaster />
+
           </DatabaseProvider>
         </ClerkProvider>
       </body>

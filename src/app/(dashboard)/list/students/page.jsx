@@ -29,12 +29,12 @@ const studentListPage = async({ searchParams}) => {
                 some: { teacherId: parseInt(value) },
               };
               break;
-            case 'search':
-              query.name = { contains: value, mode:"insensitive" };
-              break;
-            // Add additional filters as needed
-            default:
-              break;
+              case 'search':
+                query.OR = [
+                    { name: { contains: value, mode: "insensitive" } }, // Search by student name
+                    { class: { name: { contains: value, mode: "insensitive" } } }, // Search by class name
+                ];
+                break;
           }
         }
       }
@@ -72,7 +72,6 @@ const studentListPage = async({ searchParams}) => {
   });
   
   
-  console.log(studentData, "cccccccccccccccccccccccc");
 
 
   const count = await prisma.student.count({
@@ -84,7 +83,7 @@ const studentListPage = async({ searchParams}) => {
    
  const column = [
   { header: 'Info', accessor: 'info' },
-  { header: 'Student Id', accessor: 'studentId', className: 'hidden md:table-cell' },
+  { header: 'User Name', accessor: 'studentId', className: 'hidden md:table-cell' },
   { header: 'Grade', accessor: 'grade', className: 'hidden md:table-cell' },
   { header: 'Phone', accessor: 'phone', className: 'hidden lg:table-cell' },
   { header: 'Address', accessor: 'address', className: 'hidden lg:table-cell' },
@@ -136,7 +135,7 @@ const studentListPage = async({ searchParams}) => {
   );
 
   return (
-    <div className="bg-white rounded-md p-4 flex-1 m-4 mt-0">
+    <div className="bg-purple-50 rounded-md p-4 flex-1 mt-10">
       {/* TOP */}
       <div className="flex items-center justify-between">
         <h1 className="hidden md:block text-lg font-semibold">All Students</h1>

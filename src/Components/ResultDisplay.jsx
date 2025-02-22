@@ -133,7 +133,7 @@ const ResultDisplay = ({
               <Image src="/logo.png" width={60} height={60} alt="School Logo" />
               <div className="text-center flex-1">
                 <h1 className="text-2xl font-bold uppercase">
-                  MUSLIM GROUP OF SCHOOLS
+                  MUSLIM COMPREHENSIVE COLLEGE
                 </h1>
                 <p className="text-sm italic font-semibold">"ALLAH IS GREAT"</p>
                 <p className="text-xs">

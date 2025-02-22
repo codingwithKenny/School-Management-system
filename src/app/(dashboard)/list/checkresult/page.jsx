@@ -57,6 +57,7 @@ const CheckResult = async () => {
       totalScore: true
     }
   });
+  console.log(results, "results");
 
   return (
     <div>

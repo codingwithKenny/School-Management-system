@@ -24,7 +24,7 @@ model Teacher {
   img          String?
   address      String?
   phone        String?
-  password     String
+  password     String?
   subjects     TeacherSubject[] // ✅ Many-to-Many relationship
   results      Result[]
   classes      Class[]          @relation("SupervisorRelation")

@@ -8,6 +8,7 @@ const AdminResultAction = ({ allResult, sessions, subject }) => {
   const [selectedSubject, setSelectedSubject] = useState("");
   const [filteredResults, setFilteredResults] = useState([]);
   const { databaseData } = useDatabase();
+  const [loading, setLoading, ]=useState(false)
 
   const grades = databaseData.grades || [];
   const history = databaseData.studentHistory.map((item) => item.results);
@@ -18,6 +19,7 @@ const AdminResultAction = ({ allResult, sessions, subject }) => {
   const terms = selectedSessionData ? selectedSessionData.terms : [];
 
   const handleLoadResult = () => {
+    setLoading(true)
     if (selectedSession && selectedTerm && selectedSubject) {
       // CONFIRM RESULT MATCH THE SELECTED SESSION,TERM AND SUBJECT
       const results = allResult.data.filter((result) => {
@@ -42,6 +44,8 @@ const AdminResultAction = ({ allResult, sessions, subject }) => {
 
       setFilteredResults(historyResults || []);
     }
+    setLoading(false);
+
   };
 
   const handleSessionChange = (e) => {
@@ -93,7 +97,7 @@ const AdminResultAction = ({ allResult, sessions, subject }) => {
             </label>
             <select
               id="term"
-              className="block w-full p-2.5 border rounded-lg mt-2 text-sm focus:ring-2 focus:ring-blue-600 focus:outline-none"
+              className="block w-full p-2.5 border rounded-lg mt-2 text-sm focus:ring-2 focus:ring-blue-600 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
               value={selectedTerm}
               onChange={handleTermChange}
             >
@@ -131,9 +135,10 @@ const AdminResultAction = ({ allResult, sessions, subject }) => {
       <div className="mt-4">
         <button
           onClick={handleLoadResult}
+          disabled={loading}
           className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none"
         >
-          Load Results
+         {loading?"loading Results":"Load Results" } 
         </button>
       </div>
       {/* DISPLAY RESULT PER GRADE */}

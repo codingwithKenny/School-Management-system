@@ -31,7 +31,7 @@ CREATE TABLE "Teacher" (
     "img" TEXT,
     "address" TEXT,
     "phone" TEXT,
-    "password" TEXT NOT NULL,
+    "password" TEXT,
     "isDeleted" BOOLEAN NOT NULL DEFAULT false,
     "deletedAt" TIMESTAMP(3),
 

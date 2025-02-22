@@ -6,24 +6,9 @@ import { ITEM_PER_PAGE } from "@/lib/settings";
 import prisma from "@/lib/prisma";
 import Image from "next/image";
 import React from "react";
-import { getUserRole, role } from "@/lib/authUtils";
+import { getUserRole } from "@/lib/authUtils";
 
-const column = [
-  { header: "Subject Name", accessor: "name" },
-  {
-    header: "Teachers",
-    accessor: "teachers",
-    className: "hidden md:table-cell",
-  },
-  ...(role === "admin"
-    ? [
-        {
-          header: "Actions",
-          accessor: "actions",
-        },
-      ]
-    : []),
-];
+
 
 const subjectListPage = async ({ searchParams }) => {
   const role = await getUserRole();
@@ -57,6 +42,23 @@ const subjectListPage = async ({ searchParams }) => {
 
   const count = await prisma.subject.count({ where: query });
 
+  const column = [
+    { header: "Subject Name", accessor: "name" },
+    {
+      header: "Teachers",
+      accessor: "teachers",
+      className: "hidden md:table-cell",
+    },
+    ...(role
+      ? [
+          {
+            header: "Actions",
+            accessor: "actions",
+          },
+        ]
+      : []),
+  ];
+
   // ✅ Render Teachers Properly
   const renderRow = (subject) => (
     <tr
@@ -75,7 +77,7 @@ const subjectListPage = async ({ searchParams }) => {
       </td>
       <td>
         <div className="flex items-center gap-2">
-          {role === "admin" && (
+          {role && (
             <>
               <FormModal type="update" table="subject" data={subject} />
               <FormModal type="delete" table="subject" id={subject?.id} />
@@ -100,7 +102,7 @@ const subjectListPage = async ({ searchParams }) => {
             <button className="w-8 h-8 flex items-center justify-center rounded-full bg-[#FAE27C]">
               <Image src={"/sort.png"} alt="" width={14} height={14} />
             </button>
-            {role === "admin" && <FormModal type="create" table="subject" />}
+            {role && <FormModal type="create" table="subject" />}
           </div>
         </div>
       </div>

@@ -14,7 +14,7 @@ const Pagination = ({page, count}) => {
   const hasPrev = ITEM_PER_PAGE *(page -1) > 0
   const hasNext = ITEM_PER_PAGE * page < count
   return (
-    <div className='p-4 flex items-center justify-between text-gray-500'>
+    <div className='p-4 flex items-center justify-center gap-5 text-gray-500'>
         <button disabled = {!hasPrev} className='py-2 px-4 rounded-md bg-slate-200 disabled:opacity-50 disable:cursor-not-allowed'
         onClick={()=>{changePage(page - 1)}}>
           Prev

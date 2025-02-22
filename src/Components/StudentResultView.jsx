@@ -24,16 +24,17 @@ const StudentResultView = ({ sessions, results, studentInfo,userId }) => {
   const className = studentClassData?.name || studentHistory?.class.name || "Class Not Found";
 
 // GET RESULTS ACCORDING TO SELECTED TERM, CLASS,GRADE AND SESSION
-  const filteredResults = results.filter(
-    (result) =>
-      result.sessionId === selectedSession &&
-      result.gradeId === studentGradeData?.id || studentHistory?.grade?.id &&
-      result.classId === studentClassData?.id || studentHistory?.class?.id  &&
-      result.termId === selectedTerm
-  );
+const filteredResults = results.filter(
+  (result) =>
+    result.sessionId === selectedSession &&
+    (result.gradeId === studentGradeData?.id || result.gradeId === studentHistory?.grade?.id) &&
+    (result.classId === studentClassData?.id || result.classId === studentHistory?.class?.id) &&
+    result.termId === selectedTerm
+);
+
 
   return (
-    <div className="p-6 bg-gray-100 min-h-screen">
+    <div className="p-6 bg-purple-100 min-h-screen">
       <h2 className="text-xl font-bold text-center mb-6 text-gray-800">📄 CHECK RESULT</h2>
 
       <div className="bg-white shadow-md rounded-lg p-6 flex flex-wrap gap-6 justify-between items-center">

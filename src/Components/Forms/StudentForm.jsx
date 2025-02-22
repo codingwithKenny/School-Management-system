@@ -9,13 +9,15 @@ import { studentSchema } from "@/lib/formValidation";
 import { useDatabase } from "@/app/context/DatabaseProvider";
 import { createStudent, updateStudent } from "@/lib/actions";
 import { CldUploadWidget } from "next-cloudinary";
+import { useRouter } from "next/navigation";
 
-const StudentForm = ({ type, data }) => {
+const StudentForm = ({ type, data,setOpen }) => {
   const { databaseData } = useDatabase();
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState(null);
   const [selectedGrade, setSelectedGrade] = useState("");
   const [img, setImg] = useState(data?.img || "");
+  const router = useRouter()
 
   const activeSession = databaseData.sessions.find((s) => s.isCurrent);
   const filteredGrades = databaseData.grades.filter(
@@ -80,6 +82,7 @@ const StudentForm = ({ type, data }) => {
   const onSubmit = handleSubmit(async (formData) => {
     console.log("🟢 Form submission started!");
     console.log("Raw form data:", formData);
+    setLoading(true);
 
     try {
       let response;
@@ -115,7 +118,8 @@ const StudentForm = ({ type, data }) => {
         });
 
         setTimeout(() => {
-          window.location.reload();
+          setOpen(false);
+          router.refresh()
         }, 2000);
       } else {
         throw new Error(response.error || "Unknown error occurred.");
@@ -165,12 +169,23 @@ const StudentForm = ({ type, data }) => {
               register={register}
               error={errors.username}
             />
-            <InputField
-              label="Email"
-              name="email"
-              register={register}
-              error={errors.email}
-            />
+                    { type === "update" ? (
+  <InputField 
+    disabled={true}
+    label="Email" 
+    name="email" 
+    register={register} 
+    error={errors.email} 
+    className="disabled:opacity-50 disabled:cursor-not-allowed"
+  />
+) : (
+  <InputField 
+    label="Email" 
+    name="email" 
+    register={register} 
+    error={errors.email} 
+  />
+)}
             <InputField
               label="Address"
               name="address"
@@ -222,7 +237,7 @@ const StudentForm = ({ type, data }) => {
                 className="border text-sm text-gray-500 mt-2 ring-[1.5px] ring-gray-300 rounded-md p-2 cursor-pointer"
               >
                 <option value="">-- Select Session --</option>
-                <option value={activeSession.id}>{activeSession.name}</option>
+                <option value={activeSession?.id}>{activeSession?.name}</option>
               </select>
             </div>
           </div>
@@ -322,13 +337,14 @@ const StudentForm = ({ type, data }) => {
 
           <button
             type="submit"
-            className="bg-purple-400 rounded-md text-white p-2"
+            className="bg-purple-400 rounded-md text-white p-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={loading}
           >
             {loading
               ? "Submitting..."
               : type === "create"
               ? "Add Student"
-              : "Update"}
+              : "Update Student"}
           </button>
         </form>
       ) : null}

@@ -1,36 +1,34 @@
 "use client";
-
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { createSession, updateTermStatus } from "@/lib/actions";
+import { useRouter } from "next/navigation"; // Change from next/router to next/navigation
 
-export default function SessionModal({ sessionName, terms, sessionId }) {
+export default function SessionModal({ sessionName, terms, sessionId, currentTerm, role }) {
   const [showSessionModal, setShowSessionModal] = useState(false);
   const [showTermModal, setShowTermModal] = useState(false);
   const [newSession, setNewSession] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [selectedTerm, setSelectedTerm] = useState(null);
+  const [selectedTerm, setSelectedTerm] = useState(currentTerm || null);
   const [updatingTerm, setUpdatingTerm] = useState(false);
+  const router = useRouter();
 
+  // Set default selected term to current term
   useEffect(() => {
-    // Set the default selected term to the first term marked as isCurrent
-    if (terms?.length > 0) {
-      const currentTerm = terms.find(term => term.isCurrent) || terms[0];
+    if (currentTerm) {
       setSelectedTerm(currentTerm);
     }
-  }, [terms]);
+  }, [currentTerm, router]);
 
   const handleCreateSession = async () => {
     if (!newSession.trim()) {
       setError("Session name cannot be empty.");
       return;
     }
-
     setLoading(true);
     setError("");
 
-    // Step 1: Create session
     const response = await createSession(newSession);
 
     if (!response.success) {
@@ -39,31 +37,39 @@ export default function SessionModal({ sessionName, terms, sessionId }) {
       return;
     }
 
-    // Step 2: Reload page to reflect new session
     setLoading(false);
-    window.location.reload();
-  };
+    setShowSessionModal(false); 
+
+router.refresh()  };
 
   const handleTermChange = async (e) => {
-    const termId = e.target.value;
+    let termId = e.target.value;
     if (!termId) return;
+
+    if (!isNaN(termId)) {
+      termId = Number(termId);}
+
+    
 
     setUpdatingTerm(true);
     const response = await updateTermStatus(termId, sessionId);
+    console.log(sessionId, termId);
 
     if (response.success) {
-      setSelectedTerm(terms.find(t => t.id === termId));
+      const updatedTerm = terms.find((t) => t.id === termId);
+      setSelectedTerm(updatedTerm);
       setShowTermModal(false);
     } else {
       alert(response.message);
     }
-
     setUpdatingTerm(false);
+router.refresh();
+    
   };
 
   return (
     <>
-      <div className="bg-[#E6C5AD] rounded-2xl p-4">
+      <div className="bg-[#D598CF]  p-4">
         {/* Session Info */}
         <div className="flex items-center justify-between">
           <button className="bg-white text-green-600 text-sm p-2 font-bold rounded-lg shadow-md">
@@ -76,7 +82,7 @@ export default function SessionModal({ sessionName, terms, sessionId }) {
 
         {/* Selected Term */}
         <div className="flex items-center justify-between mt-2">
-          <button className="bg-white text-green-600 text-sm p-2 font-bold rounded-lg shadow-md">
+          <button className="bg-white text-green-600 text-sm p-1 font-bold rounded-lg shadow-md">
             {selectedTerm ? selectedTerm.name : "Select Term"}
           </button>
           <button onClick={() => setShowTermModal(true)} className="p-2 rounded-md">

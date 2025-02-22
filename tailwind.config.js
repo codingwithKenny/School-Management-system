@@ -52,8 +52,7 @@ module.exports = {
   		},
   		fontFamily: {
   			sans: [
-  				'Inter',
-  				'sans-serif'
+  				'IBM Plex Sans', 'sans-serif',
   			]
   		},
   		borderRadius: {

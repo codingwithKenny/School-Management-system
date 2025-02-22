@@ -5,8 +5,12 @@ import InputField from "../InputField";
 import { subjectSchema } from "@/lib/formValidation";
 import { createSubject, updateSubject } from "@/lib/actions";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
-const SubjectForm = ({ type, data }) => {
+const SubjectForm = ({ type, data, setOpen }) => {
+  const [loading, setLoading] = useState(false);
+
+  const router = useRouter();
   const {
     register,
     handleSubmit,
@@ -17,9 +21,11 @@ const SubjectForm = ({ type, data }) => {
   });
 
   const assignedTeachers =
-  data?.teachers?.length > 0
-    ? data.teachers.map((t) => `${t.teacher.name} ${t.teacher.surname}`).join(", ")
-    : "No assigned teacher";
+    data?.teachers?.length > 0
+      ? data.teachers
+          .map((t) => `${t.teacher.name} ${t.teacher.surname}`)
+          .join(", ")
+      : "No assigned teacher";
 
   // useEffect(() => {
   //   if (assignedTeacher) {
@@ -38,6 +44,8 @@ const SubjectForm = ({ type, data }) => {
   const onSubmit = handleSubmit(async (formData) => {
     console.log("Form Submitted:", formData);
 
+    setLoading(true);
+
     try {
       let response;
 
@@ -46,7 +54,11 @@ const SubjectForm = ({ type, data }) => {
       } else if (type === "update" && data?.id) {
         response = await updateSubject(data.id, formData);
       } else {
-        setState({ success: false, error: true, errorMessage: "Invalid subject ID." });
+        setState({
+          success: false,
+          error: true,
+          errorMessage: "Invalid subject ID.",
+        });
         return;
       }
 
@@ -56,14 +68,19 @@ const SubjectForm = ({ type, data }) => {
         setState({ success: false, error: true, errorMessage: response.error });
       }
     } catch (error) {
-      setState({ success: false, error: true, errorMessage: "An unexpected error occurred." });
+      setState({
+        success: false,
+        error: true,
+        errorMessage: "An unexpected error occurred.",
+      });
     }
   });
 
   useEffect(() => {
     if (state.success) {
       setTimeout(() => {
-        window.location.reload();
+        setOpen(false);
+        router.refresh();
       }, 500);
     }
   }, [state.success]);
@@ -91,7 +108,9 @@ const SubjectForm = ({ type, data }) => {
         </p>
       ) : (
         <div>
-          <label className="block text-sm font-medium text-gray-700">Assigned Teacher</label>
+          <label className="block text-sm font-medium text-gray-700">
+            Assigned Teacher
+          </label>
           <input
             type="text"
             {...register("teacherName")}
@@ -108,15 +127,19 @@ const SubjectForm = ({ type, data }) => {
           Subject {type === "create" ? "created" : "updated"} successfully!
         </p>
       )}
-      {state.error && <p className="text-red-500">{state.errorMessage || "Something went wrong."}</p>}
+      {state.error && (
+        <p className="text-red-500">
+          {state.errorMesdisage || "Something went wrong."}
+        </p>
+      )}
 
       <button
         type="submit"
-        className="bg-purple-400 rounded-md text-white p-2"
-        disabled={state.success}
+        className="bg-purple-400 rounded-md text-white p-2 disabled:opacity-50 disabled:cursor-not-allowed"
+        disabled={loading}
       >
-        {type === "create" ? "Create" : "Update"}
-      </button>
+        {loading ? "Saving..." : type === "create" ? "Create" : "Update"}
+        </button>
     </form>
   );
 };

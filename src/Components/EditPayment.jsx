@@ -1,3 +1,4 @@
+
 "use client";
 import { useState, useEffect, useMemo } from "react";
 import { fetchGrades, fetchClasses, fetchStudents } from "@/lib/actions";
@@ -6,8 +7,9 @@ import AdminView from "./AdminView";
 import TeacherView from "./TeacherView";
 import FormModal from "./FormModal";
 
-const GradeComponent = ({ role, currentUser,sessions }) => {
+const EditpayMent = ({ role, currentUser }) => {
   const { databaseData } = useDatabase();
+  const sessions = databaseData.sessions || [];
   const [loading, setLoading] = useState(false);
   const [selectedSession, setSelectedSession] = useState(null);
   const [grades, setGrades] = useState([]);
@@ -27,7 +29,6 @@ const GradeComponent = ({ role, currentUser,sessions }) => {
     };
     fetchData();
   }, [selectedSession]);
-
 
   const handleGradeClick = async (gradeId) => {
     setSelectedGrade(gradeId);
@@ -51,9 +52,6 @@ const GradeComponent = ({ role, currentUser,sessions }) => {
       selectedGrade,
       classId
     );
-
-    console.log("Fetched Students:", classStudents); // Debugging output
-
     setStudents(classStudents);
   };
 
@@ -62,7 +60,7 @@ const GradeComponent = ({ role, currentUser,sessions }) => {
   const memoizedStudents = useMemo(() => students, [students]);
 
   return (
-    <div className="p-6 ml-10 bg-purple-50">
+    <div className="p-6 bg-gray-50 min-h-screen">
       <h1 className="text-2xl font-bold text-center text-gray-800 mb-6">
         📚 Grade & Class Management
       </h1>
@@ -85,10 +83,10 @@ const GradeComponent = ({ role, currentUser,sessions }) => {
         </select>
       </div>
 
-      <div className="flex  flex-wrap justify-between gap-6">
+      <div className="flex flex-wrap justify-between gap-6">
         {/* GRADE SELECTION */}
         {selectedSession && (
-          <div className="w-full md:w-5/12 shadow-md rounded-lg p-6">
+          <div className="w-full md:w-5/12 bg-white shadow-md rounded-lg p-6">
             <h2 className="text-xl font-semibold text-gray-700 mb-3">
               📌 Select Grade Level
             </h2>
@@ -118,7 +116,7 @@ const GradeComponent = ({ role, currentUser,sessions }) => {
 
         {/* CLASS SELECTION */}
         {selectedGrade && (
-          <div className="w-full md:w-5/12 shadow-md rounded-lg p-6">
+          <div className="w-full md:w-5/12 bg-white shadow-md rounded-lg p-6">
             <div className="flex justify-between items-center mb-3">
               <h2 className="text-xl font-semibold text-gray-700">
                 🏫 Select Class
@@ -171,14 +169,7 @@ const GradeComponent = ({ role, currentUser,sessions }) => {
               selectedSession={selectedSession}
             />
           ) : (
-            <TeacherView
-              students={students}
-              memoizedClasses={memoizedClasses}
-              memoizedGrades={memoizedGrades}
-              selectedClass={selectedClass}
-              selectedSession={selectedSession}
-              currentUser={currentUser}
-            />
+           <p>null</p>
           )}
         </div>
       )}
@@ -186,4 +177,4 @@ const GradeComponent = ({ role, currentUser,sessions }) => {
   );
 };
 
-export default GradeComponent;
+export default EditpayMent;

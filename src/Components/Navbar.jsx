@@ -1,17 +1,37 @@
-import { UserButton, useUser } from "@clerk/nextjs";
+import { UserButton, useUser, useClerk } from "@clerk/nextjs";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import React from "react";
 
 export default function Navbar() {
   const { isLoaded, user } = useUser();
+  const { signOut } = useClerk();
+  const [loggedUser, setLoggedUser] = useState(null);
+  const [signingOut, setSigningOut] = useState(false);
 
-  if (!isLoaded || !user) {
+  // Persist user role when logged in
+  useEffect(() => {
+    if (user?.publicMetadata?.role) {
+      setLoggedUser(user.publicMetadata.role);
+    }
+  }, [user]);
+
+  // Prevent Navbar from disappearing on sign-out
+  const handleSignOut = async () => {
+    setSigningOut(true);
+    await signOut();
+    setSigningOut(false);
+  };
+
+  if (!isLoaded) {
     return <div>Loading...</div>;
   }
 
-  const role = user.publicMetadata?.role;
+  const role = loggedUser || "User"; // Fallback role
+  const username = user?.username || "User";
+
   return (
-    <div className="flex items-center justify-between p-4 bg-gray-100">
+    <div className="flex items-center justify-between p-3 bg-purple-300 ">
       {/* SEARCHBAR */}
       <div className="hidden md:flex items-center gap-2 text-xs bg-white p-2 rounded-full ring-[1.5px] ring-grey-300">
         <Image src="/search.png" alt="Search Icon" width={14} height={14} />
@@ -40,11 +60,12 @@ export default function Navbar() {
 
         {/* User Info */}
         <div>
-          <p className="text-xs leading-3 font-medium">{user.username}</p>
+          <p className="text-xs leading-3 font-medium">{username}</p>
           <p className="text-[10px] text-gray-500 text-right">{role}</p>
         </div>
-        {/* <Image src="/avatar.png" alt="User Avatar" width={36} height={36} className="rounded-full" /> */}
-        <UserButton/>
+
+        {/* Sign Out Button with UserButton */}
+        <UserButton afterSignOutUrl="/" />
       </div>
     </div>
   );

@@ -7,6 +7,7 @@ const InputField = ({
   name,
   defaultValue,
   error,
+  disabled,
   inputProps,
 }) => {
   return (
@@ -15,7 +16,9 @@ const InputField = ({
       <input
         type={type}
         {...register(name)}
-        className="ring-[1.5px] ring-gray-300 rounded-md p-2 text-sm"
+        disabled={disabled}
+
+        className="ring-[1.5px] ring-gray-300 rounded-md p-2 text-sm "
         {...inputProps}
         defaultValue={defaultValue}
       />
