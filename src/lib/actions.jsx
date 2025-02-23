@@ -1,7 +1,7 @@
 "use server";
 import { clerkClient } from "@clerk/clerk-sdk-node";
 import prisma from "@/lib/prisma";
-import { revalidatePath, revalidateTag } from "next/cache";
+import { revalidatePath } from "next/cache";
 
 // ..............................................................................................................................................
 export async function fetchGrades(sessionId) {
@@ -156,9 +156,9 @@ export const createTeacher = async (data) => {
       console.warn("No subjects provided.");
     }
     revalidatePath("/list/teachers");
+    revalidatePath("/list/classes");
     return { success: true, message: "Teacher added successfully!" };
   } catch (error) {
-    console.error("Error Creating Teacher:", error);
     if (error.status === 422) {
       return {
         success: false,
@@ -176,7 +176,6 @@ export const updateTeacher = async (teacherId, data) => {
     });
 
     if (!existingTeacher) {
-      console.error("Error: Teacher Not Found.");
       return { success: false, error: "Teacher not found." };
     }
     if (
@@ -198,7 +197,6 @@ export const updateTeacher = async (teacherId, data) => {
           };
         }
         if (duplicateTeacher.username === data.username) {
-          console.error("Error: Duplicate Username Detected.");
           return {
             success: false,
             error: "A teacher with this username already exists.",
@@ -251,6 +249,8 @@ export const updateTeacher = async (teacherId, data) => {
 
     // Refresh UI
     revalidatePath("/list/teachers");
+    revalidatePath("/list/classes");
+ 
     return { success: true, message: "Teacher updated successfully!" };
   } catch (error) {
     console.error("Error Updating Teacher:", error);
@@ -348,7 +348,6 @@ export async function createStudent(data) {
       };
     }
 
-    console.log("Creating Student in Clerk...");
 
     const generatePassword = (surname) => surname.toLowerCase() + "1234!";
 
@@ -361,7 +360,6 @@ export async function createStudent(data) {
       publicMetadata: { role: "student" },
     });
 
-    console.log("Clerk User Created:", student);
 
     const newStudent = await prisma.student.create({
       data: {
@@ -392,14 +390,11 @@ export async function createStudent(data) {
         skipDuplicates: true,
       });
     } else {
-      console.warn("No subjects provided.");
     }
-    console.log("Student created successfully in Prisma.");
     revalidatePath("/list/students");
 
     return { success: true, message: "Student created successfully!" };
   } catch (error) {
-    console.error("Error Creating Student in Clerk:", error);
 
     if (error.errors) {
       console.error(
@@ -504,7 +499,6 @@ export const updateStudent = async (studentId, data) => {
         img: data.img,
       },
     });
-    console.log(updatedStudent);
 
     if (Array.isArray(data.subjects)) {
       await prisma.studentSubject.deleteMany({ where: { studentId } });
@@ -520,52 +514,49 @@ export const updateStudent = async (studentId, data) => {
       }
     }
     //  CHECK IF THE PAYMENT UPDATE IS "PAID"
-    if (data.paymentStatus === "PAID") {
-      const sessionId = existingStudent.sessionId;
-      const currentTermId = data.termId || existingStudent.termId;
+    // if (data.paymentStatus === "PAID") {
+    //   const sessionId = existingStudent.sessionId;
+    //   const currentTermId = data.termId || existingStudent.termId;
 
-      // Check if a payment record exists for the student, session, and term
-      const existingPayment = await prisma.paymentHistory.findFirst({
-        where: { studentId, sessionId, termId: currentTermId },
-      });
+    //   // Check if a payment record exists for the student, session, and term
+    //   const existingPayment = await prisma.paymentHistory.findFirst({
+    //     where: { studentId, sessionId, termId: currentTermId },
+    //   });
 
-      if (existingPayment) {
-        if (existingPayment.status !== "PAID") {
-          await prisma.paymentHistory.update({
-            where: { id: existingPayment.id },
-            data: { status: "PAID" },
-          });
-        }
-      } else {
-        await prisma.paymentHistory.create({
-          data: {
-            studentId,
-            status: "PAID",
-            termId: currentTermId,
-            sessionId,
-            updatedBy: "Admin",
-          },
-        });
-        console.log("Payment history created for student:", studentId);
-      }
-    }
+    //   if (existingPayment) {
+    //     if (existingPayment.status !== "PAID") {
+    //       await prisma.paymentHistory.update({
+    //         where: { id: existingPayment.id },
+    //         data: { status: "PAID" },
+    //       });
+    //     }
+    //   } else {
+    //     await prisma.paymentHistory.create({
+    //       data: {
+    //         studentId,
+    //         status: "PAID",
+    //         termId: currentTermId,
+    //         sessionId,
+    //         updatedBy: "Admin",
+    //       },
+    //     });
+    //     console.log("Payment history created for student:", studentId);
+    //   }
+    // }
 
     return { success: true, student: updatedStudent };
   } catch (error) {
-    console.error("Error updating student:", error);
     return { success: false, error: error.message };
   }
 };
 export const deleteStudent = async (studentId) => {
   try {
-    console.log(`Deleting Student ID: ${studentId}...`);
 
     const existingStudent = await prisma.student.findUnique({
       where: { id: studentId },
     });
 
     if (!existingStudent) {
-      console.error("Error: Student Not Found.");
       return { success: false, error: "Teacher not found." };
     }
     await prisma.student.update({
@@ -577,15 +568,11 @@ export const deleteStudent = async (studentId) => {
     });
     try {
       await clerkClient.users.deleteUser(studentId);
-      console.log("Student deleted from Clerk.");
     } catch (clerkError) {
-      console.error("Error deleting student from Clerk:", clerkError);
       return { success: false, error: "Failed to delete student from Clerk." };
     }
-    console.log("student Soft Deleted Successfully.");
     return { success: true, message: "student soft deleted successfully!" };
   } catch (error) {
-    console.error("Error Soft Deleting student:", error);
     return { success: false, error: "An unexpted error occurred." };
   }
 };
@@ -602,11 +589,14 @@ export const createSubject = async (data) => {
     const newSubject = await prisma.subject.create({
       data: { name: data.name.trim() },
     });
+   
     revalidatePath("/list/teachers");
-
+    revalidatePath("/list/classes");
+    revalidatePath("/list/resultoverview");
+    revalidatePath("/list/students");
     return { success: true, message: "Subject created successfully!" };
+    
   } catch (error) {
-    console.error("Error Creating Subject:", error);
 
     return {
       success: false,
@@ -626,7 +616,6 @@ export const updateSubject = async (id, data) => {
     if (error.code === "P2002") {
       return { success: false, error: "Subject already exists." };
     }
-    console.error("Error updating subject:", error);
     return { success: false, error: "An unexpected error occurred." };
   }
 };
@@ -647,60 +636,90 @@ export const deleteSubject = async (id) => {
     revalidateTag("subjects");
     return { success: true };
   } catch (error) {
-    console.error("Error deleting subject:", error);
     return { success: false, error: "An unexpected error occurred." };
   }
 };
 // ............................................................................................................................................
 export async function createSession(sessionName) {
   try {
-    if (
-      !sessionName ||
-      typeof sessionName !== "string" ||
-      sessionName.trim() === ""
-    ) {
+    if (!sessionName || typeof sessionName !== "string" || sessionName.trim() === "") {
       return { success: false, message: "Invalid session name." };
     }
-    // GET THE CURRENT SESSION
-    const lastSession = await prisma.session.findFirst({
-      where: { isCurrent: true },
-    });
 
     const existingSession = await prisma.session.findFirst({
       where: { name: sessionName.trim() },
     });
     if (existingSession) {
-      console.error("Session already exists:", sessionName);
       return { success: false, message: "Session already exists." };
     }
-    // DEACTIVATE THE LASTSESSION
+
+    const lastSession = await prisma.session.findFirst({
+      where: { isCurrent: true },
+    });
+
     if (lastSession) {
+      // ✅ Get the currently active term in the last session
+      const lastActiveTerm = await prisma.term.findFirst({
+        where: { sessionId: lastSession.id, isCurrent: true },
+      });
+
+      if (lastActiveTerm) {
+        console.log("📌 Last active term:", lastActiveTerm.name);
+
+        // ✅ If last active term is "Third Term", save payment history
+        if (lastActiveTerm.name === "Third Term") {
+          const allStudents = await prisma.student.findMany({
+            where: { sessionId: lastSession.id, isDeleted: false },
+            select: { id: true, paymentStatus: true },
+          });
+
+          if (allStudents.length > 0) {
+            const paymentHistoryRecords = allStudents.map((student) => ({
+              studentId: student.id,
+              sessionId: lastSession.id,
+              termId: lastActiveTerm.id,
+              status: student.paymentStatus,
+            }));
+
+            await prisma.paymentHistory.createMany({ data: paymentHistoryRecords });
+          }
+        }
+      }
+
+      // ✅ Deactivate last session and all its terms
       await prisma.session.update({
         where: { id: lastSession.id },
         data: { isCurrent: false },
       });
+
+      await prisma.term.updateMany({
+        where: { sessionId: lastSession.id },
+        data: { isCurrent: false },
+      });
     }
-    // CREATE THE NEW SESSION
+
+    // ✅ Create the new session
     const newSession = await prisma.session.create({
       data: { name: sessionName.trim(), isCurrent: true, isDeleted: false },
     });
 
     if (!newSession?.id) {
-      console.error("Failed to create session.");
       return { success: false, message: "Failed to create a new session." };
     }
-    // AUTO CREATE TERM
+
+    // ✅ Create terms and set **First Term as active by default**
     const termNames = ["First Term", "Second Term", "Third Term"];
-    const createdTerms = await prisma.term.createMany({
+    await prisma.term.createMany({
       data: termNames.map((name, index) => ({
         name,
         sessionId: newSession.id,
-        isCurrent: index === 0, // Set "First Term" as true
+        isCurrent: index === 0, // ✅ First term is active by default
+        isDeleted: false,
       })),
     });
-    // AUTO CREATE GRADES AND CLASS
-    const grades = ["JSS1", "JSS2", "JSS3", "SSS1", "SSS2", "SSS3"];
 
+    // ✅ Create grades and classes
+    const grades = ["JSS1", "JSS2", "JSS3", "SSS1", "SSS2", "SSS3"];
     for (let grade of grades) {
       const newGrade = await prisma.grade.create({
         data: { name: grade, sessionId: newSession.id },
@@ -710,29 +729,30 @@ export async function createSession(sessionName) {
         { name: `${grade} A`, gradeId: newGrade.id },
         { name: `${grade} B`, gradeId: newGrade.id },
       ];
-
       if (grade.startsWith("SSS")) {
         classes.push({ name: `${grade} C`, gradeId: newGrade.id });
       }
 
       await prisma.class.createMany({ data: classes });
     }
-    // PASS LASTSESSIONiD TO HANDLEPROMOTIONANDMOVETONEXTCLASS
 
+    // ✅ Handle promotion if last session exists
     if (lastSession?.id) {
       const promotionResult = await handlePromotionAndMoveToNewClass(
         lastSession.id,
         newSession.id
       );
-
       if (!promotionResult.success) {
         console.log("Error handling promotion:", promotionResult.message);
       } else {
-        console.log("Promotion and class progression handled successfully.");
       }
-    } else {
-      console.log("⚠️ No last session found, skipping promotion.");
     }
+
+    // ✅ Revalidate necessary paths
+    revalidatePath("/list/classes");
+    revalidatePath("/list/resultoverview");
+    revalidatePath("/list/teachers");
+    revalidatePath("/list/students");
 
     return {
       success: true,
@@ -740,13 +760,12 @@ export async function createSession(sessionName) {
       session: newSession,
     };
   } catch (error) {
-    console.error("❌ Error creating session:", error);
-    return {
-      success: false,
-      message: "An error occurred while creating the session.",
-    };
+    return { success: false, message: "An error occurred while creating the session." };
   }
 }
+
+
+
 // ..............................................................................................................................................
 const classPromotionMap = {
   JSS1A: "JSS2A",
@@ -829,7 +848,6 @@ async function handlePromotionAndMoveToNewClass(lastSessionId, newSessionId) {
       };
     }
 
-    console.log("🎓 Students to Process:", studentsToProcess);
 
     // ✅ PROCESS EACH STUDENT
     const updatePromises = studentsToProcess.map(async (record) => {
@@ -845,9 +863,7 @@ async function handlePromotionAndMoveToNewClass(lastSessionId, newSessionId) {
       });
 
       if (!studentClassRecord) {
-        console.error(
-          `❌ No class record found for student ${studentId} in session ${lastSessionId}`
-        );
+       
         return null;
       }
 
@@ -858,9 +874,7 @@ async function handlePromotionAndMoveToNewClass(lastSessionId, newSessionId) {
       });
 
       if (!studentClass) {
-        console.error(
-          `❌ No class found for classId ${studentClassRecord.classId}`
-        );
+        
         return null;
       }
 
@@ -877,22 +891,18 @@ async function handlePromotionAndMoveToNewClass(lastSessionId, newSessionId) {
         },
       });
 
-      console.log(`📌 Student history recorded for ${studentId}`);
 
       // ✅ Handle Repeated Students (Stay in the Same Class)
       if (record.promotion === "REPEATED") {
-        console.log(`🔁 Student ${studentId} is repeating ${formattedCurrentClass}`);
       
         // Get the new class and grade based on the same class name in the new session
         const repeatNewClassId = classIdMap[formattedCurrentClass]; 
         const repeatNewGradeId = gradeIdMap[formattedCurrentClass]; 
       
         if (!repeatNewClassId || !repeatNewGradeId) {
-          console.error(`❌ No matching class or grade found for ${formattedCurrentClass} in the new session.`);
           return null;
         }
       
-        console.log(repeatNewClassId, repeatNewGradeId, "I PRAY IT WORK");
       
         const repeatedStudent = await prisma.student.update({
           where: { id: studentId },
@@ -904,7 +914,6 @@ async function handlePromotionAndMoveToNewClass(lastSessionId, newSessionId) {
           },
         });
       
-        console.log("✅ Repeated student updated:", repeatedStudent);
         return repeatedStudent;
       }
       
@@ -940,9 +949,7 @@ async function handlePromotionAndMoveToNewClass(lastSessionId, newSessionId) {
           const nextClassName = classPromotionMap[formattedCurrentClass];
 
           if (!nextClassName) {
-            console.warn(
-              `⚠️ No promotion mapping found for ${formattedCurrentClass}`
-            );
+           
             return null;
           }
 
@@ -952,9 +959,7 @@ async function handlePromotionAndMoveToNewClass(lastSessionId, newSessionId) {
             gradeIdMap[nextClassName.replace(/\s+/g, "").toUpperCase()];
 
           if (!newClassId || !newGradeId) {
-            console.warn(
-              `⚠️ No class ID or grade ID found for ${nextClassName} in new session`
-            );
+          
             return null;
           }
         }
@@ -980,14 +985,12 @@ async function handlePromotionAndMoveToNewClass(lastSessionId, newSessionId) {
     // ✅ WAIT FOR ALL UPDATES TO COMPLETE
     const updatedStudents = await Promise.all(updatePromises.filter(Boolean));
 
-    console.log("✅ Updated Students:", updatedStudents);
     return {
       success: true,
       message: "Students promoted and repeated successfully",
       updatedStudents,
     };
   } catch (error) {
-    console.error("❌ Error moving students:", error);
     return { success: false, message: "Error occurred while moving students" };
   }
 }
@@ -1036,6 +1039,8 @@ export async function assignClassTeacher({ classId, teacherId }) {
     });
 
     console.log("✅ Teacher assigned successfully");
+    revalidatePath("/list/classes");
+  
     return { success: true, message: "Teacher assigned successfully" };
   } catch (error) {
     console.error("❌ Error:", error.message);
@@ -1309,63 +1314,91 @@ export const createAdmin = async (data) => {
 export default async () => {};
 
 export async function updateTermStatus(termId, sessionId) {
-  console.log("Updating term:", { termId, sessionId });
+  console.log("🔄 Updating term status", { termId, sessionId });
 
   try {
     if (!termId || !sessionId) {
       return { success: false, message: "Invalid term selection." };
     }
 
-    // Ensure term exists in the given session
-    const termExists = await prisma.term.findFirst({
-      where: { id: termId, sessionId },
+    // ✅ Find the current active term
+    const lastTerm = await prisma.term.findFirst({
+      where: { sessionId, isCurrent: true },
     });
 
-    if (!termExists) {
-      return {
-        success: false,
-        message: "Selected term does not exist in this session.",
-      };
+
+    if (!lastTerm || !lastTerm.id) {
+      console.error("❌ No last active term found.");
+      return { success: false, message: "No previous term found." };
     }
 
-    // ❗ Ensure session has terms before updating
-    const sessionTerms = await prisma.term.findMany({
+    // ✅ Fetch all students in the session (for payment history tracking)
+    const allStudents = await prisma.student.findMany({
+      where: { sessionId, isDeleted: false },
+      select: { id: true, paymentStatus: true },
+    });
+
+
+    if (allStudents.length === 0) {
+      return { success: false, message: "No students found for this session." };
+    }
+
+    // ✅ Save payment history before switching terms
+    const paymentHistoryRecords = allStudents.map((student) => ({
+      studentId: student.id,
+      sessionId,
+      termId: lastTerm.id,
+      status: student.paymentStatus,
+    }));
+
+
+    if (paymentHistoryRecords.length > 0) {
+      try {
+        await prisma.paymentHistory.createMany({ data: paymentHistoryRecords });
+      } catch (err) {
+      }
+    } else {
+    }
+
+    // ✅ Deactivate all previous terms
+    await prisma.term.updateMany({
       where: { sessionId },
+      data: { isCurrent: false },
     });
 
-    if (!sessionTerms.length) {
-      return { success: false, message: "No terms found in this session." };
-    }
+    // ✅ Activate the new term
+    const newTerm = await prisma.term.update({
+      where: { id: termId },
+      data: { isCurrent: true },
+    });
 
-    // ✅ Ensure all updates are wrapped in a transaction
-    await prisma.$transaction([
-      prisma.term.updateMany({
-        where: { sessionId },
-        data: { isCurrent: false },
-      }),
-      prisma.term.update({
-        where: { id: termId },
-        data: { isCurrent: true },
-      }),
-    ]);
-
-    return { success: true, message: "Term updated successfully." };
+    return { success: true, message: "Term updated successfully. Admin will handle student updates." };
   } catch (error) {
     console.error("❌ Error updating term status:", error);
-    return {
-      success: false,
-      message: "An error occurred while updating the term.",
-    };
+    return { success: false, message: "An error occurred while updating the term." };
   }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 export const updateSession = async (sessionId, newName) => {
   try {
     if (!sessionId || !newName.trim()) {
       return { success: false, message: "Invalid session ID or name." };
     }
-
-    // Check if the session exists
     const session = await prisma.session.findUnique({
       where: { id: sessionId },
     });
@@ -1373,8 +1406,6 @@ export const updateSession = async (sessionId, newName) => {
     if (!session) {
       return { success: false, message: "Session not found." };
     }
-
-    // Ensure the new name is unique
     const existingSession = await prisma.session.findFirst({
       where: { name: newName.trim() },
     });
@@ -1390,10 +1421,50 @@ export const updateSession = async (sessionId, newName) => {
     });
 
     revalidatePath("/list/settings");
+    revalidatePath("/list/classes");
+    revalidatePath("/list/resultoverview");
+    revalidatePath("/list/teachers");
+    revalidatePath("/list/students");
+
+
 
     return { success: true, message: "Session updated successfully!", session: updatedSession };
   } catch (error) {
-    console.error("❌ Error updating session:", error);
     return { success: false, message: "An error occurred while updating the session." };
   }
 };
+
+
+
+export const updatePaymentHistory = async ({ studentId, sessionId, termId, newStatus }) => {
+  console.log(studentId, "1", sessionId, "2", termId, "3", newStatus, "4");
+  
+  try {
+    if (!studentId || !sessionId || !termId || !newStatus) {
+      return { success: false, message: "Missing required parameters" };
+    }
+
+    const existingRecord = await prisma.paymentHistory.findFirst({
+      where: { studentId, sessionId, termId },
+    });
+
+    if (!existingRecord) {
+      return { success: false, message: "Payment record not found" };
+    }
+
+    const updatedRecord = await prisma.paymentHistory.update({
+      where: { id: existingRecord.id },
+      data: { status: newStatus },
+    });
+
+    return { success: true, message: "Payment status updated successfully", data: updatedRecord };
+
+  } catch (error) {
+    return { success: false, message: error.message };
+  }
+};
+
+
+
+
+

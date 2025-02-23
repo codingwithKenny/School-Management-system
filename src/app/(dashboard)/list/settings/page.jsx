@@ -1,11 +1,9 @@
 
-import EditpayMent from "@/components/EditPayment";
+import EditUnpaidStudent from "@/components/EditPayment";
 import UpdateSessionCard from "@/components/UpdateSessioncard";
-import { getUserId, getUserRole } from "@/lib/authUtils";
+import prisma from "@/lib/prisma";
 
 const settingPage = async() => {
-  const role = await getUserRole(); 
-    const userId = await getUserId();
   
 
     const session = await prisma.session.findFirst({
@@ -21,6 +19,8 @@ const settingPage = async() => {
       <UpdateSessionCard session={session} />
 
       <div>
+      <h1>UPDATE DEFAULTER</h1>
+        <EditUnpaidStudent />
       </div>
       
     </div>

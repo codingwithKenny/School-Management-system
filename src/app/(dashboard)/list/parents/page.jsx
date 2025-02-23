@@ -8,19 +8,8 @@ import Image from "next/image";
 import Link from "next/link";
 
 import React from "react";
-import { role } from "@/lib/authUtils";
+import { role } from "@/lib/data";
 
-const column = [
-  { header: "Info", accessor: "info" },
-  {
-    header: "Student Name",
-    accessor: "studentname",
-    className: "hidden md:table-cell",
-  },
-  { header: "Phone", accessor: "phone", className: "hidden md:table-cell" },
-  { header: "Address", accessor: "address", className: "hidden lg:table-cell" },
-  { header: "Actions", accessor: "actions" },
-];
 
 
 const parentListPage = async({ searchParams }) => {
@@ -59,6 +48,19 @@ const parentListPage = async({ searchParams }) => {
 
   const count = await prisma.parent.count({ where: query });
 
+
+  
+const column = [
+  { header: "Info", accessor: "info" },
+  {
+    header: "Student Name",
+    accessor: "studentname",
+    className: "hidden md:table-cell",
+  },
+  { header: "Phone", accessor: "phone", className: "hidden md:table-cell" },
+  { header: "Address", accessor: "address", className: "hidden lg:table-cell" },
+  { header: "Actions", accessor: "actions" },
+];
   
   
 
@@ -111,7 +113,6 @@ const parentListPage = async({ searchParams }) => {
               <Image src={"/sort.png"} alt="" width={14} height={14} />
             </button>
             {/* <button className="w-8 h-8 flex items-center justify-center rounded-full bg-[#FAE27C]">
-              <Image src={"/plus.png"} alt="" width={14} height={14} />
             </button> */}
              {role === "admin" && (
             // <button className="w-7 h-7 rounded-full flex items-center justify-center bg-[#CFCEFF]">

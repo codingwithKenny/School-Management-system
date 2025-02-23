@@ -10,16 +10,17 @@ const matchers = Object.keys(routeAccessMap).map(route => ({
 export default clerkMiddleware(async (auth, req) => {
   try {
     const { sessionId, sessionClaims } = await auth();
+    const role = sessionClaims?.metadata?.role;
 
-    // Redirect unauthenticated users to /sign-in
-    if (!sessionId) {
-      if (req.nextUrl.pathname !== "/sign-in") {
-        return NextResponse.redirect(new URL('/sign-in', req.url));
-      }
-      return;
+    // Allow unauthenticated users to access "/"
+    if (!sessionId && req.nextUrl.pathname === "/") {
+      return; // Allow access without redirection
     }
 
-    const role = sessionClaims?.metadata?.role;
+    // Redirect unauthenticated users to /sign-in (except for "/")
+    if (!sessionId) {
+      return NextResponse.redirect(new URL('/sign-in', req.url));
+    }
 
     // Role-based access control for protected routes
     for (const { matcher, allowedRole } of matchers) {
@@ -41,6 +42,6 @@ export default clerkMiddleware(async (auth, req) => {
 
 export const config = {
   matcher: [
-    '/((?!_next|sign-in|unauthorized|error|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
+    '/((?!_next|sign-in|unauthorized|error|api|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
   ],
 };

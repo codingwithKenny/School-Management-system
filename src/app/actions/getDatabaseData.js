@@ -8,7 +8,7 @@ export async function getDatabaseData() {
     console.log("🟡 Fetching database data...");
 
     // 🔵 Parallelize requests to speed up data fetching
-    const [sessions, grades, classes, subjects, teachers, parents, terms,classRecord, paymentHistory,studentHistory] = await Promise.all([
+    const [sessions, grades, classes, subjects, teachers, parents, terms,classRecord, paymentHistory,studentHistory,student] = await Promise.all([
       prisma.session.findMany({
         select: { id: true, name: true, isCurrent: true },
       }),
@@ -50,6 +50,7 @@ export async function getDatabaseData() {
             status: true,
             // other necessary fields
           },
+          
         }),
         prisma.studentHistory.findMany({
           include: {
@@ -59,24 +60,28 @@ export async function getDatabaseData() {
             grade: true,          // Include grade details (if needed)
             class: true,          // Include class details (if needed)
           },
-        })
+        }),
+        prisma.student.findMany({
+          select: { id: true, name: true }, // ✅ Fetch students
+        }),
     ]);
 
-    // Log the count of each result after they are all fetched
-    console.log("✅ Sessions Fetched:", sessions.length);
-    console.log("✅ Grades Fetched:", grades.length);
-    console.log("✅ Classes Fetched:", classes.length);
-    console.log("✅ Subjects Fetched:", subjects.length);
-    console.log("✅ Teachers Fetched:", teachers.length);
-    console.log("✅ Parents Fetched:", parents.length);
-    console.log("✅ Terms Fetched:", terms.length); // ✅ Log terms count
-    console.log("✅ classRecord Fetched:", classRecord.length); // ✅ Log terms count
-    console.log("✅ paymentHistory Fetched:", paymentHistory.length); // ✅ Log terms count
-    console.log("✅ studentHistory Fetched:", studentHistory.length); // ✅ Log terms count
+    // // Log the count of each result after they are all fetched
+    // console.log("✅ Sessions Fetched:", sessions.length);
+    // console.log("✅ Grades Fetched:", grades.length);
+    // console.log("✅ Classes Fetched:", classes.length);
+    // console.log("✅ Subjects Fetched:", subjects.length);
+    // console.log("✅ Teachers Fetched:", teachers.length);
+    // console.log("✅ Parents Fetched:", parents.length);
+    // console.log("✅ Terms Fetched:", terms.length); // ✅ Log terms count
+    // console.log("✅ classRecord Fetched:", classRecord.length); // ✅ Log terms count
+    // console.log("✅ paymentHistory Fetched:", paymentHistory.length); // ✅ Log terms count
+    // console.log("✅ studentHistory Fetched:", studentHistory.length); // ✅ Log terms count
+    // console.log("✅ student Fetched:", student.length); // ✅ Log terms count
 
     return {
       success: true,
-      data: { sessions, grades, classes, subjects, parents, teachers, terms,classRecord ,paymentHistory,studentHistory}, // ✅ Include terms
+      data: { sessions, grades, classes, subjects, parents, teachers, terms,classRecord ,paymentHistory,studentHistory,student}, // ✅ Include terms
     };
   } catch (error) {
     console.error("❌ Prisma Error:", error);

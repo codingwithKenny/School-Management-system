@@ -9,7 +9,7 @@ import { ITEM_PER_PAGE } from "@/lib/settings";
 import { getUserRole } from "@/lib/authUtils";
 
 export default async function TeacherListPage({ searchParams }) {
-  const params = searchParams || {};
+  const params = searchParams ? await searchParams : {};
   const role = await getUserRole();
   const page = parseInt(params.page) || 1;
 
@@ -50,7 +50,7 @@ export default async function TeacherListPage({ searchParams }) {
       <td className="p-4 flex items-center gap-4">
         <Link href={`/list/teachers/${teacher.id}`} className="flex items-center gap-4">
           <Image
-            src={teacher.img || "/default-avatar.png"}
+            src={teacher.img || "/avatar.png"}
             alt="Profile"
             width={50}
             height={50}

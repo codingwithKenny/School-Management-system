@@ -10,7 +10,7 @@ const NewsCard = () => {
           src="/school2.jpg" 
           alt="News Image" 
           layout="fill"
-          objectFit="cover"
+          // objectFit="cover"
           className="w-full"
         />
       </div>

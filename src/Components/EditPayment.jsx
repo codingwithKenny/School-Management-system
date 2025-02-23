@@ -1,70 +1,96 @@
-
 "use client";
-import { useState, useEffect, useMemo } from "react";
-import { fetchGrades, fetchClasses, fetchStudents } from "@/lib/actions";
 import { useDatabase } from "@/app/context/DatabaseProvider";
-import AdminView from "./AdminView";
-import TeacherView from "./TeacherView";
-import FormModal from "./FormModal";
+import { toast } from "@/hooks/use-toast";
+import { updatePaymentHistory } from "@/lib/actions";
+import React, { useState, useEffect } from "react";
 
-const EditpayMent = ({ role, currentUser }) => {
+const EditUnpaidStudent = () => {
   const { databaseData } = useDatabase();
-  const sessions = databaseData.sessions || [];
-  const [loading, setLoading] = useState(false);
   const [selectedSession, setSelectedSession] = useState(null);
-  const [grades, setGrades] = useState([]);
-  const [selectedGrade, setSelectedGrade] = useState(null);
-  const [classes, setClasses] = useState([]);
-  const [selectedClass, setSelectedClass] = useState(null);
+  const [selectedTerm, setSelectedTerm] = useState(null);
   const [students, setStudents] = useState([]);
 
-  //GET GRADE IN SELECTED SESSION
+  // Filter sessions where isCurrent is false
+  const allSessions = databaseData.sessions;
+
+  // Filter terms related to the selected session
+  const relatedTerms = selectedSession
+    ? databaseData.terms.filter((t) => Number(t.sessionId) === Number(selectedSession))
+    : [];
+
   useEffect(() => {
-    if (!selectedSession || isNaN(selectedSession)) return;
-    setLoading(true);
-    const fetchData = async () => {
-      const sessionGrades = await fetchGrades(selectedSession);
-      setGrades(sessionGrades);
-      setLoading(false);
-    };
-    fetchData();
-  }, [selectedSession]);
+    if (!databaseData.paymentHistory || databaseData.paymentHistory.length === 0) {
+      console.log("Payment history is empty or not loaded yet.");
+      return;
+    }
 
-  const handleGradeClick = async (gradeId) => {
-    setSelectedGrade(gradeId);
-    setSelectedClass(null);
-    setStudents([]);
+    console.log("Fetching students for session:", selectedSession, "and term:", selectedTerm);
 
-    // FILTER CLASS AND DISPLAY ONLY CLASS ASSIGNED TO THE LOGGED IN TEACHER(USER)
-    const gradeClasses = await fetchClasses(selectedSession, gradeId);
-    const filteredClasses =
-      role === "teacher"
-        ? gradeClasses.filter((cls) => cls.supervisor?.id === currentUser)
-        : gradeClasses;
+    const filteredStudents = databaseData.paymentHistory
+      .filter(
+        (p) =>
+          Number(p.sessionId) === Number(selectedSession) &&
+          Number(p.termId) === Number(selectedTerm)
+      )
+      .map((p) => {
+        const student = databaseData.student.find((s) => s.id === p.studentId);
+        return student ? { id: student.id, name: student.name, status: p.status } : null;
+      })
+      .filter(Boolean); // Remove null values
 
-    setClasses(filteredClasses);
-  };
-  //  GET STUDENT TO DISPALY
-  const handleStudentShow = async (classId) => {
-    setSelectedClass(classId);
-    const classStudents = await fetchStudents(
-      selectedSession,
-      selectedGrade,
-      classId
+    console.log("Filtered students:", filteredStudents);
+    setStudents(filteredStudents);
+  }, [selectedSession, selectedTerm, databaseData.paymentHistory]);
+
+  // Handle status update
+  const handleStatusChange = (studentId, newStatus) => {
+    setStudents((prev) =>
+      prev.map((student) =>
+        student.id === studentId ? { ...student, status: newStatus } : student
+      )
     );
-    setStudents(classStudents);
   };
 
-  const memoizedGrades = useMemo(() => grades, [grades]);
-  const memoizedClasses = useMemo(() => classes, [classes]);
-  const memoizedStudents = useMemo(() => students, [students]);
+  // Update payment status
+  const updatePaymentStatus = async (studentId, newStatus) => {
+    console.log(
+      "Updating payment status for:",
+      studentId,
+      "to",
+      newStatus,
+      "for session",
+      selectedSession,
+      "and term",
+      selectedTerm
+    );
+
+    try {
+      const response = await updatePaymentHistory({
+        studentId,
+        sessionId: selectedSession,
+        termId: selectedTerm,
+        newStatus,
+      });
+      console.log(response);
+      if(response.success){
+        toast({
+          description: "Payment status updated successfully.",
+          variant: "destructive",
+        });
+
+
+      }
+    } catch (error) {
+      toast({
+        description: "Error updating result.",
+        variant: "destructive",
+      });
+    }
+  };
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
-      <h1 className="text-2xl font-bold text-center text-gray-800 mb-6">
-        📚 Grade & Class Management
-      </h1>
-
+    <div>
+      {/* Session Dropdown */}
       <div className="bg-white shadow-md rounded-lg p-6 mb-6">
         <label className="block text-sm font-semibold text-gray-700 mb-2">
           Select Session
@@ -75,7 +101,7 @@ const EditpayMent = ({ role, currentUser }) => {
           onChange={(e) => setSelectedSession(parseInt(e.target.value, 10))}
         >
           <option value="">-- Select Session --</option>
-          {sessions.map((s) => (
+          {allSessions.map((s) => (
             <option key={s.id} value={s.id}>
               {s.name}
             </option>
@@ -83,98 +109,74 @@ const EditpayMent = ({ role, currentUser }) => {
         </select>
       </div>
 
-      <div className="flex flex-wrap justify-between gap-6">
-        {/* GRADE SELECTION */}
-        {selectedSession && (
-          <div className="w-full md:w-5/12 bg-white shadow-md rounded-lg p-6">
-            <h2 className="text-xl font-semibold text-gray-700 mb-3">
-              📌 Select Grade Level
-            </h2>
-            {loading ? (
-              <p className="text-gray-500">Loading grades...</p>
-            ) : memoizedGrades.length > 0 ? (
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                {memoizedGrades.map((grade) => (
-                  <button
-                    key={grade.id}
-                    className={`p-4 md:p-5 ${
-                      selectedGrade === grade.id
-                        ? "bg-indigo-600 text-white"
-                        : "bg-gray-100"
-                    } rounded-lg shadow-md transition-all duration-300 border border-gray-300 hover:bg-indigo-600 hover:text-white`}
-                    onClick={() => handleGradeClick(grade.id)}
-                  >
-                    {grade.name}
-                  </button>
-                ))}
-              </div>
-            ) : (
-              <p className="text-gray-500">No grades found.</p>
-            )}
-          </div>
-        )}
-
-        {/* CLASS SELECTION */}
-        {selectedGrade && (
-          <div className="w-full md:w-5/12 bg-white shadow-md rounded-lg p-6">
-            <div className="flex justify-between items-center mb-3">
-              <h2 className="text-xl font-semibold text-gray-700">
-                🏫 Select Class
-              </h2>
-              {role === "admin" && (
-                <FormModal
-                  memoizedClasses={
-                    memoizedClasses.length > 0 ? memoizedClasses : null
-                  }
-                  table="classTeacher"
-                  type="create"
-                />
-              )}
-            </div>
-            {memoizedClasses.length > 0 ? (
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                {memoizedClasses.map((cls) => (
-                  <button
-                    key={cls.id}
-                    className={`p-4 md:p-5 ${
-                      selectedClass === cls.id
-                        ? "bg-green-600 text-white"
-                        : "bg-gray-100"
-                    } rounded-lg shadow-md transition-all duration-300 border border-gray-300 hover:bg-green-600 hover:text-white`}
-                    onClick={() => handleStudentShow(cls.id)}
-                  >
-                    {cls.name}
-                  </button>
-                ))}
-              </div>
-            ) : (
-              <p className="text-gray-500">
-                {role === "teacher"
-                  ? "No assigned classes."
-                  : "No classes found."}
-              </p>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* STUDENT TABLE */}
-      {selectedClass && (
-        <div className="mt-6">
-          {role === "admin" ? (
-            <AdminView
-              students={students}
-              memoizedClasses={memoizedClasses}
-              selectedClass={selectedClass}
-              selectedSession={selectedSession}
-            />
-          ) : (
-           <p>null</p>
-          )}
+      {/* Term Dropdown */}
+      {selectedSession && (
+        <div className="bg-white shadow-md rounded-lg p-6 mb-6">
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
+            Select Term
+          </label>
+          <select
+            className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500"
+            value={selectedTerm || ""}
+            onChange={(e) => setSelectedTerm(parseInt(e.target.value, 10))}
+        >
+            <option value="">-- Select Term --</option>
+            {relatedTerms.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.name}
+              </option>
+            ))}
+          </select>
         </div>
+      )}
+
+      {/* Student Table */}
+      {selectedTerm && students.length > 0 && (
+        <div className="bg-white shadow-md rounded-lg p-6 mt-6">
+          <h3 className="text-lg font-semibold mb-4">Student Payment Status</h3>
+          <table className="w-full border-collapse border border-gray-300">
+            <thead>
+              <tr className="bg-gray-100">
+                <th className="border p-2">Student Name</th>
+                <th className="border p-2">Payment Status</th>
+                <th className="border p-2">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {students.map((student) => (
+                <tr key={student.id} className="text-center">
+                  <td className="border p-2">{student.name}</td>
+                  <td className="border p-2">
+                    <select
+                      className="p-1 border rounded"
+                      value={student.status}
+                      onChange={(e) => handleStatusChange(student.id, e.target.value)}
+                    >
+                      <option value="PAID">PAID</option>
+                      <option value="NOT_PAID">UNPAID</option>
+                      <option value="PARTIALLY_PAID">PARTIALLY PAID</option>
+                    </select>
+                  </td>
+                  <td className="border p-2">
+                    <button
+                      className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
+                      onClick={() => updatePaymentStatus(student.id, student.status)}
+                    >
+                      Save
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {selectedTerm && students.length === 0 && (
+        <p className="text-gray-500 text-sm mt-4">No students found for this term.</p>
       )}
     </div>
   );
 };
 
-export default EditpayMent;
+export default EditUnpaidStudent;

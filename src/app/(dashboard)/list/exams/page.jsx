@@ -5,7 +5,7 @@ import prisma from "@/lib/prisma";
 import Image from "next/image";
 import FormModal from "@/components/FormModal";
 import { ITEM_PER_PAGE } from "@/lib/settings";
-import { currentUserId, role } from "@/lib/authUtils";
+import { role } from "@/lib/data";
 
 const ExamListPage = async ({ searchParams }) => {
   const params = searchParams ? await searchParams : {};

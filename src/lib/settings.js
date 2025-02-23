@@ -3,6 +3,7 @@ export const ITEM_PER_PAGE = 10
 
 // Route access map object defining allowed roles for each route
 export const routeAccessMap = {
+  "/": [],
     "/admin(.*)": ["admin"],
     "/student(.*)": ["student"],
     "/teacher(.*)": ["teacher"],
