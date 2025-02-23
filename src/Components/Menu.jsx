@@ -50,7 +50,7 @@ export default function Menu() {
       title: "OTHER",
       items: [
         { icon: "/profile.png", label: "Profile", href: "/profile", visible: ["admin"] },
-        { icon: "/setting.png", label: "Settings", href: "list/settings", visible: ["admin"]},
+        { icon: "/setting.png", label: "Settings", href: "/settings", visible: ["admin"]},
       ],
     },
   ];

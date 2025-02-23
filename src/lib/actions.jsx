@@ -1326,38 +1326,45 @@ export async function updateTermStatus(termId, sessionId) {
       where: { sessionId, isCurrent: true },
     });
 
-
     if (!lastTerm || !lastTerm.id) {
       console.error("❌ No last active term found.");
       return { success: false, message: "No previous term found." };
     }
 
-    // ✅ Fetch all students in the session (for payment history tracking)
+    // ✅ Fetch all students in the session
     const allStudents = await prisma.student.findMany({
       where: { sessionId, isDeleted: false },
       select: { id: true, paymentStatus: true },
     });
 
-
     if (allStudents.length === 0) {
       return { success: false, message: "No students found for this session." };
     }
 
-    // ✅ Save payment history before switching terms
-    const paymentHistoryRecords = allStudents.map((student) => ({
-      studentId: student.id,
-      sessionId,
-      termId: lastTerm.id,
-      status: student.paymentStatus,
-    }));
+    // ✅ Get students who already have payment history for this term
+    const existingPaymentRecords = await prisma.paymentHistory.findMany({
+      where: { sessionId, termId: lastTerm.id },
+      select: { studentId: true },
+    });
 
+    const existingStudentIds = new Set(existingPaymentRecords.map((record) => record.studentId));
 
-    if (paymentHistoryRecords.length > 0) {
+    // ✅ Filter students who do NOT already have payment history
+    const newPaymentHistoryRecords = allStudents
+      .filter((student) => !existingStudentIds.has(student.id))
+      .map((student) => ({
+        studentId: student.id,
+        sessionId,
+        termId: lastTerm.id,
+        status: student.paymentStatus,
+      }));
+
+    if (newPaymentHistoryRecords.length > 0) {
       try {
-        await prisma.paymentHistory.createMany({ data: paymentHistoryRecords });
+        await prisma.paymentHistory.createMany({ data: newPaymentHistoryRecords });
       } catch (err) {
+        console.error("❌ Error saving payment history:", err);
       }
-    } else {
     }
 
     // ✅ Deactivate all previous terms
@@ -1378,6 +1385,7 @@ export async function updateTermStatus(termId, sessionId) {
     return { success: false, message: "An error occurred while updating the term." };
   }
 }
+
 
 
 
