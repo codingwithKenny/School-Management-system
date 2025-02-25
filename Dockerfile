@@ -18,10 +18,13 @@ COPY . .
 #RUN npx prisma migrate dev --name init
 
 # Build the Next.js application
-RUN npm run build
+#RUN npm run build
+
+COPY entrypoint.sh . 
+CMD ["./entrypoint.sh"]
 
 # Expose the port the app runs on
 EXPOSE 3000
 
 # Start the Next.js application
-CMD ["npm", "start"]
+#CMD ["npm", "start"]
