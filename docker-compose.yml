@@ -17,6 +17,8 @@ services:
       interval: 10s
       retries: 5
       timeout: 5s
+    networks:
+    - app_network
     
   app:
     build: .
@@ -27,7 +29,13 @@ services:
       DATABASE_URL: "postgresql://postgres:17011996@postgres:5432/school"
     depends_on:
       postgres:
-        condition: service_healthy
+        condition: service_healthy        
+    networks:
+    - app_network
 
 volumes:
   postgres_data:
+
+networks:
+  app_network:
+    driver: bridge
