@@ -23,7 +23,7 @@ const WelcomePage = () => {
   return (
    
       <div className="text-center flex justify-center items-center px-4 py-6 rounded-md shadow-lg bg-purple-100">
-        <p className="text-lg font-semibold">Welcome, {user?.username}!</p>
+        <p className="text-lg font-semibold">Welcome, {user?.firstName}!</p>
         
       </div>
     

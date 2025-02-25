@@ -171,7 +171,7 @@ const TeacherView = ({ students, memoizedClasses, memoizedGrades, selectedClass,
               {students.length > 0 ? (
                 students.map((student) => (
                   <tr key={student.id} className="border-b border-gray-300">
-                    <td className="p-3">{`${student.surname} ${student.name}`}</td>
+                    <td className="p-3">{`${student.surname} ${student.firstname}`}</td>
                     <td className="p-3">
                       <input
                         type="text"

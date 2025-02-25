@@ -18,7 +18,7 @@ const StudentForm = ({ type, data,setOpen }) => {
   const [selectedGrade, setSelectedGrade] = useState("");
   const [img, setImg] = useState(data?.img || "");
   const router = useRouter()
-
+        console.log(databaseData.terms, "terms")
   const activeSession = databaseData.sessions.find((s) => s.isCurrent);
   const filteredGrades = databaseData.grades.filter(
     (g) => g.sessionId === activeSession?.id
@@ -158,34 +158,25 @@ const StudentForm = ({ type, data,setOpen }) => {
               error={errors.surname}
             />
             <InputField
-              label="Name"
-              name="name"
+              label="First Name"
+              name="firstname"
               register={register}
               error={errors.name}
             />
             <InputField
-              label="Username"
-              name="username"
+              label="Admission Number"
+              name="admission"
               register={register}
               error={errors.username}
             />
-                    { type === "update" ? (
-  <InputField 
+                    {/* <InputField 
     disabled={true}
     label="Email" 
     name="email" 
     register={register} 
     error={errors.email} 
     className="disabled:opacity-50 disabled:cursor-not-allowed"
-  />
-) : (
-  <InputField 
-    label="Email" 
-    name="email" 
-    register={register} 
-    error={errors.email} 
-  />
-)}
+  /> */}
             <InputField
               label="Address"
               name="address"
@@ -299,7 +290,7 @@ const StudentForm = ({ type, data,setOpen }) => {
                 defaultValue={data?.termId || ""}
               >
                 <option value="">-- Select Term --</option>
-                {filteredTerms.map((t) => (
+                {filteredTerms?.map((t) => (
                   <option key={t.id} value={String(t.id)}>
                     {t.name}
                   </option>

@@ -11,28 +11,33 @@ export default clerkMiddleware(async (auth, req) => {
   try {
     const { sessionId, sessionClaims } = await auth();
     const role = sessionClaims?.metadata?.role;
+    const path = req.nextUrl.pathname;
 
-    // Allow unauthenticated users to access "/"
-    if (!sessionId && req.nextUrl.pathname === "/") {
-      return; // Allow access without redirection
+    console.log("Request Path:", path, "Session:", sessionId, "Role:", role);
+
+    // Explicitly allow unauthenticated users to access "/"
+    if (path === "/") {
+      return NextResponse.next();
     }
 
-    // Redirect unauthenticated users to /sign-in (except for "/")
+    // Redirect unauthenticated users to /sign-in (excluding "/")
     if (!sessionId) {
       return NextResponse.redirect(new URL('/sign-in', req.url));
     }
 
-    // Role-based access control for protected routes
+    // Role-based access control for protected routes (excluding "/")
     for (const { matcher, allowedRole } of matchers) {
-      if (matcher(req) && (!role || !allowedRole.includes(role))) {
+      if (path !== "/" && matcher(req) && (!role || !allowedRole.includes(role))) {
         return NextResponse.redirect(new URL('/unauthorized', req.url));
       }
     }
 
     // Protect the /admin page (only admins can access)
-    if (req.nextUrl.pathname === "/admin" && role !== "admin") {
+    if (path.startsWith("/admin") && role !== "admin") {
       return NextResponse.redirect(new URL('/unauthorized', req.url));
     }
+
+    return NextResponse.next();
 
   } catch (error) {
     console.error("Authentication error:", error);

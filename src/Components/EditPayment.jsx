@@ -34,7 +34,7 @@ const EditUnpaidStudent = () => {
       )
       .map((p) => {
         const student = databaseData.student.find((s) => s.id === p.studentId);
-        return student ? { id: student.id, name: student.name, status: p.status } : null;
+        return student ? { id: student.id, name: `${student.firstname} ${student.surname}`, status: p.status } : null;
       })
       .filter(Boolean); // Remove null values
 

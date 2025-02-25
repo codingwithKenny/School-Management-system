@@ -35,7 +35,7 @@ const CheckResult = async () => {
     where: { id: userId },
     select: {
       id: true,
-      name: true,
+      firstname: true,
       surname: true,
       session: { select: { name: true } }, 
       grade: { select: { id: true, name: true } }, 

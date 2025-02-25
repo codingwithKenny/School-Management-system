@@ -34,11 +34,11 @@ export default function Menu() {
       title: "MENU",
       items: [
         { icon: "/home.png", label: "Home", href: `/${loggedUser}`, visible: ["admin", "teacher", "student", "parent"] },
+        { icon: "/subject.png", label: "Subjects", href: "/list/subjects", visible: ["admin"] },
         { icon: "/teacher.png", label: "Teachers", href: "/list/teachers", visible: ["admin", "teacher"] },
         { icon: "/student.png", label: "Students", href: "/list/students", visible: ["admin", "teacher"] },
-        { icon: "/parent.png", label: "Parents", href: "/list/parents", visible: ["admin", "teacher"], disabled: true },
-        { icon: "/subject.png", label: "Subjects", href: "/list/subjects", visible: ["admin"] },
         { icon: "/class.png", label: "Classes", href: "/list/classes", visible: ["admin", "teacher"] },
+        { icon: "/parent.png", label: "Parents", href: "/list/parents", visible: ["admin", "teacher"], disabled: true },
         { icon: "/assignment.png", label: "Result Overview", href: "/list/resultoverview", visible: ["admin"] },
         { icon: "/exam.png", label: "Check Result", href: "/list/checkresult", visible: ["student", "parent"] },
         { icon: "/result.png", label: "Results", href: "/list/results", visible: ["teacher"] },

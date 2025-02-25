@@ -52,12 +52,12 @@ const AdminView = ({ memoizedClasses, selectedClass, students }) => {
                   <td className="border border-gray-300 p-2">
                     <img
                       src={student.img || "/avatar.png"}
-                      alt={student.name}
+                      alt={student.firstname}
                       className="w-10 h-10 rounded-full mx-auto"
                     />
                   </td>
                   <td className="border border-gray-300 p-2">
-                    {student.surname} {student.name}
+                    {student.surname} {student.firstname}
                   </td>
                   <td className="border border-gray-300 p-2">
                     {student.paymentStatus}

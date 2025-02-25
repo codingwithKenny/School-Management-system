@@ -17,8 +17,8 @@ const studentPage = async () => {
     where: { id: userId },
     select: {
       surname: true,
-      name: true,
-      username: true,
+      firstname: true,
+      admission: true,
       paymentStatus: true,
       img:true,
       email: true,

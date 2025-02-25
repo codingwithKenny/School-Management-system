@@ -138,9 +138,9 @@ model Term {
 model Student {
   id             String           @id
   surname        String
-  name           String
-  username       String           @unique
-  email          String           @unique
+  firstname      String
+  admission      String           @unique
+  email          String?          @unique
   sex            Sex
   img            String?
   address        String?

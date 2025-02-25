@@ -19,24 +19,32 @@ const teacherSchema = z.object({
   subjects: z.array(z.union([z.string(), z.number()])).min(1, { message: "At least one subject must be selected" }).transform((arr) => arr.map(Number)),
 });
 
+
 const studentSchema = z.object({
   id: z.string().optional(),
   surname: z.string().min(2, { message: "Surname is required" }),
-  name: z.string().min(2, { message: "Name is required" }),
-  username: z.string().min(3, { message: "Username must be at least 3 characters" }),
-  email: z.string().email({ message: "Invalid email address" }),
+  firstname: z.string().min(2, { message: "Name is required" }),
+  admission: z.string().min(3, { message: "Admission number is required" }),
+  // email: z
+  // .string()
+  // .email({ message: "Invalid email address" })
+  // .optional()
+  // .refine(val => val === "" || val === undefined || z.string().email().safeParse(val).success, {
+  //   message: "Invalid email address",
+  // }),
+
   sex: z.enum(["MALE", "FEMALE"], { message: "Select your gender" }),
   img: z.string().optional(),
-  phone: z.string().regex(/^\d{7,15}$/, "Enter a valid phone number (7-15 digits)") .optional(),
+  phone: z.string().regex(/^\d{7,15}$/, "Enter a valid phone number (7-15 digits)").optional(),
   address: z.string().optional(),
-  sessionId: z.union([z.string(), z.number()]).transform((val) => Number(val)), // Convert string to number
-  termId: z.union([z.string(), z.number()]).transform((val) => Number(val)), // Added termId
-
+  sessionId: z.union([z.string(), z.number()]).transform((val) => Number(val)),
+  termId: z.union([z.string(), z.number()]).transform((val) => Number(val)),
   gradeId: z.union([z.string(), z.number()]).transform((val) => Number(val)),
   classId: z.union([z.string(), z.number()]).transform((val) => Number(val)),
   paymentStatus: z.enum(["PAID", "NOT_PAID", "PARTIALLY_PAID"], { message: "Select payment status" }),
   subjects: z.array(z.union([z.string(), z.number()])).min(1, { message: "At least one subject must be selected" }).transform((arr) => arr.map(Number)),
 });
+
 
 
 const recordSchema = z.object({

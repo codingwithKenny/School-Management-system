@@ -62,29 +62,29 @@ export async function getDatabaseData() {
           },
         }),
         prisma.student.findMany({
-          select: { id: true, name: true }, // ✅ Fetch students
+          select: { id: true, firstname: true, surname:true }, // ✅ Fetch students
         }),
     ]);
 
-    // // Log the count of each result after they are all fetched
-    // console.log("✅ Sessions Fetched:", sessions.length);
-    // console.log("✅ Grades Fetched:", grades.length);
-    // console.log("✅ Classes Fetched:", classes.length);
-    // console.log("✅ Subjects Fetched:", subjects.length);
-    // console.log("✅ Teachers Fetched:", teachers.length);
-    // console.log("✅ Parents Fetched:", parents.length);
-    // console.log("✅ Terms Fetched:", terms.length); // ✅ Log terms count
-    // console.log("✅ classRecord Fetched:", classRecord.length); // ✅ Log terms count
-    // console.log("✅ paymentHistory Fetched:", paymentHistory.length); // ✅ Log terms count
-    // console.log("✅ studentHistory Fetched:", studentHistory.length); // ✅ Log terms count
-    // console.log("✅ student Fetched:", student.length); // ✅ Log terms count
+    // Log the count of each result after they are all fetched
+    console.log("✅ Sessions Fetched:", sessions.length);
+    console.log("✅ Grades Fetched:", grades.length);
+    console.log("✅ Classes Fetched:", classes.length);
+    console.log("✅ Subjects Fetched:", subjects.length);
+    console.log("✅ Teachers Fetched:", teachers.length);
+    console.log("✅ Parents Fetched:", parents.length);
+    console.log("✅ Terms Fetched:", terms.length); // ✅ Log terms count
+    console.log("✅ classRecord Fetched:", classRecord.length); // ✅ Log terms count
+    console.log("✅ paymentHistory Fetched:", paymentHistory.length); // ✅ Log terms count
+    console.log("✅ studentHistory Fetched:", studentHistory.length); // ✅ Log terms count
+    console.log("✅ student Fetched:", student.length); // ✅ Log terms count
 
     return {
       success: true,
       data: { sessions, grades, classes, subjects, parents, teachers, terms,classRecord ,paymentHistory,studentHistory,student}, // ✅ Include terms
     };
   } catch (error) {
-    console.error("❌ Prisma Error:", error);
+    console.error("❌ Prisma Error:", error.message);
     return { success: false, error: error.message };
   }
 }

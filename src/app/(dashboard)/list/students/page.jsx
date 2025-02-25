@@ -46,30 +46,39 @@ const studentListPage = async({ searchParams}) => {
       ...query,
       isDeleted: false,
     },
-    select: {  
-      id: true,  
-      name: true,
-      surname: true,  
-      username: true,
+    select: {
+      id: true,
+      firstname: true, // Use firstname instead of name
+      surname: true,   // Use surname instead of name
+      admission: true,
       phone: true,
       address: true,
       email: true,
       img: true,
-      sex: true,  // ✅ Change `gender` to `sex`
+      sex: true,  // Use sex as defined in the schema
       paymentStatus: true,
       sessionId: true,
       termId: true,
       classId: true,
       gradeId: true,
       class: { select: { id: true, name: true } }, 
-      grade: { select: { id: true, name: true } }, 
+      grade: { select: { id: true, name: true } },
       subjects: { select: { subject: { select: { id: true, name: true } } } },
-      createdAt: true,  
-      isDeleted: true,  
+      createdAt: true,
+      isDeleted: true,
+      deletedAt: true,
+      session: true,
+      term: true,
+      paymentHistory: true,
+      results: true,
+      attendance: true,
+      classRecords: true,
+      histories: true,
     },
     take: ITEM_PER_PAGE,
     skip: (p - 1) * ITEM_PER_PAGE,
   });
+  
   
   
 
@@ -105,11 +114,11 @@ const studentListPage = async({ searchParams}) => {
           className="md:hidden xl:block w-10 h-10 object-cover rounded-full"
         />
         <div className="flex flex-col">
-          <h3 className="font-semibold">{student.name}</h3>
+          <h3 className="font-semibold">{student.firstname}</h3>
           <h4 className="text-gray-500 text-sm">{student.class?.name|| 'N/A'}</h4>
         </div>
       </td>
-      <td className="hidden md:table-cell">{student.username}</td>
+      <td className="hidden md:table-cell">{student.admission}</td>
       <td className="hidden md:table-cell">{student.grade?.name || 'N/A'}</td>
       <td className="hidden md:table-cell">{student.phone}</td>
       <td className="hidden md:table-cell">{student.address}</td>

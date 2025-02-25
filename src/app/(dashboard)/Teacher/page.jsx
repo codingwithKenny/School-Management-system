@@ -61,7 +61,6 @@ export default async function TeacherPage() {
         <div className="flex-1">
           <div className="flex justify-between items-center">
             <h1 className="text-xl font-semibold text-gray-800">{teacher.name}</h1>
-            <FormModal type="update" table="teacher" data={teacher} />
           </div>
           <p className="text-gray-600 text-sm">
             A dedicated educator fostering academic excellence.

@@ -129,7 +129,7 @@ const SubjectForm = ({ type, data, setOpen }) => {
       )}
       {state.error && (
         <p className="text-red-500">
-          {state.errorMesdisage || "Something went wrong."}
+          {state.errorMessage || "Something went wrong."}
         </p>
       )}
 

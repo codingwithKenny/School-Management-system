@@ -60,7 +60,7 @@ const TeacherResultActions = ({ students, sessions, subjects, teacherId, Results
       )
       .map((student) => ({
         id: student.id,
-        name: `${student.surname} ${student.name}`,
+        name: `${student.surname} ${student.firstname}`,
         grade: student.grade.name,
       }));
 

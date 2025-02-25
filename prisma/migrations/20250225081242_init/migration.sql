@@ -125,9 +125,9 @@ CREATE TABLE "Term" (
 CREATE TABLE "Student" (
     "id" TEXT NOT NULL,
     "surname" TEXT NOT NULL,
-    "name" TEXT NOT NULL,
-    "username" TEXT NOT NULL,
-    "email" TEXT NOT NULL,
+    "firstname" TEXT NOT NULL,
+    "admission" TEXT NOT NULL,
+    "email" TEXT,
     "sex" "Sex" NOT NULL,
     "img" TEXT,
     "address" TEXT,
@@ -266,7 +266,7 @@ CREATE UNIQUE INDEX "Session_name_key" ON "Session"("name");
 CREATE INDEX "unique_active_session" ON "Session"("isCurrent");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Student_username_key" ON "Student"("username");
+CREATE UNIQUE INDEX "Student_admission_key" ON "Student"("admission");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Student_email_key" ON "Student"("email");

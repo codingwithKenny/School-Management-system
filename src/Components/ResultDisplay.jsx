@@ -15,7 +15,7 @@ const ResultDisplay = ({
 }) => {
   const { databaseData } = useDatabase();
   const printRef = useRef();
-
+    console.log(studentInfo)
   // POSITION SUFFIX
   const getOrdinalSuffix = (num) => {
     if (!num) return "__";
@@ -46,7 +46,9 @@ const ResultDisplay = ({
   const selectedTermName = databaseData.terms?.find(
     (t) => t.id === selectedTerm
   )?.name;
+     
 
+  console.log(databaseData.classRecord,"hereeeeeeeeeeee")
   // GET CLASSRECORD FOR POSITION,REMARK AND PROMOTION
   const studentClassRecord = useMemo(() => {
     return (
@@ -58,16 +60,23 @@ const ResultDisplay = ({
       ) || []
     );
   }, [databaseData.classRecord, studentInfo.id, selectedTerm, sessionId]);
+  console.log(studentClassRecord, "studentClassRecord")
 
   const calculatePerformance = (ca1, ca2, exam) => {
     const total =
       (parseFloat(ca1) || 0) + (parseFloat(ca2) || 0) + (parseFloat(exam) || 0);
-    if (total >= 75) return "Excellent";
-    if (total >= 70) return "Very Good";
-    if (total >= 60) return "Good";
-    if (total >= 50) return "Pass";
-    return "Fail";
+      if (total >= 70) return "A1";
+    if (total >= 65) return "B2";
+    if (total >= 60) return "B3";
+    if (total >= 57) return "C4";
+    if (total >= 54) return "C5";
+    if (total >= 50) return "C6";
+    if (total >= 45) return "D7";
+    if (total >= 40) return "E8";
+    return "F9";
   };
+
+  console.log(databaseData.classRecord, "classRecord")
 
   // GET TOTAL NUMBER IN CLASS PER TERM
   const totalStudentsInClass = useMemo(() => {
@@ -105,6 +114,7 @@ const ResultDisplay = ({
         (payment.amount !== null || payment.amount === null)
     );
   }, [databaseData.paymentHistory, studentInfo.id, sessionId, selectedTerm]);
+  
 
   return (
     <div className="p-3 bg-gray-100 relative">
@@ -161,13 +171,13 @@ const ResultDisplay = ({
               <div>
                 <p>
                   <strong>Name:</strong> {studentInfo?.surname}{" "}
-                  {studentInfo?.name}
+                  {studentInfo?.firstname}
                 </p>
                 <p>
                   <strong>Class:</strong> {selectedClass}
                 </p>
                 <p>
-                  <strong>Admission No:</strong> {studentInfo?.username}
+                  <strong>Admission No:</strong> {studentInfo?.admission}
                 </p>
               </div>
               <div>
@@ -352,9 +362,15 @@ const ResultDisplay = ({
 
             {/* SCHOOL FOOTER */}
             <div className="mt-3 border-t pt-2 text-center text-xs font-semibold">
-              <p>"We Offer Excellence in Education"</p>
-              <p>Signed: ________________ (Principal)</p>
-            </div>
+  <p>"We Offer Excellence in Education"</p>
+  
+  <div className="flex flex-col items-center mt-2">
+    <Image src="/principalsign.png" alt="Principal Signature" width={80} height={40} />
+    <div className="w-40 border-b-2 border-black -mt-1"></div>
+    <p className="mt-1">Signed:(Principal)</p>
+  </div>
+</div>
+
           </div>
           {/* PRINT BUTTON */}
           <div className="text-center mt-3">

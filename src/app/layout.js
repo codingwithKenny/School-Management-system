@@ -4,6 +4,7 @@ import 'react-big-calendar/lib/css/react-big-calendar.css';
 import { ClerkProvider } from '@clerk/nextjs';
 import { DatabaseProvider } from './context/DatabaseProvider';
 import { Toaster } from '@/components/ui/toaster';
+import InactivityTimeout from '@/components/InactivityTimeout';
 
 export const metadata = {
   title: 'Create Next App',
@@ -22,6 +23,8 @@ export default function RootLayout({ children }) {
       <body className="">
         <ClerkProvider frontendApi="pk_test_cHJvLWRpbmdvLTUxLmNsZXJrLmFjY291bnRzLmRldiQ">
           <DatabaseProvider> 
+          <InactivityTimeout />
+
             {children}
             <Toaster />
 
