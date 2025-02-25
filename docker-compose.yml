@@ -1,7 +1,7 @@
 version: '3.8'
 
 services:
-  postgress:
+  postgres:
     image: postgres:15
     container_name: postgres
     environment:
@@ -19,7 +19,7 @@ services:
     ports:
       - '3000:3000'
     environment:
-      - DATABASE_URL: postgresql://postgres:17011996@localhost:5432/school
+      DATABASE_URL: "postgresql://postgres:17011996@postgres:5432/school"
     depends_on:
       - postgres
 
