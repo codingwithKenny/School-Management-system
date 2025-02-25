@@ -24,7 +24,7 @@ services:
     ports:
       - "3000:3000"
     environment:
-      DATABASE_URL: "postgresql://postgres:17011996@postgres:5432/school
+      DATABASE_URL: "postgresql://postgres:17011996@postgres:5432/school"
     volumes:
       - ./:/app
       - /app/node_modules
