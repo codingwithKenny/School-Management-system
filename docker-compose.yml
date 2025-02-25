@@ -12,6 +12,11 @@ services:
       - '5432:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 10s
+      retries: 5
+      timeout: 5s
     
   app:
     build: .
@@ -21,7 +26,8 @@ services:
     environment:
       DATABASE_URL: "postgresql://postgres:17011996@postgres:5432/school"
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
 
 volumes:
   postgres_data:
