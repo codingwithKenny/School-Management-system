@@ -5,6 +5,8 @@ export const ITEM_PER_PAGE = 10
 
 export const routeAccessMap = {
   "/": [], // Explicitly allows everyone
+  "/applynow": [], // Explicitly allows everyone
+  "/aboutMuslimschool": [], // Explicitly allows everyone
   "/admin(.*)": ["admin"],
   "/student(.*)": ["student"],
   "/teacher(.*)": ["teacher"],

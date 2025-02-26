@@ -16,7 +16,7 @@ export default clerkMiddleware(async (auth, req) => {
     console.log("Request Path:", path, "Session:", sessionId, "Role:", role);
 
     // Explicitly allow unauthenticated users to access "/"
-    if (path === "/") {
+    if (path === "/" || path === "/applynow" || path === "/aboutMuslimschool"  || path === "/proprietor") {
       return NextResponse.next();
     }
 

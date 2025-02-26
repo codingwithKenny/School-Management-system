@@ -53,13 +53,13 @@ export default function AboutUs() {
           <div className="absolute right-0 mt-2 w-56 rounded-md bg-white shadow-lg z-50 ring-1 ring-black/5">
             <div className="py-1">
               <Link
-                href="#"
+                href="/aboutMuslimschool"
                 className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
               >
                  Muslim Group of school
               </Link>
               <Link
-                href="#"
+                href="/proprietor"
                 className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
               >
                 The Proprietor

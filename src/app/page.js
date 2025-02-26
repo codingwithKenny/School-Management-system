@@ -5,6 +5,7 @@ import Header from "@/components/Header";
 import HomeCard from "@/components/HomeCard";
 import NewsCard from "@/components/NewsCard";
 import Image from "next/image"
+import Link from "next/link";
 import { useState } from "react";
 
 export default function Home() {
@@ -37,7 +38,7 @@ export default function Home() {
           </div>
           <div className="flex items-center gap-2 bg-[#3C1361] text-white px-4 py-2 rounded-lg">
             <Image src="/cap3.png" alt="Apply Now" width={24} height={24} />
-            <h2 className="text-sm font-medium">APPLY NOW</h2>
+           <Link href="/applynow"> <h2 className="text-sm font-medium">APPLY NOW</h2></Link>
           </div>
         </div>
       </div>
@@ -63,12 +64,14 @@ export default function Home() {
             Educating a Generation of Excellence Through Knowledge and
             Character, Guided by the Noble Quran and Sunnah.
           </h2>
-          <div className="flex items-center justify-start gap-2 border border-purple-500 p-3 mt-10 w-[50%] md:w-[30%] rounded-lg text-purple-500 mx-auto md:mx-0">
+         <Link href="https://wa.link/1gn4eg">
+         <div className="flex items-center justify-start gap-2 border border-purple-500 p-3 mt-10 w-[50%] md:w-[30%] rounded-lg text-purple-500 mx-auto md:mx-0">
             <Image src="/whatt.png" alt="Phone" width={40} height={40} />
             <h2 className="text-[14px] md:text-[15px] font-medium -ml-3">
               Contact us
             </h2>
           </div>
+         </Link>
         </div>
       </div>
 
@@ -122,13 +125,13 @@ export default function Home() {
       <div className="flex flex-col md:flex-row justify-center items-center mt-0 sm:-mt-16 md:-mt-26 gap-6 px-6 md:gap-8 lg:gap-12 md:px-20">
         <HomeCard
           img="/prylogo.jpg"
-          text="Muslim Primary School nurtures young minds with a balanced curriculum, blending academic excellence and Islamic values to shape confident leaders."
+          text="Muslim Nursery and  Primary School(MNPS,Oyo) nurtures young minds with a balanced curriculum, blending academic excellence and Islamic values to shape confident leaders."
           school="Primary School"
         />
         <HomeCard
           img="/seclogo.jpg"
           school="Secondary School"
-          text="Muslim Comprehensive College delivers a holistic education grounded in academic excellence and Islamic principles, shaping future leaders with integrity, knowledge, and a commitment to community development."
+          text="Muslim Comprehensive College(MCC,Oyo) delivers a holistic education grounded in academic excellence and Islamic principles, shaping future leaders with integrity, knowledge, and a commitment to community development."
         />
       </div>
       {/*  SECTION 5 VISSION */}
@@ -145,14 +148,9 @@ export default function Home() {
         </div>
         {/* RIGHT */}
         <div className="w-full md:w-[50%] justify-center items-center text-white p-6 md:mb-0">
-          <h1 className="font-bold text-xl  text-gray-400 ">VISSION</h1>
+          <h1 className="font-bold text-xl  text-gray-400 ">VISION</h1>
           <p className="mt-3 font-serif">
-            TTo be a center of excellence that inspires students through a
-            well-structured curriculum that builds confidence, encourages
-            learning, and develops critical thinking. We nurture academic
-            excellence, moral integrity, and leadership while upholding Islamic
-            values, preparing students to contribute positively to their
-            communities and the world.
+          To be a distinguished center of excellence, fostering a dynamic learning environment that nurtures academic brilliance, moral integrity, and leadership. Through a well-structured curriculum, we inspire confidence, encourage lifelong learning, and develop critical thinking skills. Rooted in strong Islamic values, we aim to empower students to become compassionate, ethical, and impactful members of their communities and the world at large
           </p>
         </div>
       </div>
@@ -162,12 +160,7 @@ export default function Home() {
         <div className="w-full md:w-[50%] justify-center items-center text-[#3C1361] p-6 md:mb-0">
           <h1 className="font-bold text-xl  text-[#3C1361] ">MISSION</h1>
           <p className="mt-3 font-serif">
-            TTo be a center of excellence that inspires students through a
-            well-structured curriculum that builds confidence, encourages
-            learning, and develops critical thinking. We nurture academic
-            excellence, moral integrity, and leadership while upholding Islamic
-            values, preparing students to contribute positively to their
-            communities and the world.
+          Our mission is to provide a holistic education that blends academic excellence with strong moral and spiritual values. We are committed to nurturing well-rounded individuals through a rich curriculum, innovative teaching methods, and a supportive learning environment. Guided by Islamic principles, we strive to instill discipline, integrity, and leadership in our students, preparing them to excel in all aspects of life and contribute meaningfully to society..
           </p>
         </div>
         {/* RIGHT SIDE */}
@@ -231,7 +224,8 @@ export default function Home() {
         <button className="w-full max-w-xs bg-[#EDE0C8] shadow-lg rounded-md text-white p-4 flex flex-col items-center justify-center">
           <Image src="/neco.png" alt="" width={90} height={90} />
           <h1 className="mt-3 font-bold text-[#3C1361] text-center">
-            NECO CERTIFIED
+            NECO 
+            <br/>SSCE AND BECE ACCREDITED
           </h1>
         </button>
       </div>
