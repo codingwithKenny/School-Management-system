@@ -31,7 +31,7 @@ const AboutMuslimSchoolPage = () => {
         </p>
 
         <p className="text-gray-700 mb-4 text-justify">
-          Today, <strong>Muslim Groups of School</strong> remains dedicated to shaping future leaders  
+          Today, <strong>Muslim Group of Schools</strong> remains dedicated to shaping future leaders  
           through a balanced blend of academic excellence, character building, and Islamic  
           principles. Our students continue to make us proud as they thrive in their  
           communities and beyond.
