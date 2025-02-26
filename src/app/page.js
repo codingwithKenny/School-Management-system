@@ -55,7 +55,7 @@ export default function Home() {
         {/* Right Section */}
         <div className="w-full md:w-[50%] p-6 md:p-16 text-center md:text-left">
           <h1 className="text-[24px] md:text-[30px] font-bold font-inter text-[#3C1361]">
-            MUSLIM Group of Schools, Oyo
+            MUSLIM GROUP of Schools, Oyo
           </h1>
           <p className="text-[14px] md:text-[16px] font-sans italic text-gray-800 mt-4">
             Allah is Great
