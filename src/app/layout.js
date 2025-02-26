@@ -21,7 +21,7 @@ export default function RootLayout({ children }) {
         <meta name="description" content={metadata.description} />
       </head>
       <body className="">
-        <ClerkProvider frontendApi="pk_live_Y2xlcmsubXVzbGltZ3JvdXBvZnNjaG9vbHMuY29tJA">
+        <ClerkProvider frontendApi="pk_test_cHJvLWRpbmdvLTUxLmNsZXJrLmFjY291bnRzLmRldiQ">
           <DatabaseProvider> 
           <InactivityTimeout />
 
