@@ -1,90 +1,68 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useSignIn, useUser } from "@clerk/nextjs";
+import * as Clerk from "@clerk/elements/common";
+import * as SignIn from "@clerk/elements/sign-in";
+import { useUser } from "@clerk/nextjs";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 const LoginPage = () => {
-  const [loading, setLoading] = useState(false);
-  const { signIn, isLoaded, setActive } = useSignIn();
-  const { isSignedIn, user } = useUser();
+  const { isLoaded, isSignedIn, user } = useUser();
+
   const router = useRouter();
 
-  // Redirect immediately after successful sign-in
   useEffect(() => {
-    if (isSignedIn && user) {
-      const userRole = user.publicMetadata?.role || "dashboard";
-      router.push(`/${userRole}`);
+    const role = user?.publicMetadata.role;
+
+    if (role) {
+      router.push(`/${role}`);
     }
-  }, [isSignedIn, user, router]);
-
-  const handleSubmit = async (event) => {
-    event.preventDefault();
-    if (!isLoaded) return;
-
-    setLoading(true);
-
-    const formData = new FormData(event.target);
-    const identifier = formData.get("identifier");
-    const password = formData.get("password");
-
-    try {
-      const result = await signIn.create({ identifier, password });
-
-      if (result.status === "complete") {
-        await setActive({ session: result.createdSessionId }); // Efficiently set session
-      }
-    } catch (error) {
-      console.error("Login failed:", error.errors?.[0]?.message || "Something went wrong");
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [user, router]);
 
   return (
     <div className="h-screen flex items-center justify-center bg-purple-50">
-      <div className="bg-white p-12 rounded-md shadow-lg w-96">
-        <h1 className="text-xl font-bold text-center mb-4">E-Portal</h1>
-        <h2 className="text-gray-500 text-center mb-6">Sign in to your account</h2>
-
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <div>
-            <label className="text-sm text-gray-500">Username or Email</label>
-            <input
+      <SignIn.Root>
+        <SignIn.Step
+          name="start"
+          className="bg-white p-12 rounded-md shadow-2xl flex flex-col gap-2"
+        >
+          <h1 className="text-xl font-bold flex items-center gap-2">
+            <Image src="/logo.png" alt="" width={24} height={24} />
+            E - Portal
+          </h1>
+          <h2 className="text-gray-400">Sign in to your account</h2>
+          <Clerk.GlobalError className="text-sm text-red-400" />
+          <Clerk.Field name="identifier" className="flex flex-col gap-2">
+            <Clerk.Label className="text-xs text-gray-500">
+              Username
+            </Clerk.Label>
+            <Clerk.Input
               type="text"
-              name="identifier"
               required
-              className="w-full p-2 rounded-md border border-gray-300"
+              className="p-2 rounded-md ring-1 ring-gray-300"
             />
-          </div>
-
-          <div>
-            <label className="text-sm text-gray-500">Password</label>
-            <input
+            <Clerk.FieldError className="text-xs text-red-400" />
+          </Clerk.Field>
+          <Clerk.Field name="password" className="flex flex-col gap-2">
+            <Clerk.Label className="text-xs text-gray-500">
+              Password
+            </Clerk.Label>
+            <Clerk.Input
               type="password"
-              name="password"
               required
-              className="w-full p-2 rounded-md border border-gray-300"
+              className="p-2 rounded-md ring-1 ring-gray-300"
             />
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className={`w-full bg-purple-500 text-white py-2 rounded-md ${
-              loading ? "opacity-50 cursor-not-allowed" : ""
-            }`}
+            <Clerk.FieldError className="text-xs text-red-400" />
+          </Clerk.Field>
+          <SignIn.Action
+            submit
+            className="bg-purple-500 text-white my-1 rounded-md text-sm p-[10px]"
           >
-            {loading ? "Signing in..." : "Sign In"}
-          </button>
-        </form>
-
-        <div className="text-center mt-4">
-          <a href="/forgot-password" className="text-sm text-purple-500">
-            Forgot your password?
-          </a>
-        </div>
-      </div>
+            Sign In
+          </SignIn.Action>
+        </SignIn.Step>
+      </SignIn.Root>
     </div>
   );
 };
