@@ -10,7 +10,7 @@ const matchers = Object.keys(routeAccessMap).map(route => ({
 export default clerkMiddleware(async (auth, req) => {
   try {
     const { sessionId, sessionClaims } = await auth();
-    const role =sessionClaims?.public_metadata?.role
+    const role =sessionClaims?.metadata?.role
     const path = req.nextUrl.pathname;
 
     console.log("--- Middleware Start ---");
@@ -18,6 +18,7 @@ export default clerkMiddleware(async (auth, req) => {
     console.log("Middleware - Request Pathname:", path);
     console.log("Middleware - SessionId:", sessionId);
     console.log("Middleware - sessionclaim:", sessionClaims);
+    console.log("Middleware - sessionclaim:", sessionClaims.metadata);
     console.log("Middleware - Role:", role);
 
     // 1. Public Routes
