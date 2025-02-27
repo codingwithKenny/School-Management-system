@@ -1,6 +1,7 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { routeAccessMap } from "./lib/settings";
+import { useUser } from "@clerk/nextjs";
 
 const matchers = Object.keys(routeAccessMap).map(route => ({
   matcher: createRouteMatcher([route]),
@@ -10,6 +11,7 @@ const matchers = Object.keys(routeAccessMap).map(route => ({
 export default clerkMiddleware(async (auth, req) => {
   try {
     const { sessionId, sessionClaims } = await auth();
+   
     const role =sessionClaims?.metadata?.role
     const path = req.nextUrl.pathname;
 
