@@ -15,6 +15,10 @@ export default clerkMiddleware(async (auth, req) => {
     const role =sessionClaims?.metadata?.role
     const path = req.nextUrl.pathname;
 
+  
+    console.log('logssss', await auth());
+    
+
     console.log("--- Middleware Start ---");
     console.log("Middleware - Request URL:", req.url); // Log full URL
     console.log("Middleware - Request Pathname:", path);
