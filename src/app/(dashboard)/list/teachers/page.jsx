@@ -11,6 +11,7 @@ import { getUserRole } from "@/lib/authUtils";
 export default async function TeacherListPage({ searchParams }) {
   const params = searchParams ? await searchParams : {};
   const role = await getUserRole();
+  console.log(role, "role is really here")
   const page = parseInt(params.page) || 1;
 
   const query = Object.entries(params).reduce((acc, [key, value]) => {
