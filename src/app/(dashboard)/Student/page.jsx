@@ -6,6 +6,7 @@ import { auth } from "@clerk/nextjs/server";
 import Link from "next/link";
 import React from "react";
 import { redirect } from "next/navigation";
+import prisma from "@/lib/prisma";
 
 const studentPage = async () => {
   const { userId } = await auth();
