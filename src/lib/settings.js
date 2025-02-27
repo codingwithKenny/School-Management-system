@@ -22,7 +22,7 @@ export const routeAccessMap = {
   "/list/exams": ["admin", "teacher", "student", "parent"],
   "/list/assignments": ["admin", "teacher", "student", "parent"],
   "/list/results": ["admin", "teacher", "student", "parent"],
-  "/list/attendance": ["admin", "teacher", "student", "parent"],
-  "/list/events": ["admin", "teacher", "student", "parent"],
-  "/list/announcements": ["admin", "teacher", "student", "parent"],
+  // "/list/attendance": ["admin", "teacher", "student", "parent"],
+  // "/list/events": ["admin", "teacher", "student", "parent"],
+  // "/list/announcements": ["admin", "teacher", "student", "parent"],
 };
