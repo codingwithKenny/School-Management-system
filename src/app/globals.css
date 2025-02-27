@@ -137,3 +137,41 @@ body {
     width: 100%;
   }
 }
+
+/* Add this CSS to your global styles file (e.g., styles.css, globals.css) or within a <style jsx global> block in your component if you are using styled-jsx */
+
+.lds-ring {
+  display: inline-block;
+  position: relative;
+  width: 40px; /* Adjust size as needed */
+  height: 40px; /* Adjust size as needed */
+}
+.lds-ring div {
+  box-sizing: border-box;
+  display: block;
+  position: absolute;
+  width: 32px; /* Adjust size as needed, slightly smaller than lds-ring */
+  height: 32px; /* Adjust size as needed, slightly smaller than lds-ring */
+  margin: 4px; /* Adjust to center the rings */
+  border: 4px solid #9CA3AF; /* Gray-400 color from Tailwind, adjust color as needed */
+  border-radius: 50%;
+  animation: lds-ring 1.2s cubic-bezier(0.5, 0.05, 0.5, 0.95) infinite;
+  border-color: #9CA3AF transparent transparent transparent; /* Gray-400 color */
+}
+.lds-ring div:nth-child(1) {
+  animation-delay: -0.45s;
+}
+.lds-ring div:nth-child(2) {
+  animation-delay: -0.3s;
+}
+.lds-ring div:nth-child(3) {
+  animation-delay: -0.15s;
+}
+@keyframes lds-ring {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
