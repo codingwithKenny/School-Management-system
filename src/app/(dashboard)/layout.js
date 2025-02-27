@@ -6,13 +6,13 @@ import Image from "next/image";
 import Link from "next/link";
 
 export default function DashboardLayout({ children }) {
-  const pathname = usePathname(); // Get the current path
-  console.log(pathname)
+  // const pathname = usePathname(); // Get the current path
+  // console.log(pathname)
 
-  // Exclude `/welcome` from using the layout
-  if (pathname === "/welcome") {
-    return <>{children}</>; // Render the children without the layout
-  }
+  // // Exclude `/welcome` from using the layout
+  // if (pathname === "/welcome") {
+  //   return <>{children}</>; // Render the children without the layout
+  // }
 
   return (
     <div className="flex h-screen">
