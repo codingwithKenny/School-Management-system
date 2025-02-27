@@ -10,22 +10,18 @@
       "page": "/",
       "matchers": [
         {
-          "regexp": "^(?:\\/(_next\\/data\\/[^/]{1,}))?(?:\\/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*))(\\.json)?[\\/#\\?]?$",
-          "originalSource": "/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)"
-        },
-        {
-          "regexp": "^(?:\\/(_next\\/data\\/[^/]{1,}))?(?:\\/(api|trpc))(.*)(\\.json)?[\\/#\\?]?$",
-          "originalSource": "/(api|trpc)(.*)"
+          "regexp": "^(?:\\/(_next\\/data\\/[^/]{1,}))?(?:\\/((?!_next\\/static|_next\\/image|favicon.ico|sign-in|unauthorized|error|api|applynow|aboutMuslimschool|proprietor|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*))(\\.json)?[\\/#\\?]?$",
+          "originalSource": "/((?!_next/static|_next/image|favicon.ico|sign-in|unauthorized|error|api|applynow|aboutMuslimschool|proprietor|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)"
         }
       ],
       "wasm": [],
       "assets": [],
       "env": {
-        "__NEXT_BUILD_ID": "xg8HJQ4VQqjFt3WOthw7u",
+        "__NEXT_BUILD_ID": "mGTSRmahK785d9xZ7mUWO",
         "NEXT_SERVER_ACTIONS_ENCRYPTION_KEY": "VuxkxH/nHwsZJD7P2bmD81ism/ML/AtDN38/cRF2poo=",
-        "__NEXT_PREVIEW_MODE_ID": "0a969b9af768a71eec8f69e9950cc9d2",
-        "__NEXT_PREVIEW_MODE_ENCRYPTION_KEY": "db6cd33305c79f94af4e65c2a0fa58992b6a439b2cda1d0478d5c24eef3e2052",
-        "__NEXT_PREVIEW_MODE_SIGNING_KEY": "93c249f211db370bcc52b91309e3374f01a653fef201ae38b96991f7350c46f6"
+        "__NEXT_PREVIEW_MODE_ID": "15c9e10af783573cec956331d7603b79",
+        "__NEXT_PREVIEW_MODE_ENCRYPTION_KEY": "4d66f020e2e3c15515f71e5996b039fcc410a6f6f426608ef047ef2947a4bd17",
+        "__NEXT_PREVIEW_MODE_SIGNING_KEY": "ef97db10047eb76bae5af718965dd4cc24ea1e0e7f97c2042b0355eddcbcb203"
       }
     }
   },
