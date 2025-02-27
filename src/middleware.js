@@ -40,7 +40,7 @@ export default clerkMiddleware(async (auth, req) => {
           console.log("Middleware - Unauthorized Role:", role, "for path:", path, ". Redirecting to /unauthorized");
           return NextResponse.redirect(new URL('/unauthorized', req.url));
         } else {
-          console.log("Middleware - Authorized Role:", role, "for path:", path, ". Allowing.");
+          console.log("Middleware - Authorized Role:", role, "for path:", path, ". Allowing.", req.url);
           return NextResponse.next();
         }
       } else if (matcher(req)) { // Add log for when matcher matches but no roles

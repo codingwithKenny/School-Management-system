@@ -7,6 +7,7 @@ import Link from "next/link";
 
 export default function DashboardLayout({ children }) {
   const pathname = usePathname(); // Get the current path
+  console.log(pathname)
 
   // Exclude `/welcome` from using the layout
   if (pathname === "/welcome") {

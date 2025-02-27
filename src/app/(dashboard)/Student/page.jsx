@@ -5,6 +5,7 @@ import Image from "next/image";
 import { auth } from "@clerk/nextjs/server";
 import Link from "next/link";
 import React from "react";
+import { redirect } from "next/navigation";
 
 const studentPage = async () => {
   const { userId } = await auth();

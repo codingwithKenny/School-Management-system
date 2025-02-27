@@ -56,14 +56,6 @@
       "static/chunks/7998-9006726105dca666.js",
       "static/chunks/app/sign-in/[[...sign-in]]/page-8d35b02a28a2fa52.js"
     ],
-    "/applynow/page": [
-      "static/chunks/webpack-e50fbe139a72a798.js",
-      "static/chunks/4bd1b696-3ddbb1f95b964f18.js",
-      "static/chunks/1517-96aa6e371fa32f43.js",
-      "static/chunks/main-app-e80f0a59883fe7b0.js",
-      "static/chunks/4839-954d016b84bf6d89.js",
-      "static/chunks/app/applynow/page-f3f286eb39d902b8.js"
-    ],
     "/aboutMuslimschool/page": [
       "static/chunks/webpack-e50fbe139a72a798.js",
       "static/chunks/4bd1b696-3ddbb1f95b964f18.js",
@@ -71,6 +63,14 @@
       "static/chunks/main-app-e80f0a59883fe7b0.js",
       "static/chunks/4839-954d016b84bf6d89.js",
       "static/chunks/app/aboutMuslimschool/page-44e8a97d9796dbe3.js"
+    ],
+    "/applynow/page": [
+      "static/chunks/webpack-e50fbe139a72a798.js",
+      "static/chunks/4bd1b696-3ddbb1f95b964f18.js",
+      "static/chunks/1517-96aa6e371fa32f43.js",
+      "static/chunks/main-app-e80f0a59883fe7b0.js",
+      "static/chunks/4839-954d016b84bf6d89.js",
+      "static/chunks/app/applynow/page-f3f286eb39d902b8.js"
     ],
     "/proprietor/page": [
       "static/chunks/webpack-e50fbe139a72a798.js",
@@ -88,7 +88,20 @@
       "static/chunks/5565-344e7b9feca15ac3.js",
       "static/chunks/4839-954d016b84bf6d89.js",
       "static/chunks/921-28f34980144a8e32.js",
-      "static/chunks/app/(dashboard)/layout-5d0394cb6be71c9a.js"
+      "static/chunks/app/(dashboard)/layout-f77ff1787a85b2f8.js"
+    ],
+    "/(dashboard)/admin/page": [
+      "static/chunks/webpack-e50fbe139a72a798.js",
+      "static/chunks/4bd1b696-3ddbb1f95b964f18.js",
+      "static/chunks/1517-96aa6e371fa32f43.js",
+      "static/chunks/main-app-e80f0a59883fe7b0.js",
+      "static/css/20fc84e825709a2d.css",
+      "static/chunks/5565-344e7b9feca15ac3.js",
+      "static/chunks/3746-7ff1b8d3eca6b338.js",
+      "static/chunks/3004-36b8ffba4a3641de.js",
+      "static/chunks/8443-cca4c83c9b703338.js",
+      "static/chunks/9220-3af9b81c76d628f6.js",
+      "static/chunks/app/(dashboard)/admin/page-a83b707b747ab2e8.js"
     ],
     "/(dashboard)/list/loading": [
       "static/chunks/webpack-e50fbe139a72a798.js",
@@ -96,17 +109,6 @@
       "static/chunks/1517-96aa6e371fa32f43.js",
       "static/chunks/main-app-e80f0a59883fe7b0.js",
       "static/chunks/app/(dashboard)/list/loading-d1e8ffbd885eae21.js"
-    ],
-    "/(dashboard)/list/checkresult/page": [
-      "static/chunks/webpack-e50fbe139a72a798.js",
-      "static/chunks/4bd1b696-3ddbb1f95b964f18.js",
-      "static/chunks/1517-96aa6e371fa32f43.js",
-      "static/chunks/main-app-e80f0a59883fe7b0.js",
-      "static/chunks/5565-344e7b9feca15ac3.js",
-      "static/chunks/3746-7ff1b8d3eca6b338.js",
-      "static/chunks/8443-cca4c83c9b703338.js",
-      "static/chunks/8896-b670625d149f029f.js",
-      "static/chunks/app/(dashboard)/list/checkresult/page-f9c74b75f6f05bea.js"
     ],
     "/(dashboard)/list/classes/page": [
       "static/chunks/webpack-e50fbe139a72a798.js",
@@ -127,19 +129,6 @@
       "static/chunks/4839-954d016b84bf6d89.js",
       "static/chunks/2908-a96dfc716d948941.js",
       "static/chunks/app/(dashboard)/list/events/page-ba5764639b55e670.js"
-    ],
-    "/(dashboard)/admin/page": [
-      "static/chunks/webpack-e50fbe139a72a798.js",
-      "static/chunks/4bd1b696-3ddbb1f95b964f18.js",
-      "static/chunks/1517-96aa6e371fa32f43.js",
-      "static/chunks/main-app-e80f0a59883fe7b0.js",
-      "static/css/20fc84e825709a2d.css",
-      "static/chunks/5565-344e7b9feca15ac3.js",
-      "static/chunks/3746-7ff1b8d3eca6b338.js",
-      "static/chunks/3004-36b8ffba4a3641de.js",
-      "static/chunks/8443-cca4c83c9b703338.js",
-      "static/chunks/9220-3af9b81c76d628f6.js",
-      "static/chunks/app/(dashboard)/admin/page-a83b707b747ab2e8.js"
     ],
     "/(dashboard)/list/parents/page": [
       "static/chunks/webpack-e50fbe139a72a798.js",
@@ -178,6 +167,17 @@
       "static/chunks/8443-cca4c83c9b703338.js",
       "static/chunks/8896-b670625d149f029f.js",
       "static/chunks/app/(dashboard)/list/results/page-026b4b0eb9486c7f.js"
+    ],
+    "/(dashboard)/list/checkresult/page": [
+      "static/chunks/webpack-e50fbe139a72a798.js",
+      "static/chunks/4bd1b696-3ddbb1f95b964f18.js",
+      "static/chunks/1517-96aa6e371fa32f43.js",
+      "static/chunks/main-app-e80f0a59883fe7b0.js",
+      "static/chunks/5565-344e7b9feca15ac3.js",
+      "static/chunks/3746-7ff1b8d3eca6b338.js",
+      "static/chunks/8443-cca4c83c9b703338.js",
+      "static/chunks/8896-b670625d149f029f.js",
+      "static/chunks/app/(dashboard)/list/checkresult/page-f9c74b75f6f05bea.js"
     ],
     "/(dashboard)/list/students/[id]/page": [
       "static/chunks/webpack-e50fbe139a72a798.js",
@@ -237,14 +237,6 @@
       "static/chunks/2908-a96dfc716d948941.js",
       "static/chunks/app/(dashboard)/list/teachers/page-e4208cd9c3979fb1.js"
     ],
-    "/(dashboard)/settings/page": [
-      "static/chunks/webpack-e50fbe139a72a798.js",
-      "static/chunks/4bd1b696-3ddbb1f95b964f18.js",
-      "static/chunks/1517-96aa6e371fa32f43.js",
-      "static/chunks/main-app-e80f0a59883fe7b0.js",
-      "static/chunks/5565-344e7b9feca15ac3.js",
-      "static/chunks/app/(dashboard)/settings/page-8fe2ef159009a632.js"
-    ],
     "/(dashboard)/profile/page": [
       "static/chunks/webpack-e50fbe139a72a798.js",
       "static/chunks/4bd1b696-3ddbb1f95b964f18.js",
@@ -252,6 +244,14 @@
       "static/chunks/main-app-e80f0a59883fe7b0.js",
       "static/chunks/5565-344e7b9feca15ac3.js",
       "static/chunks/app/(dashboard)/profile/page-7e3f8dcc22784b0c.js"
+    ],
+    "/(dashboard)/settings/page": [
+      "static/chunks/webpack-e50fbe139a72a798.js",
+      "static/chunks/4bd1b696-3ddbb1f95b964f18.js",
+      "static/chunks/1517-96aa6e371fa32f43.js",
+      "static/chunks/main-app-e80f0a59883fe7b0.js",
+      "static/chunks/5565-344e7b9feca15ac3.js",
+      "static/chunks/app/(dashboard)/settings/page-8fe2ef159009a632.js"
     ],
     "/(dashboard)/student/page": [
       "static/chunks/webpack-e50fbe139a72a798.js",
