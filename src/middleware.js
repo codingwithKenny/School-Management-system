@@ -18,7 +18,6 @@ export default clerkMiddleware(async (auth, req) => {
     console.log("Middleware - Request Pathname:", path);
     console.log("Middleware - SessionId:", sessionId);
     console.log("Middleware - sessionclaim:", sessionClaims);
-    console.log("Middleware - sessionclaim:", sessionClaims.metadata);
     console.log("Middleware - Role:", role);
 
     // 1. Public Routes
