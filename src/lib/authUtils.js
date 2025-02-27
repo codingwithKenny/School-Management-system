@@ -5,7 +5,8 @@ export async function getCurrentUser() {
   const { userId, sessionClaims } = await auth();
   return {
     userId,
-    role: sessionClaims?.metadata?.role, // Default to 'guest' if undefined
+    role: sessionClaims?.metadata?.role,
+    sessionClaims // Default to 'guest' if undefined
   };
 }
 

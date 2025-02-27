@@ -3,11 +3,11 @@ export const ITEM_PER_PAGE = 10
 
 
 
-
+// Route Access Configuration
 export const routeAccessMap = {
-  "/": [], // Explicitly allows everyone
-  "/applynow": [], // Explicitly allows everyone
-  "/aboutMuslimschool": [], // Explicitly allows everyone
+  "/": [], // Public
+  "/applynow": [], 
+  "/aboutMuslimschool": [], 
   "/admin(.*)": ["admin"],
   "/student(.*)": ["student"],
   "/teacher(.*)": ["teacher"],
@@ -22,7 +22,4 @@ export const routeAccessMap = {
   "/list/exams": ["admin", "teacher", "student", "parent"],
   "/list/assignments": ["admin", "teacher", "student", "parent"],
   "/list/results": ["admin", "teacher", "student", "parent"],
-  // "/list/attendance": ["admin", "teacher", "student", "parent"],
-  // "/list/events": ["admin", "teacher", "student", "parent"],
-  // "/list/announcements": ["admin", "teacher", "student", "parent"],
 };
