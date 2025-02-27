@@ -13,6 +13,8 @@ import { getUserRole } from "@/lib/authUtils";
 const subjectListPage = async ({ searchParams }) => {
   const role = await getUserRole();
 
+  console.log(role)
+
   const params = searchParams ? await searchParams : {};
   const page = params?.page || 1;
   const p = parseInt(page);
