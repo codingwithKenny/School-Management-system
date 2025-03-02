@@ -12,13 +12,18 @@ const LoginPage = () => {
   const router = useRouter();
 
   useEffect(() => {
-    if (!isLoaded) return; 
+    const startTime = performance.now(); // Start time before role check
 
-    if (isSignedIn) {
-      router.push("/welcome");
+    const role = user?.publicMetadata.role;
+    const roleFetchEndTime = performance.now(); // End time after role is fetched
+
+    if (role) {
+      const redirectStartTime = performance.now(); // Start time before router.push
+      router.push(`/${role}`);
+      const redirectEndTime = performance.now(); // End time after router.push
+    } else if (user) {
     }
-  }, [isLoaded, isSignedIn, router]);
-  
+  }, [user, router]);
 
   if (!isLoaded) {
     return (
@@ -40,7 +45,7 @@ const LoginPage = () => {
         >
           <h1 className="text-xl font-bold flex items-center gap-2">
             <Image src="/logo.png" alt="" width={24} height={24} />
-            E - Portal
+            E-Porta
           </h1>
           <h2 className="text-gray-400">Sign in to your account</h2>
           <Clerk.GlobalError className="text-sm text-red-400" />
@@ -74,9 +79,6 @@ const LoginPage = () => {
           </SignIn.Action>
         </SignIn.Step>
       </SignIn.Root>
-      <div>
-        
-      </div>
     </div>
   );
 };

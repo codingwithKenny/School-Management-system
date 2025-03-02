@@ -30,7 +30,7 @@ export default function Menu() {
     {
       title: "MENU",
       items: [
-        { icon: "/home.png", label: "Home", href: `/${loggedUser}`, visible: ["admin", "teacher", "student", "parent"] },
+        { icon: "/home.png", label: "Home", href: `/${loggedUser}`, visible: ["admin", "teacher", "student"] },
         { icon: "/subject.png", label: "Subjects", href: "/list/subjects", visible: ["admin"] },
         { icon: "/teacher.png", label: "Teachers", href: "/list/teachers", visible: ["admin"] },
         { icon: "/student.png", label: "Students", href: "/list/students", visible: ["admin"] },

@@ -14,11 +14,11 @@ export const routeAccessMap = {
   "/parent(.*)": ["parent"],
   "/settings(.*)": ["admin"],
   "/profile(.*)": ["admin"],
-  "/list/teachers": ["admin", "teacher"],
-  "/list/students": ["admin", "teacher"],
-  "/list/parents": ["admin", "teacher"],
-  "/list/subjects": ["admin"],
-  "/list/classes": ["admin", "teacher"],
-  "/list/results": ["teacher"],
+  // "/list/teachers": ["admin", "teacher"],
+  // "/list/students": ["admin", "teacher"],
+  // "/list/parents": ["admin", "teacher"],
+  // "/list/subjects": ["admin"],
+  // "/list/classes": ["admin", "teacher"],
+  // "/list/results": ["teacher"],
 
 };

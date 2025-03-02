@@ -10,18 +10,15 @@
       "page": "/",
       "matchers": [
         {
-          "regexp": "^(?:\\/(_next\\/data\\/[^/]{1,}))?(?:\\/((?!_next\\/static|_next\\/image|favicon.ico|sign-in|unauthorized|error|api|applynow|aboutMuslimschool|proprietor|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*))(\\.json)?[\\/#\\?]?$",
-          "originalSource": "/((?!_next/static|_next/image|favicon.ico|sign-in|unauthorized|error|api|applynow|aboutMuslimschool|proprietor|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)"
+          "regexp": "^/.*$",
+          "originalSource": "/:path*"
         }
       ],
       "wasm": [],
       "assets": [],
       "env": {
-        "__NEXT_BUILD_ID": "LfQzV5m8TYY4rXSeG4Zt4",
-        "NEXT_SERVER_ACTIONS_ENCRYPTION_KEY": "VuxkxH/nHwsZJD7P2bmD81ism/ML/AtDN38/cRF2poo=",
-        "__NEXT_PREVIEW_MODE_ID": "42b555aa2035541fcff726508754195f",
-        "__NEXT_PREVIEW_MODE_ENCRYPTION_KEY": "281e571deb82bd90613bbc9656842ab6783a7182f94547648869d36d09c50950",
-        "__NEXT_PREVIEW_MODE_SIGNING_KEY": "5ad71761dddb952181a707a947b220c04eac18581020106dd0923df6dfc10184"
+        "__NEXT_BUILD_ID": "development",
+        "NEXT_SERVER_ACTIONS_ENCRYPTION_KEY": "VuxkxH/nHwsZJD7P2bmD81ism/ML/AtDN38/cRF2poo="
       }
     }
   },
