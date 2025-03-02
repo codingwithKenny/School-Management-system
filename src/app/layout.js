@@ -7,7 +7,7 @@ import { Toaster } from '@/components/ui/toaster';
 import InactivityTimeout from '@/components/InactivityTimeout';
 
 export const metadata = {
-  title: 'Muslim Group of Schools - Best Secondary School in Oyo, Nigeria',
+  title: 'Muslim Group of Schools - ALLAH IS GREAT',
   description: 'Muslim Group of Schools is a top Islamic secondary school in Oyo, Nigeria, offering quality education with strong moral and academic excellence.',
   keywords: 'Muslim school in Nigeria, best secondary school in Oyo, Islamic schools in Nigeria, top Muslim schools, quality education in Oyo',
   author: 'Muslim Group of Schools',
