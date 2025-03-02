@@ -20,7 +20,7 @@ export const routeAccessMap = {
   "/list/parents": ["admin", "teacher"],
   "/list/subjects": ["admin"],
   "/list/classes": ["admin", "teacher"],
-  "/list/exams": ["admin", "teacher", "student", "parent"],
-  "/list/assignments": ["admin", "teacher", "student", "parent"],
-  "/list/results": ["admin", "teacher", "student", "parent"],
+  "/list/results": ["teacher"],
+  "/list/checkresult": ["student"],
+  "/list/resultoverview": ["admin"],
 };

@@ -92,7 +92,7 @@ const studentListPage = async({ searchParams}) => {
    
  const column = [
   { header: 'Info', accessor: 'info' },
-  { header: 'User Name', accessor: 'studentId', className: 'hidden md:table-cell' },
+  { header: 'Adnission No', accessor: 'studentId', className: 'hidden md:table-cell' },
   { header: 'Grade', accessor: 'grade', className: 'hidden md:table-cell' },
   { header: 'Phone', accessor: 'phone', className: 'hidden lg:table-cell' },
   { header: 'Address', accessor: 'address', className: 'hidden lg:table-cell' },

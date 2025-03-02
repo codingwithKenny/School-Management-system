@@ -38,9 +38,9 @@ export default function Menu() {
         { icon: "/assignment.png", label: "Result Overview", href: "/list/resultoverview", visible: ["admin"] },
         { icon: "/exam.png", label: "Check Result", href: "/list/checkresult", visible: ["student", "parent"] },
         { icon: "/result.png", label: "Results", href: "/list/results", visible: ["teacher"] },
-        { icon: "/parent.png", label: "Parents", href: "/list/parents", visible: ["admin", "teacher"], disabled: true },
-        { icon: "/message.png", label: "Messages", href: "/list/messages", visible: ["admin", "teacher", "student", "parent"], disabled: true },
-        { icon: "/announcement.png", label: "Announcements", href: "/list/announcements", visible: ["admin", "teacher", "student", "parent"], disabled: true },
+        { icon: "/parent.png", label: "Parents", href: "/", visible: ["admin", "teacher"], disabled: true },
+        { icon: "/message.png", label: "Messages", href: "/", visible: ["admin", "teacher", "student", "parent"], disabled: true },
+        { icon: "/announcement.png", label: "Announcements", href: "/", visible: ["admin", "teacher", "student", "parent"], disabled: true },
       ],
     },
     {
