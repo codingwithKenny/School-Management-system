@@ -7,7 +7,6 @@ export const ITEM_PER_PAGE = 10
 export const routeAccessMap = {
   "/": [], // Public
   "/applynow": [], 
-  "/welcome": [], 
   "/aboutMuslimschool": [], 
   "/admin(.*)": ["admin"],
   "/student(.*)": ["student"],
