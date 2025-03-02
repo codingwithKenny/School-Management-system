@@ -1,16 +1,19 @@
 import { auth } from "@clerk/nextjs/server";
 
-// ✅ Function to get the current user's ID & role
+let cachedUser = null;
+
 export async function getCurrentUser() {
-  const { userId, sessionClaims } = await auth();
-  return {
-    userId,
-    role: sessionClaims?.metadata?.role,
-    sessionClaims // Default to 'guest' if undefined
-  };
+  if (!cachedUser) {
+    const { userId, sessionClaims } = await auth();
+    cachedUser = {
+      userId,
+      role: sessionClaims?.metadata?.role || "guest", // Default to 'guest'
+      sessionClaims,
+    };
+  }
+  return cachedUser;
 }
 
-// ✅ Export individual properties for easier imports
 export async function getUserId() {
   const { userId } = await getCurrentUser();
   return userId;

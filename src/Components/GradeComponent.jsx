@@ -94,9 +94,9 @@ const GradeComponent = ({ role, currentUser,sessions }) => {
             </h2>
             {loading ? (
               <p className="text-gray-500">Loading grades...</p>
-            ) : memoizedGrades.length > 0 ? (
+            ) : memoizedGrades?.length > 0 ? (
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                {memoizedGrades.map((grade) => (
+                {memoizedGrades?.map((grade) => (
                   <button
                     key={grade.id}
                     className={`p-4 md:p-5 ${

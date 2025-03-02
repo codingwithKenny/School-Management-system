@@ -8,25 +8,28 @@ const WelcomePage = () => {
   const router = useRouter();
 
   useEffect(() => {
-    if (!isLoaded || !user) return;
+    if (!isLoaded) return; // Wait for authentication to load
 
-    const role = user?.publicMetadata.role;
+    console.log("🟢 WelcomePage - Checking user role...");
+    const role = user?.publicMetadata?.role;
+    const rolePath = role ? `/${role}` : "/dashboard";
 
-    if (role) {
-      router.push(`/${role}`); // Redirect dynamically based on role
-    } else {
-      console.log("No role found. Redirecting to /dashboard");
-      router.push("/sign-in");
+    console.log(`🔍 Detected Role: ${role || "❌ None"}
+      - Current Path: ${window.location.pathname}
+      - Target Path: ${rolePath}`);
+
+    if (role && window.location.pathname !== rolePath) {
+      console.log(`🔄 Redirecting to: ${rolePath}`);
+      router.push(rolePath);
     }
   }, [isLoaded, user, router]);
 
+  if (!isLoaded) return <div>Loading...</div>;
+
   return (
-   
-      <div className="text-center flex justify-center items-center px-4 py-6 rounded-md shadow-lg bg-purple-100">
-        <p className="text-lg font-semibold">Welcome, {user?.firstName}!</p>
-        
-      </div>
-    
+    <div className="text-center flex justify-center items-center px-4 py-6 rounded-md shadow-lg bg-purple-100">
+      <p className="text-lg font-semibold">Welcome, {user?.username}!</p>
+    </div>
   );
 };
 

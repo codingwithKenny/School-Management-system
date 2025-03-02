@@ -15,7 +15,6 @@ const ResultDisplay = ({
 }) => {
   const { databaseData } = useDatabase();
   const printRef = useRef();
-    console.log(studentInfo)
   // POSITION SUFFIX
   const getOrdinalSuffix = (num) => {
     if (!num) return "__";
@@ -117,14 +116,14 @@ const ResultDisplay = ({
   
 
   return (
-    <div className="p-3 bg-gray-100 relative">
+    <div className="p-3 relative">
       {!isPaymentComplete ? (
         <div className="p-4 bg-red-100 text-center text-red-600 font-semibold">
           Payment for {selectedTermName} Term is not complete. Please complete
           the payment to access the result.
         </div>
       ) : (
-        <div>
+        <div className="w-[600px]">
           <div
             ref={printRef}
             id="printable-area"
@@ -142,7 +141,7 @@ const ResultDisplay = ({
             <div className="flex flex-wrap justify-between items-center border-b pb-2">
               <Image src="/logo.png" width={60} height={60} alt="School Logo" />
               <div className="text-center flex-1">
-                <h1 className="text-2xl font-bold uppercase">
+                <h1 className="text-xl font-bold uppercase">
                   MUSLIM COMPREHENSIVE COLLEGE
                 </h1>
                 <p className="text-sm italic font-semibold">"ALLAH IS GREAT"</p>
@@ -199,13 +198,14 @@ const ResultDisplay = ({
                 <table className="w-full border-collapse border border-gray-300 text-xs mt-3">
                   <thead>
                     <tr className="bg-gray-200 text-center">
-                      <th className="border p-1">Subject</th>
+                      <th className="border p-1 ">Subject</th>
                       <th className="border p-1">CA1</th>
                       <th className="border p-1">CA2</th>
                       <th className="border p-1">Exam</th>
                       <th className="border p-1">Total</th>
                       <th className="border p-1">Avg</th>
                       <th className="border p-1">Performance</th>
+                      <th className="border p-1">Position</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -235,6 +235,9 @@ const ResultDisplay = ({
                               result.secondAssessment,
                               result.examScore
                             )}
+                          </td>
+                          <td className="border p-1 font-bold">
+                            {result.subPosition}
                           </td>
                         </tr>
                       ))}
@@ -279,7 +282,7 @@ const ResultDisplay = ({
               <div className="flex flex-wrap justify-around items-center border p-2 text-xs">
                 {/* Position & Promotion Section */}
                 <div className="border w-[50%] text-center">
-                  {studentClassRecord?.map((record) => (
+                  {/* {studentClassRecord?.map((record) => (
                     <p
                       key={record.id}
                       className="italic border border-gray-300 p-1"
@@ -287,7 +290,7 @@ const ResultDisplay = ({
                       <strong>Position:</strong>{" "}
                       {getOrdinalSuffix(record.position)}
                     </p>
-                  ))}
+                  ))} */}
                   {selectedTermName === "Third Term" &&
                     studentClassRecord?.map((record) => (
                       <p
@@ -380,7 +383,7 @@ const ResultDisplay = ({
             >
               Print Result
             </button>
-          </div>{" "}
+          </div>
         </div>
       )}
     </div>

@@ -208,6 +208,7 @@ export const updateTeacher = async (teacherId, data) => {
     await clerkClient.users.updateUser(teacherId, {
       emailAddress: [data.email],
       username: data.username,
+      password: data.password? data.password : existingTeacher.password,
     });
 
     const updatedTeacher = await prisma.teacher.update({
@@ -1075,6 +1076,7 @@ export async function assignClassTeacher({ classId, teacherId }) {
 }
 // ............................................................................................................................
 export const createResult = async (results) => {
+  console.log(results);
   try {
     if (!Array.isArray(results) || results.length === 0) {
       return { success: false, error: "❌ No results provided." };
@@ -1106,7 +1108,8 @@ export const createResult = async (results) => {
           !result.teacherId ||
           !result.firstAssessment ||
           !result.secondAssessment ||
-          !result.examScore
+          !result.examScore ||
+          !result.subPosition
         ) {
           return null;
         }
@@ -1122,6 +1125,7 @@ export const createResult = async (results) => {
           firstAssessment: parseFloat(result.firstAssessment),
           secondAssessment: parseFloat(result.secondAssessment),
           examScore: parseFloat(result.examScore),
+          subPosition: result.subPosition,
           totalScore:
             parseFloat(result.firstAssessment) +
             parseFloat(result.secondAssessment) +
@@ -1130,15 +1134,19 @@ export const createResult = async (results) => {
       })
       .filter(Boolean);
 
+      console.log(validResults,"hereeeeeeeeeeee")
+
+
     if (validResults.length === 0) {
       return {
         success: false,
         error: "❌ Some results are invalid. Fix them before submission.",
       };
     }
-
+       console.log("ready to create")
     // ✅ Insert results
     await prisma.result.createMany({ data: validResults });
+    console.log("�� Results created successfully");
 
     return { success: true };
   } catch (error) {

@@ -5,6 +5,7 @@ import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import prisma from "@/lib/prisma";
 import { fetchTerms } from "@/lib/actions";
+import { getUserRole } from "@/lib/authUtils";
 
 // Dynamically import components
 const Announcement = dynamic(() => import("@/components/Annoucement"));
@@ -19,6 +20,11 @@ export default async function TeacherPage() {
   if (!userId) {
     redirect("/sign-in");
   }
+    const role = await getUserRole(); // get the user role from Clerk
+    if (!role) {
+      redirect(`${role}`);
+  
+    }
 
   const latestSession = await prisma.session.findFirst({
     orderBy: { id: "desc" },
@@ -36,7 +42,6 @@ export default async function TeacherPage() {
       classes: true,
     },
   });
-  console.log(teacher.subjects.lenght)
 
   const term = await fetchTerms(latestSession.id)
   console.log(term.name);

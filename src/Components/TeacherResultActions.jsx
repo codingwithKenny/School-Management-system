@@ -14,7 +14,7 @@ const TeacherResultActions = ({ students, sessions, subjects, teacherId, Results
   const [results, setResults] = useState({});
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
-  
+
   // New state for confirmation modal and checkbox
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [confirmationChecked, setConfirmationChecked] = useState(false);
@@ -30,15 +30,14 @@ const TeacherResultActions = ({ students, sessions, subjects, teacherId, Results
     const currentSession = sessions.find((s) => s.id === Number(selectedSession));
     return currentSession ? currentSession.terms : [];
   }, [selectedSession, sessions]);
-  console.log(filteredTerms);
 
   const filteredGrades = useMemo(() => {
     const currentSession = sessions.find((s) => s.id === Number(selectedSession));
     return currentSession ? currentSession.grades : [];
   }, [selectedSession, sessions]);
-  
-  const filteredClasses = useMemo(() => 
-    filteredGrades.find((g) => g.id === selectedGrade)?.classes || [], 
+
+  const filteredClasses = useMemo(() =>
+    filteredGrades.find((g) => g.id === selectedGrade)?.classes || [],
     [selectedGrade, filteredGrades]
   );
 
@@ -125,10 +124,13 @@ const TeacherResultActions = ({ students, sessions, subjects, teacherId, Results
         firstAssessment: parseFloat(scores.ca1),
         secondAssessment: parseFloat(scores.ca2),
         examScore: parseFloat(scores.exam),
+        subPosition: scores.position || "", // Get position as string, default to ""
         totalScore: parseFloat(scores.ca1) + parseFloat(scores.ca2) + parseFloat(scores.exam),
       }));
       const response = await createResult(formattedResults);
-      if (!response.success) {
+      console.log(formattedResults, "here");
+      console.log(response,"that");
+      if (!response?.success) {
         toast({
           description: response.error,
           variant: "destructive",
@@ -281,7 +283,7 @@ const TeacherResultActions = ({ students, sessions, subjects, teacherId, Results
           </div>
           {/* Confirmation Checkbox and Load Students Button */}
           <div className="flex flex-col items-center mt-4">
-          
+
             {selectedClass && (
               <button
                 onClick={handleLoadStudents}
@@ -357,34 +359,37 @@ const TeacherResultActions = ({ students, sessions, subjects, teacherId, Results
                 <th className="border p-2">CA 1</th>
                 <th className="border p-2">CA 2</th>
                 <th className="border p-2">Exam</th>
-                <th className="border p-2">Grade Performance</th>
+                <th className="border p-2">Position</th>
               </tr>
             </thead>
             <tbody className="text-center">
-              {filteredStudents.map((student) => (
-                <tr key={student.id} className="border-t">
-                  <td className="border p-2">{student.name}</td>
-                  <td className="border p-2">{student.grade}</td>
-                  {["ca1", "ca2", "exam"].map((field) => (
-                    <td key={field} className="border p-2">
+              {filteredStudents.map((student) => {
+                const studentId = student.id;
+                return (
+                  <tr key={studentId} className="border-t">
+                    <td className="border p-2">{student.name}</td>
+                    <td className="border p-2">{student.grade}</td>
+                    {["ca1", "ca2", "exam"].map((field) => (
+                      <td key={field} className="border p-2">
+                        <input
+                          type="number"
+                          min="0"
+                          max="100"
+                          className="w-16 border p-1"
+                          onChange={(e) => handleInputChange(studentId, field, e.target.value)}
+                        />
+                      </td>
+                    ))}
+                    <td className="border p-2">
                       <input
-                        type="number"
-                        min="0"
-                        max="100"
+                        type="text" // Changed to type="text"
                         className="w-16 border p-1"
-                        onChange={(e) => handleInputChange(student.id, field, e.target.value)}
+                        onChange={(e) => handleInputChange(studentId, "position", e.target.value)}
                       />
                     </td>
-                  ))}
-                  <td className="border p-2">
-                    {calculatePerformance(
-                      results[student.id]?.ca1,
-                      results[student.id]?.ca2,
-                      results[student.id]?.exam
-                    )}
-                  </td>
-                </tr>
-              ))}
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
           {/* <div className="flex items-center gap-2 mb-4">

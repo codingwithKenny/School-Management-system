@@ -54,10 +54,10 @@ const CheckResult = async () => {
       firstAssessment: true,
       secondAssessment: true,
       examScore: true,
-      totalScore: true
+      totalScore: true,
+      subPosition: true,
     }
   });
-  console.log(results, "results");
 
   return (
     <div>

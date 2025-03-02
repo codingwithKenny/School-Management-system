@@ -7,6 +7,7 @@ import Link from "next/link";
 import React from "react";
 import { redirect } from "next/navigation";
 import prisma from "@/lib/prisma";
+import { getUserRole } from "@/lib/authUtils";
 
 const studentPage = async () => {
   const { userId } = await auth();
@@ -14,6 +15,12 @@ const studentPage = async () => {
   if (!userId) {
     redirect("/sign-in");
   }
+
+    const role = await getUserRole(); // get the user role from Clerk
+    if (!role) {
+      redirect(`/${role}`);
+  
+    }
 
   const student = await prisma.student.findUnique({
     where: { id: userId },

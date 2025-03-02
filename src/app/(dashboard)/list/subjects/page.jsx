@@ -13,7 +13,10 @@ import { getUserRole } from "@/lib/authUtils";
 const subjectListPage = async ({ searchParams }) => {
   const role = await getUserRole();
 
-  console.log(role, "confirm role is here")
+  if (role!== "admin") {
+          redirect(`/${role}`);
+      }
+
 
   const params = searchParams ? await searchParams : {};
   const page = params?.page || 1;

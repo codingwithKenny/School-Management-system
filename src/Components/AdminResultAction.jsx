@@ -157,8 +157,8 @@ const AdminResultAction = ({ allResult, sessions, subject }) => {
                 <thead>
                   <tr className="bg-gray-200 text-sm font-semibold text-gray-700">
                     <th className="px-4 py-2 border-b">Student Name</th>
-                    <th className="px-4 py-2 border-b">First CA</th>
-                    <th className="px-4 py-2 border-b">Second CA</th>
+                    <th className="px-4 py-2 border-b">CA1</th>
+                    <th className="px-4 py-2 border-b">CA2</th>
                     <th className="px-4 py-2 border-b">Exam</th>
                     <th className="px-4 py-2 border-b">Grade</th>
                     <th className="px-4 py-2 border-b">Session</th>
@@ -175,7 +175,7 @@ const AdminResultAction = ({ allResult, sessions, subject }) => {
                       }`}
                     >
                       <td className="px-4 py-3 border-b">
-                        {result.student.name}
+                        {result.student.surname} {result.student.firstname}
                       </td>
                       <td className="px-4 py-3 border-b">
                         {result.firstAssessment}

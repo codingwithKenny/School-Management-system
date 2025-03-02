@@ -29,6 +29,7 @@ const Footer = () => {
           <h1 className="font-semibold text-gray-400">Quick Links</h1>
           <Link href="#" className="hover:text-gray-300 transition">About Us</Link>
           <Link href="#" className="hover:text-gray-300 transition">School</Link>
+          <Link href="#" className="hover:text-gray-300 transition">Alumni</Link>
           <Link href="#" className="hover:text-gray-300 transition">News</Link>
           <Link href="#" className="hover:text-gray-300 transition">Gallery</Link>
         </div>
@@ -44,8 +45,8 @@ const Footer = () => {
         <div className="flex flex-col gap-y-4">
           <h1 className="font-semibold text-gray-400">School Hours</h1>
           <p className="text-sm">Monday - Friday: 8:00 AM - 4:00 PM</p>
-          <p className="text-sm">Saturday: 9:00 AM - 1:00 PM</p>
-          <p className="text-sm">Sunday: Closed</p>
+          <p className="text-sm">Office Hours: 8:00 AM - 4:00 PM</p>
+          <p className="text-sm">Weekend: Closed</p>
         </div>
 
         {/* SOCIAL MEDIA */}
@@ -70,7 +71,9 @@ const Footer = () => {
 
       {/* COPYRIGHT */}
       <div className="mt-6 text-center text-sm text-gray-500">
-        © {new Date().getFullYear()} Muslim School Oyo. All Rights Reserved.
+        © {new Date().getFullYear()} Muslim School Oyo. All Rights Reserved.Powered by <Link className='border font-bold p-2' href="https://wa.link/2rngws" target="_blank" rel="noopener noreferrer">
+  S-TECH
+</Link>
       </div>
     </footer>
   );

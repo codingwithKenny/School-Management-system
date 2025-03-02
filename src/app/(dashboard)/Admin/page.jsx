@@ -8,9 +8,16 @@ import Annoucement from "@/components/Annoucement";
 import prisma from "@/lib/prisma";
 import SessionModal from "@/components/SessionModal"; 
 import { getUserRole } from "@/lib/authUtils";
+import { auth } from "@clerk/nextjs/server";
+import { redirect } from "next/navigation";
 
 export default async function AdminPage() {
-  const role = await getUserRole(); // get the user role from Clerk
+    const { userId } = await auth();
+    const role = await getUserRole(); 
+    
+    if (!userId || role!== "admin") {
+        redirect("/sign-in");
+    }
   
   const latestSession = await prisma.session.findFirst({
     orderBy: { id: "desc" },

@@ -1,9 +1,23 @@
 
 import EditUnpaidStudent from "@/components/EditPayment";
 import UpdateSessionCard from "@/components/UpdateSessioncard";
+import { getUserRole } from "@/lib/authUtils";
 import prisma from "@/lib/prisma";
+import { redirect } from "next/navigation";
+import { auth } from "@clerk/nextjs/server";
+
 
 const settingPage = async() => {
+    const { userId } = await auth();
+  
+    if (!userId) {
+      redirect("/sign-in");
+    }
+      const role = await getUserRole(); // get the user role from Clerk
+      if (!role) {
+        redirect(`${role}`);
+    
+      }
   
 
     const session = await prisma.session.findFirst({

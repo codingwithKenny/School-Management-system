@@ -63,14 +63,11 @@ const TeacherView = ({ students, memoizedClasses, memoizedGrades, selectedClass,
         sessionId: selectedSession,
         classId: selectedClass,
         remark: data.remarks[student.id] || "",
-        position: data.positions[student.id] || null,
         promotion:
           selectedTermName === "Third Term" ? data.promotions[student.id] || "Not Set" : undefined,
         preferredClass:
           isJSS3 && selectedTermName === "Third Term" ? data.preferredClass[student.id] || "Not Selected" : undefined,
       }));
-
-      console.log(records, "wwwwwwwwwwwwww")
       const response = await createClassRecord(records);
       if (!response.success) {
         toast({
@@ -162,7 +159,6 @@ const TeacherView = ({ students, memoizedClasses, memoizedGrades, selectedClass,
               <tr>
                 <th className="p-3 text-left">Student</th>
                 <th className="p-3 text-left">Remark</th>
-                <th className="p-3 text-left w-24">Position</th>
                 {isThirdTerm && <th className="p-3 text-left">Promotion</th>}
                 {isThirdTerm && isJSS3 && <th className="p-3 text-left">Preferred Class</th>}
               </tr>
@@ -186,7 +182,7 @@ const TeacherView = ({ students, memoizedClasses, memoizedGrades, selectedClass,
                         </p>
                       )}
                     </td>
-                    <td className="p-3">
+                    {/* <td className="p-3">
                       <input
                         type="number"
                         className={`border p-2 w-full text-center rounded-md focus:ring-2 focus:ring-indigo-500 ${
@@ -199,7 +195,7 @@ const TeacherView = ({ students, memoizedClasses, memoizedGrades, selectedClass,
                           {errors.positions[student.id].message}
                         </p>
                       )}
-                    </td>
+                    </td> */}
                     {isThirdTerm && (
                       <td className="p-3">
                         <select

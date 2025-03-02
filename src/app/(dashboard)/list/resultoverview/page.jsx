@@ -16,10 +16,10 @@ const ResultOverview = async () => {
 
   //  GET ALL RESULT
   const allResult = await allResults();
-  console.log(allResult, "all results");
+
   // GET SUBJECT
   const subject = await fetchSubjects();
-  console.log(subject);
+
 
   return (
     <div>

@@ -55,7 +55,7 @@ export default function Home() {
         {/* Right Section */}
         <div className="w-full md:w-[50%] p-6 md:p-16 text-center md:text-left">
           <h1 className="text-[24px] md:text-[30px] font-bold font-inter text-[#3C1361]">
-            MUSLIM GROUP of Schools, Oyo
+            MUSLIM Group of Schools,Oyo
           </h1>
           <p className="text-[14px] md:text-[16px] font-sans italic text-gray-800 mt-4">
             Allah is Great
@@ -186,9 +186,9 @@ export default function Home() {
 
         {/* News Cards Section */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-10 place-items-center">
-          <NewsCard />
-          <NewsCard />
-          <NewsCard />
+          <NewsCard image='/excellence.jpeg' />
+          <NewsCard image="/books.png" />
+          <NewsCard image="/studentsuccess.png" />
         </div>
         <button className="border border-purple-300 text-white p-2 mt-5 mb-0 rounded-md">
           Read More

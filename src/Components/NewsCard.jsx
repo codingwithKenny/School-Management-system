@@ -1,13 +1,13 @@
 import Image from "next/image";
 import Link from "next/link";
 
-const NewsCard = () => {
+const NewsCard = ({image}) => {
   return (
     <div className="border border-gray-200 shadow-md overflow-hidden w-full max-w-xs bg-white transition-transform transform hover:scale-105">
       {/* Image Section - Full Width */}
       <div className="w-full h-44 relative">
         <Image 
-          src="/school2.jpg" 
+          src={image}
           alt="News Image" 
           layout="fill"
           // objectFit="cover"
