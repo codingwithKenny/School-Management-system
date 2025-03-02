@@ -224,7 +224,7 @@ model Result {
   secondAssessment Float
   examScore        Float
   totalScore       Float            @default(0)
-  subPosition      String           
+  subPosition      String            @default("N/A")
   status           ResultStatus     @default(PENDING)
   isDeleted        Boolean          @default(false)
   deletedAt        DateTime?

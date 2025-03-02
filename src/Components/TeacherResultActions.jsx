@@ -124,7 +124,7 @@ const TeacherResultActions = ({ students, sessions, subjects, teacherId, Results
         firstAssessment: parseFloat(scores.ca1),
         secondAssessment: parseFloat(scores.ca2),
         examScore: parseFloat(scores.exam),
-        subPosition: scores.position || "", // Get position as string, default to ""
+        subPosition: scores.position || "N/A", // Get position as string, default to ""
         totalScore: parseFloat(scores.ca1) + parseFloat(scores.ca2) + parseFloat(scores.exam),
       }));
       const response = await createResult(formattedResults);
