@@ -7,6 +7,7 @@ import prisma from "@/lib/prisma";
 import Image from "next/image";
 import React from "react";
 import { getUserRole } from "@/lib/authUtils";
+import { redirect } from "next/navigation";
 
 
 
